@@ -1,4 +1,4 @@
 [core]
     remote = presse
 ['remote "presse"']
-    url = ssh://hammerlab@presse:/vol/data/
+    url = ssh://hammerlab@presse:/vol/data/RayleighBenard-Dataset/
