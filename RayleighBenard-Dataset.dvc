@@ -1,6 +1,6 @@
 outs:
-- md5: 5b93d0a26ce33e75cfa575292d086822.dir
-  size: 22176099600
-  nfiles: 150
+- md5: b54ee07f5431b59c2862733607ed0f57.dir
+  size: 3696022748
+  nfiles: 26
   hash: md5
   path: RayleighBenard-Dataset
