@@ -1,5 +1,6 @@
 [core]
     remote = presse
+    autostage = false
 ['remote "presse"']
     url = ssh://hammerlab@presse:22/vol/data/RayleighBenard-Dataset/
     user = hammerlab
