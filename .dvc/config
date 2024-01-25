@@ -1,8 +1,11 @@
 [core]
-    remote = presse
+    remote = sciebo
     autostage = false
 ['remote "presse"']
     url = ssh://hammerlab@presse:22/vol/data/RayleighBenard-Dataset/
     user = hammerlab
     port = 22
+    ask_password = true
+['remote "sciebo"']
+    url = webdavs://uni-bielefeld.sciebo.de/remote.php/webdav/datasets/RayleighBenard-Dataset
     ask_password = true
