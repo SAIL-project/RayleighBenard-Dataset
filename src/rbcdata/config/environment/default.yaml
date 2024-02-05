@@ -1,0 +1,9 @@
+ckpt_path: /tmp/shenfun
+solver_steps: 1
+episode_length: 500
+cook_time: 100
+N: (64, 96)
+Ra: 10000
+Pr: 0.7
+dt: 0.025
+bcT: (2, 1)

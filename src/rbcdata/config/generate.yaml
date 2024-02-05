@@ -1,0 +1,8 @@
+defaults:
+  - environment/default
+
+name: train
+base_seed: 42
+count: 1
+path: ./data/dataset
+dt: 1.0

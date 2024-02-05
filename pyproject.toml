@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rbcdata"
+version = "0.0.1"
+authors = [{ name = "Thorben Markmann", email = "dev@thorbenmarkmann.com" }]
+description = "Tools for managing Rayleigh Benard Convection data."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = ["numpy", "h5py", "hydra-core", "gymnasium"]
+
+[project.optional-dependencies]
+vis = ["matplotlib"]
+cli = []
+
+[project.scripts]
+rbcview = "rbcdata.scripts.dataset_view:view_dataset"
+
+[project.urls]
+Homepage = "https://github.com/SAIL-project/RayleighBenard-Dataset"
+Issues = "https://github.com/SAIL-project/RayleighBenard-Dataset/issues"
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
