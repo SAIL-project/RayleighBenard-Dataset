@@ -22,6 +22,7 @@ cli = []
 
 [project.scripts]
 rbcview = "rbcdata.scripts.dataset_view:view_dataset"
+rbcgen = "rbcdata.scripts.dataset_generate:main"
 
 [project.urls]
 Homepage = "https://github.com/SAIL-project/RayleighBenard-Dataset"

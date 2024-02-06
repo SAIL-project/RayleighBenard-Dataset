@@ -1,6 +1,6 @@
 import math
 from abc import ABC
-from typing import Any, Dict, Tuple
+from typing import Any, List
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,7 @@ except ImportError:
 class RBCFieldVisualizer(ABC):
     def __init__(
         self,
-        N: Tuple[int, int],
+        N: List[int],
         spatial_mesh: npt.NDArray[np.float32],
         vmin: float = 0,
         vmax: float = 1,

@@ -8,7 +8,7 @@
 #
 
 from pathlib import Path
-from typing import Any, Callable, Tuple
+from typing import Any, Tuple
 
 import numpy as np
 from shenfun import (
@@ -23,7 +23,6 @@ from shenfun import (
     Inner,
     Project,
     ShenfunFile,
-    SolverGeneric1ND,
     TensorProductSpace,
     TestFunction,
     TrialFunction,
@@ -89,21 +88,24 @@ class KMM:
     """
 
     def __init__(self, params: RBCSimulationParams) -> None:
+        # params
         self.params = params
         self.PDE = IMEXRK3
         self.im1 = None
+        self.domain = (tuple(params.domain[0]), tuple(params.domain[1]))
+        self.padding = tuple(params.padding)
 
         # Regular spaces
         self.B0 = FunctionSpace(
-            params.N[0], params.family, bc=(0, 0, 0, 0), domain=params.domain[0]
+            params.N[0], params.family, bc=(0, 0, 0, 0), domain=self.domain[0]
         )
         self.D0 = FunctionSpace(
-            params.N[0], params.family, bc=(0, 0), domain=params.domain[0]
+            params.N[0], params.family, bc=(0, 0), domain=self.domain[0]
         )
-        self.C0 = FunctionSpace(params.N[0], params.family, domain=params.domain[0])
-        self.F1 = FunctionSpace(params.N[1], "F", dtype="d", domain=params.domain[1])
+        self.C0 = FunctionSpace(params.N[0], params.family, domain=self.domain[0])
+        self.F1 = FunctionSpace(params.N[1], "F", dtype="d", domain=self.domain[1])
         self.D00 = FunctionSpace(
-            params.N[0], params.family, bc=(0, 0), domain=params.domain[0]
+            params.N[0], params.family, bc=(0, 0), domain=self.domain[0]
         )  # Streamwise velocity, not to be in tensorproductspace
         self.C00 = self.D00.get_orthogonal()
 
@@ -121,7 +123,7 @@ class KMM:
         self.CD = VectorSpace(self.TD)  # Dirichlet vector space
 
         # Padded space for dealiasing
-        self.TDp = self.TD.get_dealiased(params.padding)
+        self.TDp = self.TD.get_dealiased(self.padding)
 
         self.u_ = Function(self.BD)  # Velocity vector solution
         self.H_ = Function(self.CD)  # convection
@@ -148,7 +150,7 @@ class KMM:
 
         self.curl = Project(curl(self.u_), self.TC)
         self.divu = Project(div(self.u_), self.TC)
-        self.solP: SolverGeneric1ND = None  # For computing pressure
+        self.solP: la.SolverGeneric1ND = None  # For computing pressure
 
         # File for storing the results
         Path(params.filename).parent.mkdir(parents=True, exist_ok=True)
@@ -220,18 +222,18 @@ class KMM:
 
     def convection(self) -> None:
         H = self.H_.v
-        self.up = self.u_.backward(padding_factor=self.params.padding)
+        self.up = self.u_.backward(padding_factor=self.padding)
         up = self.up.v
         if self.params.conv == 0:
-            dudxp = self.dudx().backward(padding_factor=self.params.padding).v
-            dudyp = self.dudy().backward(padding_factor=self.params.padding).v
-            dvdxp = self.dvdx().backward(padding_factor=self.params.padding).v
-            dvdyp = self.dvdy().backward(padding_factor=self.params.padding).v
+            dudxp = self.dudx().backward(padding_factor=self.padding).v
+            dudyp = self.dudy().backward(padding_factor=self.padding).v
+            dvdxp = self.dvdx().backward(padding_factor=self.padding).v
+            dvdyp = self.dvdy().backward(padding_factor=self.padding).v
             H[0] = self.TDp.forward(up[0] * dudxp + up[1] * dudyp, H[0])
             H[1] = self.TDp.forward(up[0] * dvdxp + up[1] * dvdyp, H[1])
 
         elif self.params.conv == 1:
-            curl = self.curl().backward(padding_factor=self.params.padding)
+            curl = self.curl().backward(padding_factor=self.padding)
             H[0] = self.TDp.forward(-curl * up[1])
             H[1] = self.TDp.forward(curl * up[0])
         self.H_.mask_nyquist(self.mask)

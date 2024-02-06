@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
 
-from rbcdata.utils import RBCType
+from rbcdata.utils.rbc_type import RBCType
 
 
 @dataclass
@@ -17,6 +17,6 @@ class RBCDatasetParams:
     step_factor: int
     sim_length: int
     spatial_mesh: npt.NDArray[np.float32]
-    domain: Tuple[Tuple[float, float], Tuple[float, float]]
-    N: Tuple[int, int]
+    domain: List[List[float]]
+    N: List[int]
     seed: int

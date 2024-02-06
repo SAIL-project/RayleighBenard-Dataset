@@ -2,26 +2,23 @@ import math
 import os
 import pathlib
 import time
-from dataclasses import dataclass, field
 
 import h5py
 import hydra
 import numpy as np
-from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from rbcdata.config import RBCEnvConfig
 from rbcdata.sim import RayleighBenardEnv
 
 
 def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.env)
+    env = RayleighBenardEnv(cfg=cfg.environment)
     _, info = env.reset(seed=seed)
     # Generate cartesian coords
-    ((x_min, x_max), (y_min, y_max)) = env.domain
-    (N1, N2) = env.N
+    x_min, x_max, y_min, y_max = env.domain
+    N1, N2 = env.N
     axis_x = np.linspace(x_min, x_max, num=N2)
     axis_y = np.linspace(y_min, y_max, num=N1)
     axis_t = np.arange(0, cfg.env.episode_length, step=env.dt)
@@ -78,7 +75,7 @@ def main(cfg: DictConfig) -> None:
     unique = math.floor(time.time())
     path = pathlib.Path(f"{cfg.path}/{unique}")
     for i in tqdm(range(cfg.count), position=0, leave=True):
-        create_dataset(cfg=cfg, seed=cfg.seed + i, path=path)
+        create_dataset(cfg=cfg, seed=cfg.base_seed + i, path=path)
 
 
 if __name__ == "__main__":

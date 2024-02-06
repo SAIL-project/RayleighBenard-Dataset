@@ -1,7 +1,7 @@
 import pathlib
 from dataclasses import dataclass
 
-from rbcdata.utils import RBCType
+from rbcdata.utils.rbc_type import RBCType
 
 
 @dataclass

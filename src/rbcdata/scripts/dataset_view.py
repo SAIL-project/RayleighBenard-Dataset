@@ -1,11 +1,10 @@
-import argparse
 import time
 
 import hydra
 from omegaconf import DictConfig
 
-from rbcdata import RBCDataset
-from rbcdata.utils import RBCField
+from rbcdata.rbc_dataset import RBCDataset
+from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis import RBCConvectionVisualizer, RBCFieldVisualizer
 
 

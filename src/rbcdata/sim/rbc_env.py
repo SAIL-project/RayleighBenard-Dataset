@@ -5,8 +5,6 @@ from typing import Any, Dict, Tuple, TypeAlias
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
-import sympy
-from matplotlib.backend_bases import CloseEvent
 from tqdm import tqdm
 
 from rbcdata.config import RBCEnvConfig
@@ -58,7 +56,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         }
         self.N = cfg.N
         self.dt = cfg.dt
-        ((N11, N12), (N21, N22)) = sim_params.domain
         self.domain = cfg.domain
         self.bcT = cfg.bcT
 

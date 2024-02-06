@@ -1,27 +1,48 @@
 default_language_version:
-    python: python3
+  python: python3
 repos:
-    - repo: https://github.com/psf/black
-      rev: 24.1.1
-      hooks:
-          - id: black
-    - repo: https://github.com/PyCQA/flake8
-      rev: 7.0.0
-      hooks:
-          - id: flake8
-    - repo: https://github.com/pycqa/isort
-      rev: 5.13.2
-      hooks:
-          - id: isort
-            args: ["--profile", "black"]
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: "v1.8.0"
-      hooks:
-          - id: mypy
-            args: [--strict, --ignore-missing-imports, --implicit-reexport, --allow-subclassing-any, --allow-untyped-decorators]
-            additional_dependencies: [tokenize-rt==3.2.0]
-    - repo: https://github.com/adrienverge/yamllint.git
-      rev: "v1.10.0"
-      hooks:
-          - id: yamllint
-            args: ["-d {extends: relaxed, rules: {line-length: disable}}", "-s"]
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: "v1.8.0"
+    hooks:
+      - id: mypy
+        args:
+          [
+            --strict,
+            --ignore-missing-imports,
+            --implicit-reexport,
+            --allow-subclassing-any,
+            --allow-untyped-decorators,
+          ]
+        additional_dependencies: [tokenize-rt==3.2.0]
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: "v1.10.0"
+    hooks:
+      - id: yamllint
+        args: ["-d {extends: relaxed, rules: {line-length: disable}}", "-s"]
+  - repo: https://github.com/myint/autoflake
+    rev: v2.2.1
+    hooks:
+      - id: autoflake
+        language: python
+        args:
+          [
+            "--in-place",
+            "--remove-all-unused-imports",
+            "--remove-unused-variables",
+            "--expand-star-imports",
+            "--ignore-init-module-imports",
+          ]
+        files: \.py$

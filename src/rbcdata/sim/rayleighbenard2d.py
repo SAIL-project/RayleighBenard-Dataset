@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Tuple
 
 import numpy as np
-import numpy.typing as npt
 import sympy
 
 from rbcdata.utils.rbc_simulation_params import RBCSimulationParams
@@ -50,10 +49,11 @@ class RayleighBenard2D(KMM):
         # parameters
         kappa = 1.0 / np.sqrt(params.Pr * params.Ra)
         self.kappa = kappa
+        self.bcT = tuple(params.bcT)
 
         # Additional spaces and functions for Temperature equation
         self.T0 = FunctionSpace(
-            params.N[0], params.family, bc=params.bcT, domain=params.domain[0]
+            params.N[0], params.family, bc=self.bcT, domain=self.domain[0]
         )
         self.TT = TensorProductSpace(
             comm, (self.T0, self.F1), modify_spaces_inplace=True
@@ -108,11 +108,11 @@ class RayleighBenard2D(KMM):
     def update_bc(self, t: float) -> None:
         # Update time-dependent bcs.
         self.T0.bc.update(t)
-        self.T_.get_dealiased_space(self.params.padding).bases[0].bc.update(t)
+        self.T_.get_dealiased_space(self.padding).bases[0].bc.update(t)
 
     def prepare_step(self, rk: Any) -> None:
         self.convection()
-        Tp = self.T_.backward(padding_factor=self.params.padding)
+        Tp = self.T_.backward(padding_factor=self.padding)
         self.uT_ = self.up.function_space().forward(self.up * Tp, self.uT_)
 
     def tofile(self, tstep: int) -> None:
@@ -205,7 +205,7 @@ class RayleighBenard2D(KMM):
         self.T0.bc.bc["left"]["D"] = self.bcT[0]
         self.T0.bc.update()
         self.T0.bc.set_tensor_bcs(self.T0, self.T0.tensorproductspace)
-        TP0 = self.T_.get_dealiased_space(self.params.padding).bases[0]
+        TP0 = self.T_.get_dealiased_space(self.padding).bases[0]
         TP0.bc.bc["left"]["D"] = self.bcT[0]
         TP0.bc.update()
         TP0.bc.set_tensor_bcs(TP0, TP0.tensorproductspace)

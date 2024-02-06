@@ -7,9 +7,10 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from rbcdata.config import RBCDatasetConfig
-from rbcdata.utils import RBCField, RBCType
+from rbcdata.config.dataclass.rbc_dataset_config import RBCDatasetConfig
 from rbcdata.utils.rbc_dataset_params import RBCDatasetParams
+from rbcdata.utils.rbc_field import RBCField
+from rbcdata.utils.rbc_type import RBCType
 
 
 class RBCDataset(Dataset[Tensor]):
