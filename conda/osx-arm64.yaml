@@ -1,0 +1,13 @@
+name: rbcdata
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - shenfun
+  - matplotlib
+  - pytorch::pytorch
+  - torchvision
+  - torchaudio
+  - pip
+  - pip:
+      - git+https://github.com/SAIL-project/RayleighBenard-Dataset.git@main

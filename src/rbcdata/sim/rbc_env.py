@@ -60,7 +60,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.bcT = cfg.bcT
 
         # Action configuration
-        # TODO
+        self.action_space = gym.spaces.Box(
+            -np.inf,
+            np.inf,
+            shape=(1, 10),
+            dtype=np.float32,
+        )
 
         # Observation Space
         self.observation_space = gym.spaces.Box(
@@ -151,7 +156,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def close(self) -> None:
         self.simulation.clean()
-        if self.window:
+        if self.render_mode == "live":
             self.window.close()
 
     def get_obs(self) -> RBCObservation:

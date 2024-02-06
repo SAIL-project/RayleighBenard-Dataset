@@ -1,2 +1,5 @@
 hydra-core
 gymnasium
+numpy
+h5py
+tqdm

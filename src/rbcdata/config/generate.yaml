@@ -1,8 +1,13 @@
 defaults:
   - environment/default
 
-name: train
 base_seed: 42
 count: 1
-path: ./data/dataset
+path: .
 dt: 1.0
+
+hydra:
+  job:
+    chdir: true
+  run:
+    dir: ./rbcdata/ra${environment.Ra}/${now:%m-%d-%H-%M-%S}/

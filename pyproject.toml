@@ -14,11 +14,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-dependencies = ["numpy", "h5py", "hydra-core", "gymnasium"]
-
-[project.optional-dependencies]
-vis = ["matplotlib"]
-cli = []
+dependencies = ["numpy", "h5py", "hydra-core", "gymnasium", "tqdm"]
 
 [project.scripts]
 rbcview = "rbcdata.scripts.dataset_view:view_dataset"
