@@ -1,5 +1,4 @@
-context_window_len: 1
+sequence_length: 1
 type: full
 dt: 1
 start_idx: 0
-end_idx: 499

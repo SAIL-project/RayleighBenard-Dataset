@@ -24,45 +24,33 @@ class RBCDataset(Dataset[Tensor]):
         # Read dataset parameters
         try:
             with h5py.File(path, "r") as simulation:
-                self.dataset = np.array(simulation["data"])
-                # dataset parameters
-                self.N = simulation.attrs["N"]
-                self.domain = simulation.attrs["domain"]
-                self.seed = simulation.attrs["seed"]
+                self.data = np.array(simulation["data"])
+                self.parameters = simulation.attrs.items()
                 # assertions
                 assert (
                     cfg.dt >= simulation.attrs["dt"]
                 ), "dt must be greater equal than the simulation dt"
-                assert (
-                    cfg.context_window_len <= cfg.end_idx - cfg.start_idx
-                ), "sequence length too long"
 
         except Exception:
             raise ValueError(f"Error reading dataset: {path}")
 
     def __len__(self) -> int:
-        return self.cfg.end_idx - self.cfg.start_idx - self.cfg.context_window_len + 1
+        return int(
+            self.parameters["steps"] - self.cfg.start_idx - self.cfg.sequence_length + 1
+        )
 
     def __getitem__(self, idx: int) -> Tensor:
-        # check if in range
-        assert self.cfg.start_idx + idx <= self.cfg.end_idx, "index out of range"
-        # Single data frame
-        if self.cfg.context_window_len == 0:
-            return self.get_dataset_state(idx)
-
-        # Data Sequence
-        else:
-            return torch.stack(
-                [
-                    self.get_dataset_state(idx + j)
-                    for j in range(0, self.cfg.context_window_len)
-                ]
-            )
+        return torch.stack(
+            [
+                self.get_dataset_state(idx + j)
+                for j in range(0, self.cfg.sequence_length)
+            ]
+        )
 
     def get_dataset_state(self, idx: int) -> Tensor:
         # Load state from dataset; multiply by step factor for correct dt
         state = torch.tensor(
-            self.dataset[idx * self.parameters.step_factor], dtype=torch.float32
+            self.data[idx * self.parameters.step_factor], dtype=torch.float32
         )
 
         # only convection field

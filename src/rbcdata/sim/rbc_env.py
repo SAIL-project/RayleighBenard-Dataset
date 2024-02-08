@@ -32,10 +32,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().__init__()
 
         # Env configuration
-        self.solver_steps = cfg.solver_steps
-        self.episode_length = cfg.episode_length
+        self.cfg = cfg
         self.steps = round(cfg.episode_length / cfg.dt)
-        self.cook_time = cfg.cook_time
         self.cook_steps = round(cfg.cook_time / cfg.dt)
 
         # PDE configuration
@@ -50,14 +48,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=f"{cfg.ckpt_path}/{unique}/ra{cfg.Ra}/RB_2D",
         )
         self.simulation = RayleighBenard2D(sim_params)
-        self.parameters = {
-            "N": cfg.N,
-            "Ra": cfg.Ra,
-        }
-        self.N = cfg.N
-        self.dt = cfg.dt
-        self.domain = cfg.domain
-        self.bcT = cfg.bcT
 
         # Action configuration
         self.action_space = gym.spaces.Box(
