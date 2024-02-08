@@ -16,7 +16,6 @@ def view_dataset(cfg: DictConfig) -> None:
     # Visualize
     vis_state = RBCFieldVisualizer(
         N=dataset.parameters.N,
-        spatial_mesh=dataset.parameters.spatial_mesh,
         show_u=True,
         vmin=1,
         vmax=2,

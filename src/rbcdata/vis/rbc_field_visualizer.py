@@ -18,7 +18,6 @@ class RBCFieldVisualizer(ABC):
     def __init__(
         self,
         N: List[int],
-        spatial_mesh: npt.NDArray[np.float32],
         vmin: float = 0,
         vmax: float = 1,
         block: bool = False,
@@ -29,9 +28,6 @@ class RBCFieldVisualizer(ABC):
         self.last_image_shown = None
         self.show_u = show_u
         self.closed = False
-
-        # Data
-        X = spatial_mesh
 
         # Create the figure and axes
         plt.rcParams["font.size"] = 15
@@ -77,9 +73,10 @@ class RBCFieldVisualizer(ABC):
         self.fig.canvas.mpl_connect("close_event", self.close)
         # Velocity Field
         if show_u:
+            X, Y = np.meshgrid(np.arange(0, N[0]), np.arange(0, N[1]))
             self.image_u = self.ax.quiver(
-                X[1][::5, ::5],
-                X[0][::5, ::5],
+                X[::5, ::5],
+                Y[::5, ::5],
                 np.zeros(N)[::5, ::5],
                 np.zeros(N)[::5, ::5],
                 pivot="mid",

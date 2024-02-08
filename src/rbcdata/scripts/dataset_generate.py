@@ -21,7 +21,6 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     axis_x = np.linspace(x_min, x_max, num=N2)
     axis_y = np.linspace(y_min, y_max, num=N1)
     axis_t = np.arange(0, cfg.environment.episode_length, step=env.dt)
-    spatial_mesh = np.array(env.simulation.X)
     # Create dataset on disk
     file_name = f"{path}/ra{cfg.environment.Ra}/rbc{seed}.h5"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
@@ -30,7 +29,6 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     file.create_dataset("axis_x", axis_x.shape, data=axis_x)
     file.create_dataset("axis_y", axis_y.shape, data=axis_y)
     file.create_dataset("axis_t", axis_t.shape, data=axis_t)
-    file.create_dataset("spatial_mesh", spatial_mesh.shape, data=spatial_mesh)
     # Create datasets for Temperature and velocity field
     dt_ratio = math.floor(cfg.dt / cfg.environment.dt)
     assert cfg.dt / cfg.environment.dt == dt_ratio, "dt must be a multiple of dt_sim"

@@ -89,7 +89,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if render_mode == "live":
             self.window = RBCFieldVisualizer(
                 N=self.N,
-                spatial_mesh=self.simulation.X,
                 vmin=self.bcT[1],
                 vmax=self.bcT[0],
             )
