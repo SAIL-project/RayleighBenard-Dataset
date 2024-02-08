@@ -35,9 +35,7 @@ class RBCDataset(Dataset[Tensor]):
             raise ValueError(f"Error reading dataset: {path}")
 
     def __len__(self) -> int:
-        return int(
-            self.parameters["steps"] - self.cfg.start_idx - self.cfg.sequence_length + 1
-        )
+        return int(self.cfg.end_idx - self.cfg.start_idx - self.cfg.sequence_length + 1)
 
     def __getitem__(self, idx: int) -> Tensor:
         return torch.stack(

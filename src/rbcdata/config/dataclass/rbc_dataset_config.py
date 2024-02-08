@@ -9,3 +9,4 @@ class RBCDatasetConfig:
     type: RBCType = RBCType.NORMAL
     dt: float = 0.25
     start_idx: int = 0
+    end_idx: int = 1999
