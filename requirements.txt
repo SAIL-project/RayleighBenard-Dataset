@@ -1,5 +1,8 @@
-hydra-core
-gymnasium
+matplotlib
 numpy
 h5py
+hydra-core
+hydra-joblib-launcher
+hydra-colorlog
+gymnasium
 tqdm

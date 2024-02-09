@@ -12,7 +12,7 @@ dependencies:
       - matplotlib
       - numpy
       - h5py
-      - hydra
+      - hydra-core
       - hydra-joblib-launcher
       - hydra-colorlog
       - gymnasium
