@@ -1,0 +1,10 @@
+name: rbcdata
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.10
+  - shenfun
+  - matplotlib
+  - pytorch
+  - torchvision
