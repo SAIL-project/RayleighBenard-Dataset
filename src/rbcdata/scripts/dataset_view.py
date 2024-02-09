@@ -14,17 +14,18 @@ def view_dataset(cfg: DictConfig) -> None:
     dataset = RBCDataset(cfg.path, cfg.dataset)
 
     # Visualize
-    vis_state = RBCFieldVisualizer(
-        N=dataset.parameters.N,
-        show_u=True,
-        vmin=1,
-        vmax=2,
-        block=False,
-    )
     vis_conv = RBCConvectionVisualizer(
+        size=dataset.parameters["N"],
         vmin=-0.1,
         vmax=0.2,
         show=True,
+    )
+    vis_state = RBCFieldVisualizer(
+        size=dataset.parameters["N"],
+        vmin=1,
+        vmax=2,
+        show=True,
+        show_u=True,
     )
 
     # Loop
@@ -42,8 +43,8 @@ def view_dataset(cfg: DictConfig) -> None:
         # get time step
         t = idx * dataset.cfg.dt
         # visualize
-        vis_state.draw(T, ux, uy, t)
         vis_conv.draw(conv, t)
+        vis_state.draw(T, ux, uy, t)
 
         time.sleep(1 / cfg.fps)
 

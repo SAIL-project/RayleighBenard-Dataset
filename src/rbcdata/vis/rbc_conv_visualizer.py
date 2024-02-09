@@ -1,15 +1,14 @@
-import os
 from abc import ABC
-from typing import Tuple
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
-from matplotlib.backend_bases import Event
-from matplotlib.figure import Figure
 
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib.backend_bases import Event
+    from matplotlib.figure import Figure
 except ImportError:
     print("Matplotlib not found, visualization is not available")
 
@@ -17,19 +16,18 @@ except ImportError:
 class RBCConvectionVisualizer(ABC):
     def __init__(
         self,
+        size: List[int] = [64, 96],
         vmin: float = -0.1,
         vmax: float = 0.2,
         show: float = True,
-        size: Tuple[int, int] = (64, 96),
     ) -> None:
         # Matplotlib settings
-        self.show = show
         self.closed = False
         if show:
+            matplotlib.use("TkAgg")
             plt.ion()
-        elif os.name != "nt":
-            print("matplotlib using Agg backend")
-            matplotlib.pyplot.switch_backend("Agg")
+        else:
+            matplotlib.use("Agg")
 
         # Create the figure and axes
         plt.rcParams["font.size"] = 15
@@ -53,13 +51,13 @@ class RBCConvectionVisualizer(ABC):
         ax.set_ylabel(
             "spatial y",
         )
-        ax.set_yticks([0, 32, 64])
+        ax.set_yticks([0, 32, 63])
         ax.set_yticklabels([-1, 0, 1])
         # x axis
         ax.set_xlabel(
             "spatial x",
         )
-        ax.set_xticks([0, 48, 96])
+        ax.set_xticks([0, 48, 95])
         ax.set_xticklabels([0, r"$\pi$", r"2$\pi$"])
         # Colorbar
         fig.colorbar(

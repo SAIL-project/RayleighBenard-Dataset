@@ -26,7 +26,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         cfg: RBCEnvConfig,
         savestatistics: bool = False,
-        modshow: int = 5,
+        modshow: int = 20,
         render_mode: str | None = None,
     ) -> None:
         super().__init__()
@@ -78,9 +78,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.modshow = modshow
         if render_mode == "live":
             self.window = RBCFieldVisualizer(
-                N=self.N,
-                vmin=self.bcT[1],
-                vmax=self.bcT[0],
+                size=cfg.N, vmin=cfg.bcT[1], vmax=cfg.bcT[0], show=True, show_u=True
             )
         self.render_mode = render_mode
 
@@ -117,7 +115,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     ) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
         truncated = False
         # PDE stepping
-        for _ in range(self.solver_steps):
+        for _ in range(self.cfg.solver_steps):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
             self.__save_statistics()
 
@@ -139,7 +137,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 state[RBCField.T],
                 state[RBCField.UX],
                 state[RBCField.UY],
-                self.tstep * self.dt,
+                self.tstep * self.cfg.dt,
                 cooking=cooking,
             )
 

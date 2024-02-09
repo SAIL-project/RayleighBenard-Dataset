@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rbcdata"
-version = "0.0.6"
+version = "0.1.0"
 authors = [{ name = "Thorben Markmann", email = "dev@thorbenmarkmann.com" }]
 description = "Tools for managing Rayleigh Benard Convection data."
 readme = "README.md"
@@ -18,7 +18,6 @@ dependencies = ["numpy", "h5py", "hydra-core", "gymnasium", "tqdm"]
 
 [project.scripts]
 rbcview = "rbcdata.scripts.dataset_view:view_dataset"
-rbcgen = "rbcdata.scripts.dataset_generate:main"
 
 [project.urls]
 Homepage = "https://github.com/SAIL-project/RayleighBenard-Dataset"

@@ -1,15 +1,14 @@
-import math
 from abc import ABC
 from typing import Any, List
 
 import numpy as np
 import numpy.typing as npt
-from matplotlib.backend_bases import Event
-from matplotlib.figure import Figure
 
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib.backend_bases import Event
+    from matplotlib.figure import Figure
 except ImportError:
     print("Matplotlib not found, visualization is not available")
 
@@ -17,17 +16,23 @@ except ImportError:
 class RBCFieldVisualizer(ABC):
     def __init__(
         self,
-        N: List[int],
+        size: List[int] = [64, 96],
         vmin: float = 0,
         vmax: float = 1,
-        block: bool = False,
         show_u: bool = True,
         show: bool = True,
     ) -> None:
+        # Matplotlib settings
+        self.closed = False
+        if show:
+            matplotlib.use("TkAgg")
+            plt.ion()
+        else:
+            matplotlib.use("Agg")
+
         # Rendering
         self.last_image_shown = None
         self.show_u = show_u
-        self.closed = False
 
         # Create the figure and axes
         plt.rcParams["font.size"] = 15
@@ -41,26 +46,25 @@ class RBCFieldVisualizer(ABC):
             },
             figsize=(10, 6),
         )
-        extent = [0, 2 * math.pi, -1, 1]
+        # extent = [0, 2 * math.pi, -1, 1]
         self.image_T = self.ax.imshow(
-            np.zeros(N),
-            vmax=vmax,
-            vmin=vmin,
+            np.zeros(size),
             cmap="turbo",
-            extent=extent,
             aspect="auto",
+            vmin=vmin,
+            vmax=vmax,
         )
-        # Y axis
+        # y axis
         self.ax.set_ylabel(
             "spatial y",
         )
-        self.ax.set_yticks([-1, 0, 1])
+        self.ax.set_yticks([0, 32, 63])
         self.ax.set_yticklabels([-1, 0, 1])
         # X axis
         self.ax.set_xlabel(
             "spatial x",
         )
-        self.ax.set_xticks([0, math.pi, 2 * math.pi])
+        self.ax.set_xticks([0, 48, 95])
         self.ax.set_xticklabels([0, r"$\pi$", r"2$\pi$"])
 
         self.fig.colorbar(
@@ -73,12 +77,13 @@ class RBCFieldVisualizer(ABC):
         self.fig.canvas.mpl_connect("close_event", self.close)
         # Velocity Field
         if show_u:
-            X, Y = np.meshgrid(np.arange(0, N[0]), np.arange(0, N[1]))
+            X, Y = np.meshgrid(np.arange(0, 96), np.arange(0, 64))
+            self.skip = 4
             self.image_u = self.ax.quiver(
-                X[::5, ::5],
-                Y[::5, ::5],
-                np.zeros(N)[::5, ::5],
-                np.zeros(N)[::5, ::5],
+                X[:: self.skip, :: self.skip],
+                Y[:: self.skip, :: self.skip],
+                np.zeros(tuple(size))[:: self.skip, :: self.skip],
+                np.zeros(tuple(size))[:: self.skip, :: self.skip],
                 pivot="mid",
                 scale=0.01,
                 color="white",
@@ -86,16 +91,8 @@ class RBCFieldVisualizer(ABC):
             )
 
         # Show
-        self.show = show
         if show:
-            if not block:
-                plt.ion()
-            else:
-                plt.ioff()
-            plt.show(block=block)
-        else:
-            # Change backend if plots are not displayed
-            matplotlib.pyplot.switch_backend("Agg")
+            plt.show(block=False)
 
     def draw(
         self,
@@ -121,15 +118,16 @@ class RBCFieldVisualizer(ABC):
                 loc="left",
             )
 
-        if self.show:
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-
         # Update u image
         if self.show_u:
-            self.image_u.set_UVC(ux[::5, ::5], uy[::5, ::5])
+            self.image_u.set_UVC(
+                ux[:: self.skip, :: self.skip], uy[:: self.skip, :: self.skip]
+            )
             scale = np.linalg.norm(uy) / 1.5
             self.image_u.scale = 0.01 if scale == 0 else scale
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
         return self.fig
 
