@@ -11,6 +11,7 @@ try:
     from matplotlib.figure import Figure
 except ImportError:
     print("Matplotlib not found, visualization is not available")
+    exit(1)
 
 
 class RBCConvectionVisualizer(ABC):

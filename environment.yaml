@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
-  - python=3.10
+  - python=3.11
   - shenfun
   - pytorch
   - torchvision
@@ -12,6 +12,8 @@ dependencies:
       - matplotlib
       - numpy
       - h5py
-      - hydra-core
+      - hydra
+      - hydra-joblib-launcher
+      - hydra-colorlog
       - gymnasium
       - tqdm

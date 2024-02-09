@@ -34,9 +34,9 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     # Save commonly used parameters of the simulation
     file.attrs["seed"] = seed
     file.attrs["steps"] = env.steps
-    file.attrs["episode_length"] = env.episode_length
-    file.attrs["cook_length"] = env.cook_time
-    file.attrs["N"] = env.N
+    file.attrs["episode_length"] = env.cfg.episode_length
+    file.attrs["cook_length"] = env.cfg.cook_length
+    file.attrs["N"] = env.cfg.N
     file.attrs["ra"] = env.cfg.Ra
     file.attrs["pr"] = env.cfg.Pr
     file.attrs["dt"] = cfg.dt

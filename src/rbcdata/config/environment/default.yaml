@@ -1,10 +1,10 @@
 ckpt_path: /tmp/shenfun
 solver_steps: 1
 episode_length: 500
-cook_time: 100
+cook_length: 250
 N: [64, 96]
 Ra: 10000
 Pr: 0.7
-dt: 0.025
+dt: 0.05
 bcT: [2, 1]
 domain: [[-1, 1], [0, 6.28318530718]]

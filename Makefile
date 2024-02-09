@@ -17,10 +17,14 @@ clean-logs: ## Clean logs
 format: ## Run pre-commit hooks
 	pre-commit run -a
 
+generate: ## Generate a dataset
+	export PYTHONPATH=$(ROOT)/src && \
+	python src/rbcdata/scripts/dataset_generate.py --multirun
+
 run: ## Run an environment
 	export PYTHONPATH=$(ROOT)/src && \
 	python src/rbcdata/scripts/env_run.py
 
-view: ## Run an environment
+view: ## View a dataset
 	export PYTHONPATH=$(ROOT)/src && \
 	python src/rbcdata/scripts/dataset_view.py path=$(path)

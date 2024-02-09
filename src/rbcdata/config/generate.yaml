@@ -1,13 +1,20 @@
 defaults:
   - environment/default
+  - override hydra/launcher: joblib
 
-base_seed: 42
-count: 1
 path: .
-dt: 1.0
+count: 25
+base_seed: 42
+dt: 0.1
 
 hydra:
   job:
     chdir: true
-  run:
-    dir: ./logs/generate/ra${environment.Ra}/${now:%m-%d-%H-%M-%S}/
+  sweep:
+    dir: ./logs/generate/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: job${hydra.job.num}_ra${environment.Ra}
+  launcher:
+    n_jobs: 4
+  sweeper:
+    params:
+      environment.Ra: 10_000, 100_000, 500_000, 1_000_000, 2_000_000, 3_000_000, 5_000_000

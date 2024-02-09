@@ -34,7 +34,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Env configuration
         self.cfg = cfg
         self.steps = round(cfg.episode_length / cfg.dt)
-        self.cook_steps = round(cfg.cook_time / cfg.dt)
+        self.cook_steps = round(cfg.cook_length / cfg.dt)
 
         # PDE configuration
         unique = math.floor(time.time() * 1000)

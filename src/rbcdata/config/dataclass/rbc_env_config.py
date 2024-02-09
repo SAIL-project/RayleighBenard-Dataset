@@ -10,7 +10,7 @@ class RBCEnvConfig:
     ckpt_path: pathlib.Path = pathlib.Path("/tmp/shenfun")
     solver_steps: int = 1
     episode_length: int = 500
-    cook_time: int = 100
+    cook_length: int = 100
     N: List[int] = field(default_factory=lambda: [64, 96])
     Ra: int = 10000
     Pr: float = 0.7
