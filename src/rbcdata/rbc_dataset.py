@@ -25,7 +25,7 @@ class RBCDataset(Dataset[Tensor]):
         try:
             with h5py.File(path, "r") as simulation:
                 self.data = np.array(simulation["data"])
-                self.parameters = simulation.attrs.items()
+                self.parameters = dict(simulation.attrs.items())
                 # assertions
                 assert (
                     cfg.dt >= simulation.attrs["dt"]
@@ -48,7 +48,7 @@ class RBCDataset(Dataset[Tensor]):
     def get_dataset_state(self, idx: int) -> Tensor:
         # Load state from dataset; multiply by step factor for correct dt
         state = torch.tensor(
-            self.data[idx * self.parameters.step_factor], dtype=torch.float32
+            self.data[idx * self.parameters["step_factor"]], dtype=torch.float32
         )
 
         # only convection field
