@@ -1,17 +1,24 @@
+import argparse
+import pathlib
 import time
 
-import hydra
-from omegaconf import DictConfig
-
+from rbcdata.config.dataclass.rbc_dataset_config import RBCDatasetConfig
 from rbcdata.rbc_dataset import RBCDataset
 from rbcdata.utils.rbc_field import RBCField
+from rbcdata.utils.rbc_type import RBCType
 from rbcdata.vis import RBCConvectionVisualizer, RBCFieldVisualizer
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="view")
-def view_dataset(cfg: DictConfig) -> None:
+def view_dataset(path: pathlib.Path) -> None:
     # Data
-    dataset = RBCDataset(cfg.path, cfg.dataset)
+    config = RBCDatasetConfig(
+        sequence_length=1,
+        type=RBCType.FULL,
+        dt=1,
+        start_idx=0,
+        end_idx=500,
+    )
+    dataset = RBCDataset(path, config)
 
     # Visualize
     vis_conv = RBCConvectionVisualizer(
@@ -46,8 +53,19 @@ def view_dataset(cfg: DictConfig) -> None:
         vis_conv.draw(conv, t)
         vis_state.draw(T, ux, uy, t)
 
-        time.sleep(1 / cfg.fps)
+        time.sleep(1 / 10)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="rbcview",
+        description="View RayleighBenardConvection dataset",
+    )
+    parser.add_argument("filename", help="Path to the dataset")
+    args = parser.parse_args()
+
+    view_dataset(pathlib.Path(args.filename))
 
 
 if __name__ == "__main__":
-    view_dataset()
+    main()
