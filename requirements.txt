@@ -6,3 +6,4 @@ hydra-joblib-launcher
 hydra-colorlog
 gymnasium
 tqdm
+rootutils

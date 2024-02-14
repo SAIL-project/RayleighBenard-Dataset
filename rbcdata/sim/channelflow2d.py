@@ -36,8 +36,6 @@ from shenfun import (
     la,
 )
 
-from rbcdata.utils.rbc_simulation_params import RBCSimulationParams
-
 
 class KMM:
     """Navier Stokes channel flow solver in 2D
@@ -87,25 +85,38 @@ class KMM:
 
     """
 
-    def __init__(self, params: RBCSimulationParams) -> None:
-        # params
-        self.params = params
+    def __init__(
+        self,
+        N: Tuple[int, int] = (32, 32),
+        domain: Tuple[Tuple[float, ...], Tuple[float, ...]] = ((-1, 1), (0, 2 * np.pi)),
+        nu: float = 0.01,
+        dt: float = 0.1,
+        conv: int = 0,
+        dpdy: int = 1,
+        filename: str = "KMM",
+        family: str = "C",
+        padding_factor: Tuple[float, float] = (1, 1.5),
+        modsave: float = 1e8,
+        checkpoint: int = 1000,
+    ) -> None:
+        self.N = N
+        self.nu = nu
+        self.dt = dt
+        self.conv = conv
+        self.modsave = modsave
+        self.filename = filename
+        self.padding_factor = padding_factor
+        self.dpdy = dpdy
         self.PDE = IMEXRK3
         self.im1 = None
-        self.domain = (tuple(params.domain[0]), tuple(params.domain[1]))
-        self.padding = tuple(params.padding)
 
         # Regular spaces
-        self.B0 = FunctionSpace(
-            params.N[0], params.family, bc=(0, 0, 0, 0), domain=self.domain[0]
-        )
-        self.D0 = FunctionSpace(
-            params.N[0], params.family, bc=(0, 0), domain=self.domain[0]
-        )
-        self.C0 = FunctionSpace(params.N[0], params.family, domain=self.domain[0])
-        self.F1 = FunctionSpace(params.N[1], "F", dtype="d", domain=self.domain[1])
+        self.B0 = FunctionSpace(N[0], family, bc=(0, 0, 0, 0), domain=domain[0])
+        self.D0 = FunctionSpace(N[0], family, bc=(0, 0), domain=domain[0])
+        self.C0 = FunctionSpace(N[0], family, domain=domain[0])
+        self.F1 = FunctionSpace(N[1], "F", dtype="d", domain=domain[1])
         self.D00 = FunctionSpace(
-            params.N[0], params.family, bc=(0, 0), domain=self.domain[0]
+            N[0], family, bc=(0, 0), domain=domain[0]
         )  # Streamwise velocity, not to be in tensorproductspace
         self.C00 = self.D00.get_orthogonal()
 
@@ -116,75 +127,59 @@ class KMM:
         self.TD = TensorProductSpace(
             comm, (self.D0, self.F1), modify_spaces_inplace=True
         )  # Streamwise velocity
-        self.TC = TensorProductSpace(
-            comm, (self.C0, self.F1), modify_spaces_inplace=True
-        )  # No bc
+        self.TC = TensorProductSpace(comm, (self.C0, self.F1), modify_spaces_inplace=True)  # No bc
         self.BD = VectorSpace([self.TB, self.TD])  # Velocity vector space
         self.CD = VectorSpace(self.TD)  # Dirichlet vector space
 
         # Padded space for dealiasing
-        self.TDp = self.TD.get_dealiased(self.padding)
+        self.TDp = self.TD.get_dealiased(padding_factor)
 
         self.u_ = Function(self.BD)  # Velocity vector solution
         self.H_ = Function(self.CD)  # convection
         self.ub = Array(self.BD)
 
-        self.v00 = Function(
-            self.D00
-        )  # For solving 1D problem for Fourier wavenumber 0, 0
+        self.v00 = Function(self.D00)  # For solving 1D problem for Fourier wavenumber 0, 0
         self.w00 = Function(self.D00)
 
         self.work = CachedArrayDict()
-        self.mask = (
-            self.TB.get_mask_nyquist()
-        )  # Used to set the Nyquist frequency to zero
+        self.mask = self.TB.get_mask_nyquist()  # Used to set the Nyquist frequency to zero
         self.X = self.TD.local_mesh(bcast=True)
         self.K = self.TD.local_wavenumbers(scaled=True)
 
         # Classes for fast projections. All are not used except if self.conv=0
         self.dudx = Project(Dx(self.u_[0], 0, 1), self.TD)
-        if params.conv == 0:
+        if self.conv == 0:
             self.dudy = Project(Dx(self.u_[0], 1, 1), self.TB)
             self.dvdx = Project(Dx(self.u_[1], 0, 1), self.TC)
             self.dvdy = Project(Dx(self.u_[1], 1, 1), self.TD)
 
         self.curl = Project(curl(self.u_), self.TC)
         self.divu = Project(div(self.u_), self.TC)
-        self.solP: la.SolverGeneric1ND = None  # For computing pressure
+        self.solP: la.SolverGeneric2ND | None = None  # For computing pressure
 
         # File for storing the results
-        Path(params.filename).parent.mkdir(parents=True, exist_ok=True)
+        Path(filename).parent.mkdir(parents=True, exist_ok=True)
         self.file_u = ShenfunFile(
-            "_".join((params.filename, "U")),
-            self.BD,
-            backend="hdf5",
-            mode="w",
-            mesh="uniform",
+            "_".join((filename, "U")), self.BD, backend="hdf5", mode="w", mesh="uniform"
         )
 
         # Create a checkpoint file used to restart simulations
-        self.checkpoint = Checkpoint(
-            params.filename, checkevery=params.checkpoint, data={"0": {"U": [self.u_]}}
-        )
+        self.checkpoint = Checkpoint(filename, checkevery=checkpoint, data={"0": {"U": [self.u_]}})
 
         # set up equations
         v = TestFunction(self.TB)
 
         # Chebyshev matrices are not sparse, so need a tailored solver.
         # Legendre has simply 5 nonzero diagonals and can use generic solvers.
-        sol1 = (
-            chebyshev.la.Biharmonic
-            if self.B0.family() == "chebyshev"
-            else la.SolverGeneric1ND
-        )
+        sol1 = chebyshev.la.Biharmonic if self.B0.family() == "chebyshev" else la.SolverGeneric1ND
 
         self.pdes = {
             "u": self.PDE(
                 v,  # test function
                 div(grad(self.u_[0])),  # u
-                lambda f: params.nu * div(grad(f)),  # linear operator on u
+                lambda f: self.nu * div(grad(f)),  # linear operator on u
                 Dx(Dx(self.H_[1], 0, 1), 1, 1) - Dx(self.H_[0], 1, 2),
-                dt=params.dt,
+                dt=self.dt,
                 solver=sol1,
                 latex=r"\frac{\partial \nabla^2 u}{\partial t} = \
                     \nu \nabla^4 u + \frac{\partial^2 N_y}{\partial \
@@ -202,17 +197,15 @@ class KMM:
                 self.D00
             )  # Copy from H_[1, :, 0, 0] (cannot use view since not contiguous)
             source = Array(self.C00)
-            source[:] = -params.dpdy  # dpdy set by subclass
-            sol = (
-                chebyshev.la.Helmholtz if self.B0.family() == "chebyshev" else la.Solver
-            )
+            source[:] = -self.dpdy  # dpdy set by subclass
+            sol = chebyshev.la.Helmholtz if self.B0.family() == "chebyshev" else la.Solver
             self.pdes1d = {
                 "v0": self.PDE(
                     v0,
                     self.v00,
-                    lambda f: params.nu * div(grad(f)),
+                    lambda f: self.nu * div(grad(f)),
                     [-Expr(self.h1), source],
-                    dt=params.dt,
+                    dt=self.dt,
                     solver=sol,
                     latex=r"\frac{\partial v}{\partial t} = \
                         \nu \frac{\partial^2 v}{\partial x^2} \
@@ -222,18 +215,18 @@ class KMM:
 
     def convection(self) -> None:
         H = self.H_.v
-        self.up = self.u_.backward(padding_factor=self.padding)
+        self.up = self.u_.backward(padding_factor=self.padding_factor)
         up = self.up.v
-        if self.params.conv == 0:
-            dudxp = self.dudx().backward(padding_factor=self.padding).v
-            dudyp = self.dudy().backward(padding_factor=self.padding).v
-            dvdxp = self.dvdx().backward(padding_factor=self.padding).v
-            dvdyp = self.dvdy().backward(padding_factor=self.padding).v
+        if self.conv == 0:
+            dudxp = self.dudx().backward(padding_factor=self.padding_factor).v
+            dudyp = self.dudy().backward(padding_factor=self.padding_factor).v
+            dvdxp = self.dvdx().backward(padding_factor=self.padding_factor).v
+            dvdyp = self.dvdy().backward(padding_factor=self.padding_factor).v
             H[0] = self.TDp.forward(up[0] * dudxp + up[1] * dudyp, H[0])
             H[1] = self.TDp.forward(up[0] * dvdxp + up[1] * dvdyp, H[1])
 
-        elif self.params.conv == 1:
-            curl = self.curl().backward(padding_factor=self.padding)
+        elif self.conv == 1:
+            curl = self.curl().backward(padding_factor=self.padding_factor)
             H[0] = self.TDp.forward(-curl * up[1])
             H[1] = self.TDp.forward(curl * up[0])
         self.H_.mask_nyquist(self.mask)
@@ -257,19 +250,15 @@ class KMM:
 
     def compute_pressure(self) -> Any:
         if self.solP is None:
-            self.d2udx2 = Project(self.params.nu * Dx(self.u_[0], 0, 2), self.TC)
+            self.d2udx2 = Project(self.nu * Dx(self.u_[0], 0, 2), self.TC)
             N0 = self.N0 = FunctionSpace(
-                self.params.N[0],
+                self.N[0],
                 self.B0.family(),
                 bc={"left": {"N": self.d2udx2()}, "right": {"N": self.d2udx2()}},
             )
-            TN = self.TN = TensorProductSpace(
-                comm, (N0, self.F1), modify_spaces_inplace=True
-            )
+            TN = self.TN = TensorProductSpace(comm, (N0, self.F1), modify_spaces_inplace=True)
             sol = (
-                chebyshev.la.Helmholtz
-                if self.B0.family() == "chebyshev"
-                else la.SolverGeneric1ND
+                chebyshev.la.Helmholtz if self.B0.family() == "chebyshev" else la.SolverGeneric1ND
             )
             self.divH = Inner(TestFunction(TN), -div(self.H_))
             self.solP = sol(inner(TestFunction(TN), div(grad(TrialFunction(TN)))))
@@ -280,7 +269,7 @@ class KMM:
         p_ = self.solP(self.divH(), self.p_, constraints=((0, 0),))
         return p_
 
-    def print_energy_and_divergence(self, t: float) -> None:
+    def print_energy_and_divergence(self, t: float, tstep: int) -> None:
         ub = self.u_.backward(self.ub)
         e0 = inner(1, ub[0] * ub[0])
         e1 = inner(1, ub[1] * ub[1])
@@ -297,15 +286,13 @@ class KMM:
         self.checkpoint.close()
         return t, tstep
 
-    def initialize(self, from_checkpoint: bool = False) -> Tuple[float, int]:
+    def initialize(self, rand: float = 0.001, from_checkpoint: bool = False) -> Tuple[float, int]:
         if from_checkpoint:
             return self.init_from_checkpoint()
         raise RuntimeError("Initialize solver in subclass")
 
     def tofile(self, tstep: int) -> None:
-        self.file_u.write(
-            tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True
-        )
+        self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
 
     def prepare_step(self, rk: Any) -> None:
         self.convection()

@@ -1,5 +1,3 @@
-import math
-import time
 from typing import Any, Dict, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -7,12 +5,10 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
-from rbcdata.config import RBCEnvConfig
+from rbcdata.config import RBCSimConfig
+from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.utils.rbc_field import RBCField
-from rbcdata.utils.rbc_simulation_params import RBCSimulationParams
 from rbcdata.vis import RBCFieldVisualizer
-
-from .rayleighbenard2d import RayleighBenard2D
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -24,7 +20,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def __init__(
         self,
-        cfg: RBCEnvConfig,
+        cfg: RBCSimConfig,
         savestatistics: bool = False,
         modshow: int = 20,
         render_mode: str | None = None,
@@ -37,17 +33,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.cook_steps = round(cfg.cook_length / cfg.dt)
 
         # PDE configuration
-        unique = math.floor(time.time() * 1000)
-        sim_params = RBCSimulationParams(
-            N=cfg.N,
-            Ra=cfg.Ra,
-            Pr=cfg.Pr,
+        self.simulation = RayleighBenard(
+            N_state=(cfg.N[0], cfg.N[1]),
+            Ra=cfg.ra,
+            Pr=cfg.pr,
             dt=cfg.dt,
-            bcT=cfg.bcT,
-            domain=cfg.domain,
-            filename=f"{cfg.ckpt_path}/{unique}/ra{cfg.Ra}/RB_2D",
+            bcT=(cfg.bcT[0], cfg.bcT[1]),
+            domain=(tuple(cfg.domain[0]), tuple(cfg.domain[0])),
+            filename=cfg.checkpoint_path,
         )
-        self.simulation = RayleighBenard2D(sim_params)
 
         # Action configuration
         self.action_space = gym.spaces.Box(
@@ -96,9 +90,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.visualizer = None
 
         # cook system
-        for _ in tqdm(
-            range(self.cook_steps), desc="Cooking Time", position=1, leave=False
-        ):
+        for _ in tqdm(range(self.cook_steps), desc="Cooking Time", position=1, leave=False):
             self.t, self.tstep = self.simulation.step(self.t, self.tstep)
             self.__save_statistics()
             if self.tstep > 1:
@@ -110,9 +102,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         return self.get_obs(), self.__get_info()
 
-    def step(
-        self, action: RBCAction
-    ) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
         truncated = False
         # PDE stepping
         for _ in range(self.cfg.solver_steps):
@@ -142,6 +132,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             )
 
     def close(self) -> None:
+        print("Closing environment")
         self.simulation.clean()
         if self.render_mode == "live":
             self.window.close()
@@ -153,7 +144,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.simulation.state.astype(np.float32)
 
     def get_reward(self) -> float:
-        return -self.simulation.compute_nusselt()
+        return float(-self.simulation.compute_nusselt())
 
     def get_statistics(self) -> npt.NDArray[np.float32]:
         return np.array(

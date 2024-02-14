@@ -5,10 +5,13 @@ import pathlib
 import h5py
 import hydra
 import numpy as np
+import rootutils
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from rbcdata.sim import RayleighBenardEnv
+from rbcdata.sim.rbc_env import RayleighBenardEnv
+
+rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
 
 def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
@@ -37,8 +40,8 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     file.attrs["episode_length"] = env.cfg.episode_length
     file.attrs["cook_length"] = env.cfg.cook_length
     file.attrs["N"] = env.cfg.N
-    file.attrs["ra"] = env.cfg.Ra
-    file.attrs["pr"] = env.cfg.Pr
+    file.attrs["ra"] = env.cfg.ra
+    file.attrs["pr"] = env.cfg.pr
     file.attrs["dt"] = cfg.dt
     file.attrs["bcT"] = env.cfg.bcT
     file.attrs["domain"] = env.cfg.domain
@@ -61,7 +64,7 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     env.close()
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="generate")
+@hydra.main(version_base=None, config_path="config", config_name="generate")
 def main(cfg: DictConfig) -> None:
     # Generate Dataset
     path = pathlib.Path(f"{cfg.path}")

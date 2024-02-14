@@ -41,10 +41,7 @@ class RBCDataset(Dataset[Tensor]):
 
     def __getitem__(self, idx: int) -> Tensor:
         return torch.stack(
-            [
-                self.get_dataset_state(idx + j)
-                for j in range(0, self.cfg.sequence_length)
-            ]
+            [self.get_dataset_state(idx + j) for j in range(0, self.cfg.sequence_length)]
         )
 
     def get_dataset_state(self, idx: int) -> Tensor:

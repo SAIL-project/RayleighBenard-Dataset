@@ -120,9 +120,7 @@ class RBCFieldVisualizer(ABC):
 
         # Update u image
         if self.show_u:
-            self.image_u.set_UVC(
-                ux[:: self.skip, :: self.skip], uy[:: self.skip, :: self.skip]
-            )
+            self.image_u.set_UVC(ux[:: self.skip, :: self.skip], uy[:: self.skip, :: self.skip])
             scale = np.linalg.norm(uy) / 1.5
             self.image_u.scale = 0.01 if scale == 0 else scale
 

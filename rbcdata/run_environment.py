@@ -1,12 +1,15 @@
 import hydra
+import rootutils
 from omegaconf import DictConfig
 
-from rbcdata.sim import RayleighBenardEnv
+rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
+
+from rbcdata.sim.rbc_env import RayleighBenardEnv
 
 
 def run_env(cfg: DictConfig, seed: int) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.environment, modshow=40, render_mode="live")
+    env = RayleighBenardEnv(cfg=cfg.sim, modshow=40, render_mode="live")
     _, _ = env.reset(seed=seed)
 
     # Run simulation
@@ -21,7 +24,7 @@ def run_env(cfg: DictConfig, seed: int) -> None:
     env.close()
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="run")
+@hydra.main(version_base=None, config_path="config", config_name="run")
 def main(cfg: DictConfig) -> None:
     run_env(cfg=cfg, seed=cfg.seed)
 

@@ -17,25 +17,15 @@ classifiers = [
 dependencies = ["numpy", "h5py", "hydra-core", "gymnasium", "tqdm"]
 
 [project.scripts]
-rbcview = "rbcdata.scripts.dataset_view:main"
+rbcview = "rbcdata.scripts.view_dataset:main"
 
 [project.urls]
 Homepage = "https://github.com/SAIL-project/RayleighBenard-Dataset"
 Issues = "https://github.com/SAIL-project/RayleighBenard-Dataset/issues"
 
 [tool.black]
-line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+line-length = 99
+
+[tool.isort]
+profile = "black"
+filter_files = true

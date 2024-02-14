@@ -1,2 +1,0 @@
-from .rbc_conv_visualizer import RBCConvectionVisualizer
-from .rbc_field_visualizer import RBCFieldVisualizer

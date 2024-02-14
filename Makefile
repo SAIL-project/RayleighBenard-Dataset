@@ -18,13 +18,10 @@ format: ## Run pre-commit hooks
 	pre-commit run -a
 
 generate: ## Generate a dataset
-	export PYTHONPATH=$(ROOT)/src && \
-	python src/rbcdata/scripts/dataset_generate.py --multirun
+	python src/rbcdata/scripts/generate_dataset.py --multirun
 
 run: ## Run an environment
-	export PYTHONPATH=$(ROOT)/src && \
-	python src/rbcdata/scripts/env_run.py
+	python src/rbcdata/scripts/run_environment.py
 
 view: ## View a dataset
-	export PYTHONPATH=$(ROOT)/src && \
-	python src/rbcdata/scripts/dataset_view.py path=$(path)
+	python src/rbcdata/scripts/view_dataset.py path=$(path)
