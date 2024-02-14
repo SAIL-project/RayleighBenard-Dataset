@@ -1,10 +1,8 @@
 import copy
 import warnings
 from pathlib import Path
-from typing import Any, Tuple
 
 import numpy as np
-import numpy.typing as npt
 import sympy
 from mpi4py import MPI
 from shenfun import (
@@ -21,7 +19,7 @@ from shenfun import (
     la,
 )
 
-from rbcdata.sim.channelflow2d import KMM
+from .channelflow2d import KMM
 
 # global settings for numpy, sympy and MPI
 x, y, tt = sympy.symbols("x,y,t", real=True)
@@ -32,19 +30,19 @@ warnings.filterwarnings("ignore")
 class RayleighBenard(KMM):
     def __init__(
         self,
-        N_state: Tuple[int, int] = (64, 96),
-        N_obs: Tuple[int, int] = (8, 32),
-        domain: Tuple[Tuple[float, ...], Tuple[float, ...]] = ((-1, 1), (0, 2 * sympy.pi)),
-        Ra: float = 10000.0,
-        Pr: float = 0.7,
-        dt: float = 0.05,
-        bcT: Tuple[float, float] = (2, 1),
-        filename: str = "data/shenfun/RB_2D",
-        padding_factor: Tuple[float, float] = (1, 1.5),
-        modsave: int = 10000,
-        checkpoint: int = 10,
-        family: str = "C",
-    ) -> None:
+        N_state=(64, 96),
+        N_obs=(8, 32),
+        domain=((-1, 1), (0, 2 * sympy.pi)),
+        Ra=10000.0,
+        Pr=0.7,
+        dt=0.025,
+        bcT=(2, 1),
+        filename="data/shenfun/RB_2D",
+        padding_factor=(1, 1.5),
+        modsave=10000,
+        checkpoint=10,
+        family="C",
+    ):
         """Form a complex number.
 
         Keyword arguments:
@@ -93,8 +91,8 @@ class RayleighBenard(KMM):
         # Modify checkpoint file
         self.checkpoint.data["0"]["T"] = [self.T_]
 
-        # Chebyshev matrices are not sparse, so need a tailored solver. Legendre has simply \
-        # 5 nonzero diagonals
+        # Chebyshev matrices are not sparse, so need a tailored solver. Legendre has simply 5
+        # nonzero diagonals
         sol2 = chebyshev.la.Helmholtz if self.B0.family() == "chebyshev" else la.SolverGeneric1ND
 
         # Addition to u equation.
@@ -117,29 +115,29 @@ class RayleighBenard(KMM):
         )
 
         # Observation outputs
-        self.state: npt.NDArray[np.float64] = np.zeros((3, N_state[0], N_state[1]))
-        self.obs: npt.NDArray[np.float64] = np.zeros((3, N_obs[0], N_obs[1]))
-        self.obs_flat: npt.NDArray[np.float64] = np.zeros((3, N_obs[0], N_obs[1]))
+        self.state = None
+        self.obs = None
+        self.obs_flat = None
 
         # Others
         self.obsGrid = N_obs
         self.Nstep = (N_state[0] // self.obsGrid[0], N_state[1] // self.obsGrid[1])
 
-    def update_bc(self, t: float) -> None:
+    def update_bc(self, t):
         # Update time-dependent bcs.
         self.T0.bc.update(t)
         self.T_.get_dealiased_space(self.padding_factor).bases[0].bc.update(t)
 
-    def prepare_step(self, rk: Any) -> None:
+    def prepare_step(self, rk):
         self.convection()
         Tp = self.T_.backward(padding_factor=self.padding_factor)
         self.uT_ = self.up.function_space().forward(self.up * Tp, self.uT_)
 
-    def tofile(self, tstep: int) -> None:
+    def tofile(self, tstep):
         self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
         self.file_T.write(tstep, {"T": [self.T_.backward(mesh="uniform")]})
 
-    def init_from_checkpoint(self) -> Tuple[float, int]:
+    def init_from_checkpoint(self):
         self.checkpoint.read(self.u_, "U", step=0)
         self.checkpoint.read(self.T_, "T", step=0)
         self.checkpoint.open()
@@ -148,7 +146,7 @@ class RayleighBenard(KMM):
         self.checkpoint.close()
         return t, tstep
 
-    def initialize(self, rand: float = 0.001, from_checkpoint: bool = False) -> Tuple[float, int]:
+    def initialize(self, rand=0.001, from_checkpoint=False):
         if from_checkpoint:
             self.checkpoint.read(self.u_, "U", step=0)
             self.checkpoint.read(self.T_, "T", step=0)
@@ -180,7 +178,7 @@ class RayleighBenard(KMM):
         self.T_.mask_nyquist(self.mask)
         return 0, 0
 
-    def outputs(self) -> None:
+    def outputs(self):
         ub = self.u_.backward(self.ub)
         Tb = self.T_.backward(self.Tb)
 
@@ -207,18 +205,18 @@ class RayleighBenard(KMM):
         )
         self.obs_flat = obs_flat
 
-    def compute_nusselt(self) -> Any:
+    def compute_nusselt(self):
         div = self.kappa * (2.0 - self.bcT[1]) / 2  # H = 2, Tb = 2.
 
         uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
         T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))
         return (uyT_ - self.kappa * T_) / div
 
-    def compute_kinematic_energy(self) -> Any:
+    def compute_kinematic_energy(self):
         u2_xy = self.obs[1] * self.obs[1] + self.obs[0] * self.obs[0]
         return np.sum(u2_xy)
 
-    def update_actuation(self, new_bcT: Tuple[float, float]) -> None:
+    def update_actuation(self, new_bcT):
         self.bcT = new_bcT
         self.T0.bc.bc["left"]["D"] = self.bcT[0]
         self.T0.bc.update()
@@ -228,7 +226,7 @@ class RayleighBenard(KMM):
         TP0.bc.update()
         TP0.bc.set_tensor_bcs(TP0, TP0.tensorproductspace)
 
-    def step(self, t: float = 0, tstep: int = 0) -> Tuple[float, int]:
+    def step(self, t=0, tstep=0):
         # TODO what is c
         c = self.pdes["u"].stages()[2]
 
@@ -252,7 +250,7 @@ class RayleighBenard(KMM):
         self.outputs()
         return t + self.dt, tstep + 1
 
-    def clean(self) -> None:
+    def clean(self):
         self.TT.destroy()
         self.TB.destroy()
         self.TD.destroy()

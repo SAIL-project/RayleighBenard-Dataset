@@ -9,28 +9,27 @@ import rootutils
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from rbcdata.sim.rbc_env import RayleighBenardEnv
-
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
+
+from rbcdata.sim.rbc_env import RayleighBenardEnv
 
 
 def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.environment)
-    _, info = env.reset(seed=seed)
+    env = RayleighBenardEnv(cfg=cfg.sim)
 
     # Create dataset on disk
-    file_name = f"{path}/ra{cfg.environment.Ra}/rbc{seed}.h5"
+    file_name = f"{path}/ra{cfg.sim.ra}/rbc{seed}.h5"
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     file = h5py.File(file_name, "w")
 
     # Create datasets for Temperature and velocity field
-    dt_ratio = math.floor(cfg.dt / cfg.environment.dt)
-    assert cfg.dt / cfg.environment.dt == dt_ratio, "dt must be a multiple of dt_sim"
+    dt_ratio = math.floor(cfg.dt / cfg.sim.dt)
+    assert cfg.dt / cfg.sim.dt == dt_ratio, "dt must be a multiple of dt_sim"
     dataset = file.create_dataset(
         "data",
         (env.steps, 3, env.cfg.N[0], env.cfg.N[1]),
-        chunks=True,
+        compression="gzip",
         dtype=np.float32,
     )
 
@@ -47,6 +46,7 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     file.attrs["domain"] = env.cfg.domain
 
     # Run simulation
+    _, info = env.reset(seed=seed)
     while True:
         step = info["step"] - env.cook_steps
         state = env.get_state()

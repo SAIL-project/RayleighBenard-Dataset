@@ -9,7 +9,7 @@ from rbcdata.sim.rbc_env import RayleighBenardEnv
 
 def run_env(cfg: DictConfig, seed: int) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.sim, modshow=40, render_mode="live")
+    env = RayleighBenardEnv(cfg=cfg.sim, modshow=100, render_mode="live")
     _, _ = env.reset(seed=seed)
 
     # Run simulation

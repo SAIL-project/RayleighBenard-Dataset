@@ -18,10 +18,10 @@ format: ## Run pre-commit hooks
 	pre-commit run -a
 
 generate: ## Generate a dataset
-	python src/rbcdata/scripts/generate_dataset.py --multirun
+	python rbcdata/generate_dataset.py --multirun
 
 run: ## Run an environment
-	python src/rbcdata/scripts/run_environment.py
+	python rbcdata/run_environment.py
 
 view: ## View a dataset
-	python src/rbcdata/scripts/view_dataset.py path=$(path)
+	python rbcdata/view_dataset.py path=$(path)

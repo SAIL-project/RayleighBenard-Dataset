@@ -38,8 +38,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Ra=cfg.ra,
             Pr=cfg.pr,
             dt=cfg.dt,
-            bcT=(cfg.bcT[0], cfg.bcT[1]),
-            domain=(tuple(cfg.domain[0]), tuple(cfg.domain[0])),
+            # bcT=(cfg.bcT[0], cfg.bcT[1]), # TODO
+            # domain=(tuple(cfg.domain[0]), tuple(cfg.domain[0])), # TODO
             filename=cfg.checkpoint_path,
         )
 

@@ -8,7 +8,6 @@
 #
 
 from pathlib import Path
-from typing import Any, Tuple
 
 import numpy as np
 from shenfun import (
@@ -87,18 +86,18 @@ class KMM:
 
     def __init__(
         self,
-        N: Tuple[int, int] = (32, 32),
-        domain: Tuple[Tuple[float, ...], Tuple[float, ...]] = ((-1, 1), (0, 2 * np.pi)),
-        nu: float = 0.01,
-        dt: float = 0.1,
-        conv: int = 0,
-        dpdy: int = 1,
-        filename: str = "KMM",
-        family: str = "C",
-        padding_factor: Tuple[float, float] = (1, 1.5),
-        modsave: float = 1e8,
-        checkpoint: int = 1000,
-    ) -> None:
+        N=(32, 32),
+        domain=((-1, 1), (0, 2 * np.pi)),
+        nu=0.01,
+        dt=0.1,
+        conv=0,
+        dpdy=1,
+        filename="KMM",
+        family="C",
+        padding_factor=(1, 1.5),
+        modsave=1e8,
+        checkpoint=1000,
+    ):
         self.N = N
         self.nu = nu
         self.dt = dt
@@ -155,7 +154,7 @@ class KMM:
 
         self.curl = Project(curl(self.u_), self.TC)
         self.divu = Project(div(self.u_), self.TC)
-        self.solP: la.SolverGeneric2ND | None = None  # For computing pressure
+        self.solP = None  # For computing pressure
 
         # File for storing the results
         Path(filename).parent.mkdir(parents=True, exist_ok=True)
@@ -213,7 +212,7 @@ class KMM:
                 ),
             }
 
-    def convection(self) -> None:
+    def convection(self):
         H = self.H_.v
         self.up = self.u_.backward(padding_factor=self.padding_factor)
         up = self.up.v
@@ -231,7 +230,7 @@ class KMM:
             H[1] = self.TDp.forward(curl * up[0])
         self.H_.mask_nyquist(self.mask)
 
-    def compute_v(self, rk: Any) -> Any:
+    def compute_v(self, rk):
         u = self.u_.v
         if comm.Get_rank() == 0:
             self.v00[:] = u[1, :, 0].real
@@ -248,7 +247,7 @@ class KMM:
 
         return u
 
-    def compute_pressure(self) -> Any:
+    def compute_pressure(self):
         if self.solP is None:
             self.d2udx2 = Project(self.nu * Dx(self.u_[0], 0, 2), self.TC)
             N0 = self.N0 = FunctionSpace(
@@ -269,7 +268,7 @@ class KMM:
         p_ = self.solP(self.divH(), self.p_, constraints=((0, 0),))
         return p_
 
-    def print_energy_and_divergence(self, t: float, tstep: int) -> None:
+    def print_energy_and_divergence(self, t, tstep):
         ub = self.u_.backward(self.ub)
         e0 = inner(1, ub[0] * ub[0])
         e1 = inner(1, ub[1] * ub[1])
@@ -278,7 +277,7 @@ class KMM:
         if comm.Get_rank() == 0:
             print("Time %2.5f Energy %2.6e %2.6e div %2.6e" % (t, e0, e1, e3))
 
-    def init_from_checkpoint(self) -> Tuple[float, int]:
+    def init_from_checkpoint(self):
         self.checkpoint.read(self.u_, "U", step=0)
         self.checkpoint.open()
         tstep = self.checkpoint.f.attrs["tstep"]
@@ -286,20 +285,37 @@ class KMM:
         self.checkpoint.close()
         return t, tstep
 
-    def initialize(self, rand: float = 0.001, from_checkpoint: bool = False) -> Tuple[float, int]:
+    def initialize(self, from_checkpoint=False):
         if from_checkpoint:
             return self.init_from_checkpoint()
         raise RuntimeError("Initialize solver in subclass")
 
-    def tofile(self, tstep: int) -> None:
+    def tofile(self, tstep):
         self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
 
-    def prepare_step(self, rk: Any) -> None:
+    def prepare_step(self, rk):
         self.convection()
 
-    def assemble(self) -> None:
+    def assemble(self):
         for pde in self.pdes.values():
             pde.assemble()
         if comm.Get_rank() == 0:
             for pde in self.pdes1d.values():
                 pde.assemble()
+
+    def solve(self, t=0, tstep=0, end_time=1000):
+        self.assemble()
+        while t < end_time - 1e-8:
+            for rk in range(self.PDE.steps()):
+                self.prepare_step(rk)
+                for eq in self.pdes.values():
+                    eq.compute_rhs(rk)
+                for eq in self.pdes.values():
+                    eq.solve_step(rk)
+                self.compute_v(rk)
+            t += self.dt
+            tstep += 1
+            self.update(t, tstep)
+            self.checkpoint.update(t, tstep)
+            if tstep % self.modsave == 0:
+                self.tofile(tstep)
