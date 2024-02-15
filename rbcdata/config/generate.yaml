@@ -1,19 +1,19 @@
 defaults:
   - sim/default
+  - generate: full
   - override hydra/launcher: joblib
 
-path: .
+path: ../RayleighBenard-Dataset
 count: 25
 base_seed: 2710
 dt: 0.1
 
 hydra:
+  mode: "MULTIRUN"
+  job:
+    chdir: true
   sweep:
     dir: ./logs/generate/${now:%Y-%m-%d}_${now:%H-%M-%S}
     subdir: job${hydra.job.num}_ra${sim.ra}
   launcher:
     n_jobs: 4
-  sweeper:
-    params:
-      path: ${hydra.sweep.dir}/RayleighBenard-Dataset
-      sim.ra: 10_000, 100_000, 500_000, 1_000_000, 2_000_000, 3_000_000, 5_000_000

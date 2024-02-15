@@ -1,11 +1,13 @@
 import math
 import os
 import pathlib
+import time
 
 import h5py
 import hydra
 import numpy as np
 import rootutils
+from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from tqdm import tqdm
 
@@ -14,9 +16,9 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.sim.rbc_env import RayleighBenardEnv
 
 
-def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
+def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.sim)
+    env = RayleighBenardEnv(cfg=cfg.sim, tqdm_position=2 * num + 1)
 
     # Create dataset on disk
     file_name = f"{path}/ra{cfg.sim.ra}/rbc{seed}.h5"
@@ -29,6 +31,7 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
     dataset = file.create_dataset(
         "data",
         (env.steps, 3, env.cfg.N[0], env.cfg.N[1]),
+        chunks=(10, 3, env.cfg.N[0], env.cfg.N[1]),
         compression="gzip",
         dtype=np.float32,
     )
@@ -67,9 +70,13 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path) -> None:
 @hydra.main(version_base=None, config_path="config", config_name="generate")
 def main(cfg: DictConfig) -> None:
     # Generate Dataset
+    num = HydraConfig.get().job.num
     path = pathlib.Path(f"{cfg.path}")
-    for i in tqdm(range(cfg.count), position=0, leave=True):
-        create_dataset(cfg=cfg, seed=cfg.base_seed + i, path=path)
+    time.sleep(num / 10)
+    pbar = tqdm(total=cfg.count, desc=f"Generating Dataset {num}", position=2 * num, leave=False)
+    for i in range(cfg.count):
+        create_dataset(cfg=cfg, seed=cfg.base_seed + i, path=path, num=num)
+        pbar.update(1)
 
 
 if __name__ == "__main__":

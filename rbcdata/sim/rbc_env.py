@@ -24,6 +24,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         savestatistics: bool = False,
         modshow: int = 20,
         render_mode: str | None = None,
+        tqdm_position: int = 0,
     ) -> None:
         super().__init__()
 
@@ -31,6 +32,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.cfg = cfg
         self.steps = round(cfg.episode_length / cfg.dt)
         self.cook_steps = round(cfg.cook_length / cfg.dt)
+        self.closed = False
+
+        # Progress bar
+        self.pbar = tqdm(total=self.cook_steps + self.steps, leave=False, position=tqdm_position)
 
         # PDE configuration
         self.simulation = RayleighBenard(
@@ -90,14 +95,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.visualizer = None
 
         # cook system
-        for _ in tqdm(range(self.cook_steps), desc="Cooking Time", position=1, leave=False):
+        self.pbar.set_description("Cook System...")
+        for _ in range(self.cook_steps):
             self.t, self.tstep = self.simulation.step(self.t, self.tstep)
             self.__save_statistics()
             if self.tstep > 1:
                 self.render(cooking=True)
+            self.pbar.update(1)
 
-        # Reset progress bar
-        self.pbar = tqdm(total=self.steps, position=1, leave=False)
+        # Reset progress bar description
         self.pbar.set_description("Episode")
 
         return self.get_obs(), self.__get_info()
@@ -118,7 +124,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             # Update vis
             self.render()
 
-        return self.get_obs(), 0, False, truncated, self.__get_info()
+        return self.get_obs(), 0, self.closed, truncated, self.__get_info()
 
     def render(self, cooking: bool = False) -> None:
         if self.render_mode == "live" and self.tstep % self.modshow == 0:
@@ -132,8 +138,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             )
 
     def close(self) -> None:
-        print("Closing environment")
-        self.simulation.clean()
+        self.closed = True
         if self.render_mode == "live":
             self.window.close()
 
