@@ -20,6 +20,7 @@ class RBCDataset(Dataset[Tensor]):
         transform: torch.nn.Module | None = None,
     ):
         self.dataset = None
+        self.path = path
         # dataset parameters and transform
         self.cfg = cfg
         self.transform = transform
@@ -47,7 +48,7 @@ class RBCDataset(Dataset[Tensor]):
     def get_dataset_state(self, idx: int) -> Tensor:
         # Load singleton
         if self.dataset is None:
-            self.dataset = h5py.File(self.file, "r")["data"]
+            self.dataset = h5py.File(self.path, "r")["data"]
 
         # Load state from dataset; multiply by step factor for correct dt
         state = torch.tensor(np.array(self.dataset[idx * self.step_factor]), dtype=torch.float32)
