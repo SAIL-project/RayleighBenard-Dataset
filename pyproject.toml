@@ -17,7 +17,7 @@ classifiers = [
 dependencies = ["numpy", "h5py", "hydra-core", "gymnasium", "tqdm"]
 
 [project.scripts]
-rbcview = "rbcdata.scripts.view_dataset:main"
+rbcview = "rbcdata.view_dataset:main"
 
 [project.urls]
 Homepage = "https://github.com/SAIL-project/RayleighBenard-Dataset"

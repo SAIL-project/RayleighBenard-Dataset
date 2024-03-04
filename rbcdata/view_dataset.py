@@ -2,15 +2,11 @@ import argparse
 import pathlib
 import time
 
-import rootutils
-
 from rbcdata.config.dataclass.rbc_dataset_config import RBCDatasetConfig
 from rbcdata.utils.rbc_dataset import RBCDataset
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.utils.rbc_type import RBCType
 from rbcdata.vis import RBCConvectionVisualizer, RBCFieldVisualizer
-
-rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
 
 def view_dataset(path: pathlib.Path) -> None:

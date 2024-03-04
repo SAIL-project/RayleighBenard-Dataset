@@ -16,12 +16,3 @@ clean-logs: ## Clean logs
 
 format: ## Run pre-commit hooks
 	pre-commit run -a
-
-generate: ## Generate a dataset
-	python rbcdata/generate_dataset.py --multirun
-
-run: ## Run an environment
-	python rbcdata/run_environment.py
-
-view: ## View a dataset
-	python rbcdata/view_dataset.py path=$(path)
