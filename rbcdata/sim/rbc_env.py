@@ -1,17 +1,22 @@
+import math
 from typing import Any, Dict, Tuple, TypeAlias
 
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
+import sympy
 from tqdm import tqdm
 
 from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
+from rbcdata.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis import RBCFieldVisualizer
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
+
+x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
@@ -20,8 +25,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def __init__(
         self,
-        cfg: RBCSimConfig,
-        savestatistics: bool = False,
+        sim_cfg: RBCSimConfig,
+        segments: int = 10,
+        action_scaling: float = 0.75,
+        action_duration: int = 1,
         modshow: int = 20,
         render_mode: str | None = None,
         tqdm_position: int = 0,
@@ -29,55 +36,64 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().__init__()
 
         # Env configuration
-        self.cfg = cfg
-        self.steps = round(cfg.episode_length / cfg.dt)
-        self.cook_steps = round(cfg.cook_length / cfg.dt)
+        self.cfg = sim_cfg
+        self.segments = segments
+        self.action_scaling = action_scaling
+        self.solver_steps = math.floor(action_duration / sim_cfg.dt)
+        self.steps = round(sim_cfg.episode_length / sim_cfg.dt)
+        self.cook_steps = round(sim_cfg.cook_length / sim_cfg.dt)
         self.closed = False
 
         # Progress bar
         self.pbar = tqdm(total=self.cook_steps + self.steps, leave=False, position=tqdm_position)
 
-        # PDE configuration
-        self.simulation = RayleighBenard(
-            N_state=(cfg.N[0], cfg.N[1]),
-            Ra=cfg.ra,
-            Pr=cfg.pr,
-            dt=cfg.dt,
-            # bcT=(cfg.bcT[0], cfg.bcT[1]), # TODO
-            # domain=(tuple(cfg.domain[0]), tuple(cfg.domain[0])), # TODO
-            filename=cfg.checkpoint_path,
-        )
-
         # Action configuration
+        self.dicTemp = {}
+        # starting temperatures
+        for i in range(segments):
+            self.dicTemp["T" + str(i)] = sim_cfg.bcT[1]
+
         self.action_space = gym.spaces.Box(
-            -np.inf,
-            np.inf,
-            shape=(1, 10),
+            -action_scaling,
+            action_scaling,
+            shape=(segments,),
             dtype=np.float32,
         )
 
         # Observation Space
         self.observation_space = gym.spaces.Box(
-            -np.inf,
-            np.inf,
+            sim_cfg.bcT[1],
+            sim_cfg.bcT[0],
             shape=(
                 1,
-                cfg.N[0] * cfg.N[1] * 3,
-            ),  # *3 because of dim of velocity and temperature field
+                sim_cfg.N[0] * sim_cfg.N[1] * 3,
+            ),
             dtype=np.float32,
         )
 
-        # Statistics
-        self.savestatistics = savestatistics
-        self.nusselts = np.zeros(self.steps)
-        self.energies = np.zeros(self.steps)
+        # PDE configuration
+        self.simulation = RayleighBenard(
+            N_state=(sim_cfg.N[0], sim_cfg.N[1]),
+            Ra=sim_cfg.ra,
+            Pr=sim_cfg.pr,
+            dt=sim_cfg.dt,
+            bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
+            filename=sim_cfg.checkpoint_path,
+        )
+        self.t_func = Tfunc(
+            nb_seg=segments, domain=self.simulation.domain, action_scaling=action_scaling
+        )
 
         # Render configuration
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.modshow = modshow
         if render_mode == "live":
             self.window = RBCFieldVisualizer(
-                size=cfg.N, vmin=cfg.bcT[1], vmax=cfg.bcT[0], show=True, show_u=True
+                size=sim_cfg.N,
+                vmin=sim_cfg.bcT[1],
+                vmax=sim_cfg.bcT[0] + action_scaling,
+                show=True,
+                show_u=True,
             )
         self.render_mode = render_mode
 
@@ -98,7 +114,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.pbar.set_description("Cook System...")
         for _ in range(self.cook_steps):
             self.t, self.tstep = self.simulation.step(self.t, self.tstep)
-            self.__save_statistics()
             if self.tstep > 1:
                 self.render(cooking=True)
             self.pbar.update(1)
@@ -110,10 +125,14 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
         truncated = False
+        # Apply action
+        self.action = action
+        for i in range(self.segments):
+            self.dicTemp.update({"T" + str(i): action[i]})
+        self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
         # PDE stepping
-        for _ in range(self.cfg.solver_steps):
+        for _ in range(self.solver_steps):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
-            self.__save_statistics()
 
             # Check for truncation
             self.pbar.update(1)
@@ -148,21 +167,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def get_state(self) -> RBCObservation:
         return self.simulation.state.astype(np.float32)
 
+    def get_action(self) -> RBCAction:
+        return self.action
+
     def get_reward(self) -> float:
         return float(-self.simulation.compute_nusselt())
-
-    def get_statistics(self) -> npt.NDArray[np.float32]:
-        return np.array(
-            [
-                self.simulation.compute_nusselt(),
-                self.simulation.compute_kinematic_energy(),
-            ]
-        )
-
-    def __save_statistics(self) -> None:
-        if self.savestatistics and self.tstep > 0:
-            self.nusselts[self.tstep] = self.simulation.compute_nusselt()
-            self.energies[self.tstep] = self.simulation.compute_kinematic_energy()
 
     def __get_info(self) -> dict[str, Any]:
         return {"step": self.tstep, "t": round(self.t, 7)}

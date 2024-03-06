@@ -2,6 +2,11 @@ defaults:
   - sim/default
 
 seed: 42
+segments: 10
+action_scaling: 0.75
+action_duration: 1.5
+modshow: 40
+render_mode: live
 
 hydra:
   job:

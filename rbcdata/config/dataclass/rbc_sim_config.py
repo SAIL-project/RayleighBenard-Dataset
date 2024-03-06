@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List
 
-import numpy as np
-
 
 @dataclass
 class RBCSimConfig:
@@ -14,5 +12,4 @@ class RBCSimConfig:
     pr: float = 0.7
     dt: float = 0.025
     bcT: List[float] = field(default_factory=lambda: [2, 1])
-    domain: List[List[float]] = field(default_factory=lambda: [[-1, 1], [0, 2 * np.pi]])
     checkpoint_path: str = "shenfun"

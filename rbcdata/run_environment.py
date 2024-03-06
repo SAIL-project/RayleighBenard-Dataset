@@ -1,4 +1,5 @@
 import hydra
+import numpy as np
 import rootutils
 from omegaconf import DictConfig
 
@@ -7,15 +8,23 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.sim.rbc_env import RayleighBenardEnv
 
 
-def run_env(cfg: DictConfig, seed: int) -> None:
+def run_env(cfg: DictConfig) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.sim, modshow=100, render_mode="live")
-    _, _ = env.reset(seed=seed)
+    env = RayleighBenardEnv(
+        sim_cfg=cfg.sim,
+        segments=cfg.segments,
+        action_scaling=cfg.action_scaling,
+        action_duration=cfg.action_duration,
+        modshow=cfg.modshow,
+        render_mode=cfg.render_mode,
+    )
+    _, _ = env.reset(seed=cfg.seed)
 
     # Run simulation
     while True:
         # Simulation step
-        action = env.action_space.sample()  # TODO should be 0 action
+        action = np.array([-cfg.action_scaling] * cfg.segments)
+        # action[0] = cfg.C
         _, _, terminated, truncated, _ = env.step(action)
         # Termination criterion
         if terminated or truncated:
@@ -26,7 +35,7 @@ def run_env(cfg: DictConfig, seed: int) -> None:
 
 @hydra.main(version_base=None, config_path="config", config_name="run")
 def main(cfg: DictConfig) -> None:
-    run_env(cfg=cfg, seed=cfg.seed)
+    run_env(cfg=cfg)
 
 
 if __name__ == "__main__":

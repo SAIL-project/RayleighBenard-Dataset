@@ -18,7 +18,13 @@ from rbcdata.sim.rbc_env import RayleighBenardEnv
 
 def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> None:
     # Set up gym environment
-    env = RayleighBenardEnv(cfg=cfg.sim, tqdm_position=2 * num + 1)
+    env = RayleighBenardEnv(
+        sim_cfg=cfg.sim,
+        segments=cfg.segments,
+        action_scaling=cfg.action_scaling,
+        action_duration=cfg.action_duration,
+        tqdm_position=2 * num + 1,
+    )
 
     # Create dataset on disk
     file_name = f"{path}/ra{cfg.sim.ra}/rbc{seed}.h5"
@@ -35,6 +41,13 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
         compression="gzip",
         dtype=np.float32,
     )
+    actions = file.create_dataset(
+        "action",
+        (env.steps, cfg.segments),
+        chunks=(100, cfg.segments),
+        compression="gzip",
+        dtype=np.float32,
+    )
 
     # Save commonly used parameters of the simulation
     file.attrs["seed"] = seed
@@ -46,10 +59,14 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
     file.attrs["pr"] = env.cfg.pr
     file.attrs["dt"] = cfg.dt
     file.attrs["bcT"] = env.cfg.bcT
-    file.attrs["domain"] = env.cfg.domain
+    file.attrs["domain"] = np.array(env.simulation.domain).astype(np.float32)
+    file.attrs["segments"] = cfg.segments
+    file.attrs["action_scaling"] = cfg.action_scaling
+    file.attrs["action_duration"] = cfg.action_duration
 
     # Run simulation
     _, info = env.reset(seed=seed)
+    action = np.array([0.0] * cfg.segments)
     while True:
         step = info["step"] - env.cook_steps
         state = env.get_state()
@@ -57,8 +74,9 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
         if step % (dt_ratio) == 0:
             idx = math.floor(step / dt_ratio)
             dataset[idx] = state
+            actions[idx] = action
         # Simulation step
-        action = env.action_space.sample()  # TODO should be 0 action
+        action = np.array([0.0] * cfg.segments)
         _, _, terminated, truncated, info = env.step(action)
         # Termination criterion
         if terminated or truncated:

@@ -49,7 +49,7 @@ class RBCFieldVisualizer(ABC):
         # extent = [0, 2 * math.pi, -1, 1]
         self.image_T = self.ax.imshow(
             np.zeros(size),
-            cmap="turbo",
+            cmap="coolwarm",  # "turbo",
             aspect="auto",
             vmin=vmin,
             vmax=vmax,
@@ -71,9 +71,9 @@ class RBCFieldVisualizer(ABC):
             self.image_T,
             cax=self.cbar,
             orientation="vertical",
-            ticks=[1, 1.5, 2],
+            ticks=[vmin, (vmin + vmax) / 2, vmax],
         )
-        self.cbar.set_yticklabels([1, 1.5, 2])
+        self.cbar.set_yticklabels([vmin, (vmin + vmax) / 2, vmax])
         self.fig.canvas.mpl_connect("close_event", self.close)
         # Velocity Field
         if show_u:
