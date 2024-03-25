@@ -1,0 +1,10 @@
+# @package _global_
+
+hydra:
+  sweeper:
+    params:
+      sim.ra: 10_000
+
+sim:
+  episode_length: 500
+  dt: 0.025

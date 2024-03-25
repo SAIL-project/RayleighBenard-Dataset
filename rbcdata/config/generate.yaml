@@ -6,10 +6,10 @@ defaults:
 path: ../RayleighBenard-Dataset
 count: 25
 base_seed: 2710
-dt: 0.1
 segments: 10
 action_scaling: 0.75
 action_duration: 1.5
+random_control: false
 
 hydra:
   mode: "MULTIRUN"

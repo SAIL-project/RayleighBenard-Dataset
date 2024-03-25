@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Generate",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/generate_dataset.py",
+            "console": "integratedTerminal",
+            "args": "generate=controlled random_control=true count=1 sim.cook_length=10 sim.episode_length=20",
+            "justMyCode": false,
+        },
+    ]
+}

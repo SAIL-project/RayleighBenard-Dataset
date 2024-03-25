@@ -32,32 +32,34 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
     file = h5py.File(file_name, "w")
 
     # Create datasets for Temperature and velocity field
-    dt_ratio = math.floor(cfg.dt / cfg.sim.dt)
-    assert cfg.dt / cfg.sim.dt == dt_ratio, "dt must be a multiple of dt_sim"
+    dt_ratio = math.floor(cfg.action_duration / cfg.sim.dt)
+    assert (
+        cfg.action_duration / cfg.sim.dt == dt_ratio
+    ), "action_duration must be a multiple of sim dt"
+
     dataset = file.create_dataset(
         "data",
-        (env.steps, 3, env.cfg.N[0], env.cfg.N[1]),
+        (env.env_steps, 3, env.cfg.N[0], env.cfg.N[1]),
         chunks=(10, 3, env.cfg.N[0], env.cfg.N[1]),
         compression="gzip",
         dtype=np.float32,
     )
     actions = file.create_dataset(
         "action",
-        (env.steps, cfg.segments),
-        chunks=(100, cfg.segments),
+        (env.env_steps, cfg.segments),
+        chunks=(10, cfg.segments),
         compression="gzip",
         dtype=np.float32,
     )
 
     # Save commonly used parameters of the simulation
     file.attrs["seed"] = seed
-    file.attrs["steps"] = env.steps
+    file.attrs["steps"] = env.env_steps
     file.attrs["episode_length"] = env.cfg.episode_length
     file.attrs["cook_length"] = env.cfg.cook_length
     file.attrs["N"] = env.cfg.N
     file.attrs["ra"] = env.cfg.ra
     file.attrs["pr"] = env.cfg.pr
-    file.attrs["dt"] = cfg.dt
     file.attrs["bcT"] = env.cfg.bcT
     file.attrs["domain"] = np.array(env.simulation.domain).astype(np.float32)
     file.attrs["segments"] = cfg.segments
@@ -66,21 +68,26 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
 
     # Run simulation
     _, info = env.reset(seed=seed)
-    action = np.array([0.0] * cfg.segments)
     while True:
-        step = info["step"] - env.cook_steps
-        state = env.get_state()
-        # Save observations for every dt and not dt_sim
-        if step % (dt_ratio) == 0:
-            idx = math.floor(step / dt_ratio)
-            dataset[idx] = state
-            actions[idx] = action
+        # Get action: for first episode half do not introduce control
+        if info["step"] < env.sim_steps // 2:
+            action = np.array([0.0] * cfg.segments)
+        elif cfg.random_control:
+            action = env.action_space.sample()
         # Simulation step
-        action = np.array([0.0] * cfg.segments)
         _, _, terminated, truncated, info = env.step(action)
         # Termination criterion
         if terminated or truncated:
             break
+
+        # Save observations for every dt and not dt_sim
+        step = info["step"] - env.cook_steps
+        state = env.get_state()
+        if step % (dt_ratio) == 0:
+            idx = math.floor(step / dt_ratio)
+            dataset[idx - 1] = state
+            actions[idx - 1] = action
+
     # Close
     env.close()
 
@@ -95,6 +102,11 @@ def main(cfg: DictConfig) -> None:
     for i in range(cfg.count):
         create_dataset(cfg=cfg, seed=cfg.base_seed + i, path=path, num=num)
         pbar.update(1)
+
+
+@hydra.main(version_base=None, config_path="config", config_name="generate")
+def main_debug(cfg: DictConfig) -> None:
+    create_dataset(cfg=cfg, seed=cfg.base_seed, path=pathlib.Path(f"{cfg.path}"), num=0)
 
 
 if __name__ == "__main__":

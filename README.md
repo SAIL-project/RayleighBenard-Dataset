@@ -19,13 +19,6 @@ Data ist publicly available [here](https://uni-bielefeld.sciebo.de/s/eh12csvif6I
 ## Usage
 After installing you can use following tools:
 
-### Generate RBC data
-Execute `rbcgen` script. By default data will be saved in the directory you execute the script from.
-
-```rbcgen [options]``` 
-
-Type ```rbcgen --help``` to learn about the hydra configuration.
-
 ### Viewing RBC data
 To view rbc data execute the `rbcview` script and give a path to a rbc episode file:
 

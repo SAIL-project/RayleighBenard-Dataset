@@ -40,12 +40,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.segments = segments
         self.action_scaling = action_scaling
         self.solver_steps = math.floor(action_duration / sim_cfg.dt)
-        self.steps = round(sim_cfg.episode_length / sim_cfg.dt)
+        self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)
+        self.env_steps = math.floor(self.sim_steps / self.solver_steps)
         self.cook_steps = round(sim_cfg.cook_length / sim_cfg.dt)
         self.closed = False
 
         # Progress bar
-        self.pbar = tqdm(total=self.cook_steps + self.steps, leave=False, position=tqdm_position)
+        self.pbar = tqdm(
+            total=self.cook_steps + self.sim_steps, leave=False, position=tqdm_position
+        )
 
         # Action configuration
         self.dicTemp = {}
@@ -136,7 +139,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
             # Check for truncation
             self.pbar.update(1)
-            if self.tstep >= self.steps + self.cook_steps:
+            if self.tstep >= self.sim_steps + self.cook_steps:
                 truncated = True
                 break
 
