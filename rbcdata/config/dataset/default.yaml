@@ -3,3 +3,4 @@ type: full
 dt: 1
 start_idx: 0
 end_idx: 500
+include_control: false

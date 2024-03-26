@@ -14,9 +14,10 @@ def view_dataset(path: pathlib.Path) -> None:
     config = RBCDatasetConfig(
         sequence_length=1,
         type=RBCType.FULL,
-        dt=1,
+        dt=1.5,
         start_idx=0,
         end_idx=500,
+        include_control=True,
     )
     dataset = RBCDataset(path, config)
 
@@ -43,10 +44,17 @@ def view_dataset(path: pathlib.Path) -> None:
             exit()
 
         # get fields
-        T = dataset[idx][0][RBCField.T].numpy()
-        ux = dataset[idx][0][RBCField.UX].numpy()
-        uy = dataset[idx][0][RBCField.UY].numpy()
-        conv = dataset[idx][0][RBCField.JCONV].numpy()
+        if config.include_control:
+            state = dataset[idx][0]
+            control = dataset[idx][1]
+            print(f"control at t={idx}: {control[0].numpy()}")
+        else:
+            state = dataset[idx]
+
+        T = state[0][RBCField.T].numpy()
+        ux = state[0][RBCField.UX].numpy()
+        uy = state[0][RBCField.UY].numpy()
+        conv = state[0][RBCField.JCONV].numpy()
         # get time step
         t = idx * dataset.cfg.dt
         # visualize
