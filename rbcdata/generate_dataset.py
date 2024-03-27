@@ -32,11 +32,6 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
     file = h5py.File(file_name, "w")
 
     # Create datasets for Temperature and velocity field
-    dt_ratio = math.floor(cfg.action_duration / cfg.sim.dt)
-    assert (
-        cfg.action_duration / cfg.sim.dt == dt_ratio
-    ), "action_duration must be a multiple of sim dt"
-
     dataset = file.create_dataset(
         "data",
         (env.env_steps, 3, env.cfg.N[0], env.cfg.N[1]),
@@ -66,27 +61,28 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
     file.attrs["action_scaling"] = cfg.action_scaling
     file.attrs["action_duration"] = cfg.action_duration
 
-    # Run simulation
+    # Reset simulation
     _, info = env.reset(seed=seed)
+    # Save initial state and action
+    action = env.get_action()
+    actions[0] = action
+    dataset[0] = env.get_state()
+    # Run simulation
     while True:
-        # Get action: for first episode half do not introduce control
-        if info["step"] < env.sim_steps // 2:
-            action = np.array([0.0] * cfg.segments)
-        elif cfg.random_control:
+        # introduce random actions after action_start time
+        if math.floor(info["step"] / cfg.action_duration) >= cfg.action_start:
             action = env.action_space.sample()
+
         # Simulation step
         _, _, terminated, truncated, info = env.step(action)
         # Termination criterion
         if terminated or truncated:
             break
 
-        # Save observations for every dt and not dt_sim
-        step = info["step"] - env.cook_steps
-        state = env.get_state()
-        if step % (dt_ratio) == 0:
-            idx = math.floor(step / dt_ratio)
-            dataset[idx - 1] = state
-            actions[idx - 1] = action
+        # Save state and action
+        idx = info["step"]
+        dataset[idx] = env.get_state()
+        actions[idx] = env.get_action()
 
     # Close
     env.close()

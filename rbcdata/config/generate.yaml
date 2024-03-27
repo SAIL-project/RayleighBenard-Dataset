@@ -8,7 +8,8 @@ count: 25
 base_seed: 2710
 segments: 10
 action_scaling: 0.75
-action_duration: 1.5
+action_duration: 1
+action_start: 100
 random_control: false
 
 hydra:
