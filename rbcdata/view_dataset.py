@@ -3,9 +3,8 @@ import pathlib
 import time
 
 from rbcdata.config.dataclass.rbc_dataset_config import RBCDatasetConfig
-from rbcdata.utils.rbc_dataset import RBCDataset
-from rbcdata.utils.rbc_field import RBCField
-from rbcdata.utils.rbc_type import RBCType
+from rbcdata.dataset.rbc_dataset import RBCDataset
+from rbcdata.utils.enums import RBCField, RBCType
 from rbcdata.vis import RBCConvectionVisualizer, RBCFieldVisualizer
 
 

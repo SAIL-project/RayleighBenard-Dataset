@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from rbcdata.utils.rbc_type import RBCType
+from rbcdata.utils.enums import RBCType
 
 
 @dataclass

@@ -19,7 +19,7 @@ from shenfun import (
     la,
 )
 
-from .channelflow2d import KMM
+from ..channelflow2d import KMM
 
 # global settings for numpy, sympy and MPI
 x, y, tt = sympy.symbols("x,y,t", real=True)

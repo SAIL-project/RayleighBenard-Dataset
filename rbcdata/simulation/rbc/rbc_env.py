@@ -8,9 +8,9 @@ import sympy
 from tqdm import tqdm
 
 from rbcdata.config import RBCSimConfig
-from rbcdata.sim.rayleighbenard2d import RayleighBenard
-from rbcdata.sim.tfunc import Tfunc
-from rbcdata.utils.rbc_field import RBCField
+from rbcdata.simulation.rayleighbenard2d import RayleighBenard
+from rbcdata.simulation.tfunc import Tfunc
+from rbcdata.utils.enums import RBCField
 from rbcdata.vis import RBCFieldVisualizer
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]

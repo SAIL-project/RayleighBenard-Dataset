@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
-from rbcdata.sim.rbc_env import RayleighBenardEnv
+from rbcdata.simulation.rbc_env import RayleighBenardEnv
 
 
 def run_env(cfg: DictConfig) -> None:
