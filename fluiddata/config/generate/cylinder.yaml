@@ -1,0 +1,5 @@
+defaults:
+  - /sim: cylinder
+
+_target_: fluiddata.simulation.cylinder.generate.generate_cylinder
+interval: 2

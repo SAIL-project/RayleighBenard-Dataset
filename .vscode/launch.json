@@ -12,5 +12,14 @@
             "console": "integratedTerminal",
             "justMyCode": false,
         },
+        {
+            "name": "Debug View",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/view_cylinder.py",
+            "console": "integratedTerminal",
+            "args": ["${workspaceFolder}/logs/run/04-24-15-22-51/cylinder.h5"],
+            "justMyCode": false,
+        },
     ]
 }

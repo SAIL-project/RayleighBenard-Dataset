@@ -1,0 +1,5 @@
+defaults:
+  - /sim: cylinder
+
+_target_: fluiddata.simulation.cylinder.run.run_cylinder
+interval: 10

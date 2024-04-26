@@ -1,8 +1,0 @@
-defaults:
-  - sim/cylinder
-
-hydra:
-  job:
-    chdir: true
-  run:
-    dir: ./logs/run/${now:%m-%d-%H-%M-%S}/

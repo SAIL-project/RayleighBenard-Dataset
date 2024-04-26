@@ -1,0 +1,17 @@
+defaults:
+  - _self_
+  - generate: cylinder
+  - override hydra/launcher: joblib
+
+count: 4
+base_seed: 2710
+
+hydra:
+  mode: "MULTIRUN"
+  job:
+    chdir: true
+  sweep:
+    dir: ./logs/generate/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    subdir: job${hydra.job.num}
+  launcher:
+    n_jobs: 4

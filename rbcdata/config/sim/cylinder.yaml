@@ -1,7 +1,0 @@
-re: 100
-mesh: medium
-velocity_order: 1
-stabilization: gls
-
-dt: 0.1
-episode_length: 250
