@@ -1,0 +1,4 @@
+defaults:
+  - /sim: rbc
+
+_target_: fluiddata.simulation.rbc.run.run_rbc

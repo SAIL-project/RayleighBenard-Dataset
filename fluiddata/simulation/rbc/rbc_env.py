@@ -80,7 +80,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
-            filename=sim_cfg.checkpoint_path,
+            filename=f"shenfun/ra${sim_cfg.ra}/RB_2D",
         )
         self.t_func = Tfunc(
             nb_seg=segments, domain=self.simulation.domain, action_scaling=action_scaling
