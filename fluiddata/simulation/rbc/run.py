@@ -1,4 +1,5 @@
 import time
+
 from omegaconf import DictConfig
 
 from fluiddata.simulation.rbc.rbc_env import RayleighBenardEnv
