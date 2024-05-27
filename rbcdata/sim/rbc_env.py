@@ -12,6 +12,7 @@ from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis import RBCFieldVisualizer
+from rbcdata.vis import RBCActionVisualizer
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -110,7 +111,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 show_u=True,
             )
 
-            self.action_window = 
+            self.action_window = RBCActionVisualizer(True, self.simulation.domain[1], segments) 
         self.render_mode = render_mode
 
     def reset(
@@ -140,6 +141,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # Reset action
         self.action = np.array([0.0] * self.segments)
+        self.action_effective = np.array([0.0 * self.segments])
 
         return self.get_obs(), self.__get_info()
 
@@ -150,12 +152,13 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         truncated = False
         # Apply action
-        self.action = action
+        self.action = action # TODO this should be set to the action that is truly applied after t_func?
         for i in range(self.segments):
             self.dicTemp.update({"T" + str(i): action[i]})  # apply the value to each segment
-        print(self.t_func.apply_T(dicTemp=self.dicTemp, x=y))
+        self.action_effective = self.t_func.apply_T(dicTemp=self.dicTemp, x=y)   # Sympy Piecewise for the action
+        # print(self.t_func.apply_T(dicTemp=self.dicTemp, x=y))
         # print(self.dicTemp)
-        self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
+        self.simulation.update_actuation((self.action_effective, 1))
         # PDE stepping, simulates the system while performing the action for action_duration nr. of steps
         for _ in range(self.solver_steps):
             self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
@@ -182,6 +185,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 self.sim_step * self.cfg.dt,
                 cooking=cooking,
             )
+            
+            # TODO for now only show applied action if not cooking, but could also show when cooking
+            if not cooking:
+                self.action_window.draw(self.action_effective)
 
     def close(self) -> None:
         self.closed = True

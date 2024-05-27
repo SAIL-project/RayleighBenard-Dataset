@@ -3,6 +3,8 @@ from typing import Any, List
 
 import numpy as np
 import numpy.typing as npt
+from sympy import Piecewise
+from sympy.abc import y
 
 try:
     import matplotlib
@@ -17,6 +19,8 @@ class RBCActionVisualizer(ABC):
     def __init__(
         self,
         show: bool = True,
+        x_domain = (0, 2*np.pi),
+        n_segments_plot = 100
     ) -> None:
         # Matplotlib settings
         self.closed = False
@@ -32,17 +36,18 @@ class RBCActionVisualizer(ABC):
         # Create the figure and axes
         plt.rcParams["font.size"] = 15
 
-        self.fig, (self.ax, self.cbar) = plt.subplots(
+        self.fig, self.action_ax = plt.subplots(
             figsize=(10, 6),
         )
-        # extent = [0, 2 * math.pi, -1, 1]
-        self.image_T = self.ax.plot(np.linspace(0, 2*np.pi, 10), np.zeros(10))
+        self.x_domain = x_domain
+        self.n_segments_plot = n_segments_plot
+        self.action_ax.plot(np.linspace(x_domain[0], x_domain[1], n_segments_plot), np.zeros(n_segments_plot))
         # y axis
-        self.ax.set_ylabel("Applied temperature")
+        self.action_ax.set_ylabel("Applied temperature")
         # self.ax.set_yticks([0, 32, 63])
         # self.ax.set_yticklabels([-1, 0, 1])
         # X axis
-        self.ax.set_xlabel("spatial x")
+        self.action_ax.set_xlabel("spatial x")
         # self.ax.set_xticks([0, 48, 95])
         # self.ax.set_xticklabels([0, r"$\pi$", r"2$\pi$"])
 
@@ -53,35 +58,19 @@ class RBCActionVisualizer(ABC):
         if show:
             plt.show(block=False)
 
-    def draw(
-        self,
-        action: npt.NDArray[np.float32],
-        cooking: bool = False,
-    ) -> Figure:
+    def draw(self, action: Piecewise) -> Figure:
         """
-        Show an image or update the image being shown
+        Show an action curve or update the action curve.
         """
-        # Update T image
-        self.image_T.set_array(T)
-        if cooking:
-            self.ax.set_title(
-                f"Cooking Time active at t={round(t, 3)}",
-                loc="left",
-            )
-        else:
-            self.ax.set_title(
-                f"Temperature Field at t={round(t, 3)}",
-                loc="left",
-            )
-
-        # Update u image
-        if self.show_u:
-            self.image_u.set_UVC(ux[:: self.skip, :: self.skip], uy[:: self.skip, :: self.skip])
-            scale = np.linalg.norm(uy) / 1.5
-            self.image_u.scale = 0.01 if scale == 0 else scale
+        # Update the action curve
+        x_vals = np.linspace(self.x_domain[0], self.x_domain[1], self.n_segments_plot)
+        # TODO bit unfortunate that the variable is called y
+        act_vals = np.array(list(map(lambda l: action.subs(y, l), x_vals)), dtype=np.float64)
+        self.action_ax.clear()
+        self.action_ax.plot(x_vals, act_vals)
 
         self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        # self.fig.canvas.flush_events()
 
         return self.fig
 

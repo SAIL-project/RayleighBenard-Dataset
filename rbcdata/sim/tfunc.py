@@ -33,7 +33,7 @@ class Tfunc:
         K2 = max(1, np.abs(values - np.array([Mean] * self.nb_seg)).max() / self.ampl)
 
         # Position:
-        xmax = self.domain[1][1]
+        xmax = self.domain[1][1]    # TODO xmax is not a numerical value here, is that intended?
         # ind = sympy.floor(self.nb_seg * x // xmax)
 
         seq = []
