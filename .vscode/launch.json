@@ -5,13 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Generate",
+            "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rbcdata/generate_dataset.py",
+            "program": "${file}",
             "console": "integratedTerminal",
-            "args": "generate=controlled random_control=true count=1 sim.cook_length=10 sim.episode_length=20",
-            "justMyCode": false,
-        },
+            "args": "${command:pickArgs}"
+        }
     ]
 }

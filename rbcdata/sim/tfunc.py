@@ -29,6 +29,7 @@ class Tfunc:
     def apply_T(self, dicTemp, x):
         values = self.ampl * np.array(list(dicTemp.values()))
         Mean = values.mean()
+        # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.nb_seg)).max() / self.ampl)
 
         # Position:

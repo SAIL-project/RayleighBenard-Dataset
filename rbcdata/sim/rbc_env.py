@@ -20,6 +20,9 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
+    """
+    Class manages a 
+    """
     metadata = {"render_modes": ["live", "rgb_array"]}
     reward_range = (-float("inf"), float("inf"))
 
@@ -54,11 +57,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.dicTemp = {}
         # starting temperatures
         for i in range(segments):
-            self.dicTemp["T" + str(i)] = sim_cfg.bcT[1]
+            self.dicTemp["T" + str(i)] = sim_cfg.bcT[0]
+
+        # TODO Should this be -1, 1?
+        # self.action_space = gym.spaces.Box(
+        #     -action_scaling,
+        #     action_scaling,
+        #     shape=(segments,),
+        #     dtype=np.float32,
+        # )
 
         self.action_space = gym.spaces.Box(
-            -action_scaling,
-            action_scaling,
+            -1,
+            1,
             shape=(segments,),
             dtype=np.float32,
         )
@@ -98,6 +109,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 show=True,
                 show_u=True,
             )
+
+            self.action_window = 
         self.render_mode = render_mode
 
     def reset(
@@ -131,13 +144,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
+        """
+        Function to perform one step of the environment using action "action", i.e.
+        (state(t), action(t)) -> state(t+1)
+        """
         truncated = False
         # Apply action
         self.action = action
         for i in range(self.segments):
-            self.dicTemp.update({"T" + str(i): action[i]})
+            self.dicTemp.update({"T" + str(i): action[i]})  # apply the value to each segment
+        print(self.t_func.apply_T(dicTemp=self.dicTemp, x=y))
+        # print(self.dicTemp)
         self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
-        # PDE stepping
+        # PDE stepping, simulates the system while performing the action for action_duration nr. of steps
         for _ in range(self.solver_steps):
             self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
             self.pbar.update(1)
@@ -153,6 +172,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.get_obs(), 0, self.closed, truncated, self.__get_info()
 
     def render(self, cooking: bool = False) -> None:
+        # TODO: isn't it better to make the second test in units of env_step, i.e. env_step % modshow == 0?
         if self.render_mode == "live" and self.sim_step % self.modshow == 0:
             state = self.get_state()
             self.window.draw(
