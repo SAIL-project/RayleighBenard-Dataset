@@ -5,6 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from sympy import Piecewise
 from sympy.abc import y
+from spb import plot_piecewise
 
 try:
     import matplotlib
@@ -25,7 +26,7 @@ class RBCActionVisualizer(ABC):
         # Matplotlib settings
         self.closed = False
         if show:
-            matplotlib.use("TkAgg")
+            matplotlib.use("QtAgg")
             plt.ion()
         else:
             matplotlib.use("Agg")
@@ -41,7 +42,8 @@ class RBCActionVisualizer(ABC):
         )
         self.x_domain = x_domain
         self.n_segments_plot = n_segments_plot
-        self.action_ax.plot(np.linspace(x_domain[0], x_domain[1], n_segments_plot), np.zeros(n_segments_plot))
+        self.action_ax.plot(np.linspace(x_domain[0], 2 * np.pi, n_segments_plot), np.zeros(n_segments_plot))
+        # self.action_ax.plot(np.linspace(x_domain[0], x_domain[1], n_segments_plot), np.zeros(n_segments_plot))
         # y axis
         self.action_ax.set_ylabel("Applied temperature")
         # self.ax.set_yticks([0, 32, 63])
@@ -63,11 +65,12 @@ class RBCActionVisualizer(ABC):
         Show an action curve or update the action curve.
         """
         # Update the action curve
-        x_vals = np.linspace(self.x_domain[0], self.x_domain[1], self.n_segments_plot)
+        x_vals = np.linspace(self.x_domain[0], 2 * np.pi, self.n_segments_plot)
+        # x_vals = np.linspace(self.x_domain[0], self.x_domain[1], self.n_segments_plot)
         # TODO bit unfortunate that the variable is called y
-        act_vals = np.array(list(map(lambda l: action.subs(y, l), x_vals)), dtype=np.float64)
+        act_vals = np.array(list(map(lambda l: action.subs(y, l), x_vals)))
         self.action_ax.clear()
-        self.action_ax.plot(x_vals, act_vals)
+        # plot here in the axes
 
         self.fig.canvas.draw()
         # self.fig.canvas.flush_events()

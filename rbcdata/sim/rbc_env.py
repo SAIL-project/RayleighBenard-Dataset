@@ -111,7 +111,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 show_u=True,
             )
 
-            self.action_window = RBCActionVisualizer(True, self.simulation.domain[1], segments) 
+            # self.action_window = RBCActionVisualizer(True, self.simulation.domain[1], n_segments_plot=100) 
         self.render_mode = render_mode
 
     def reset(
@@ -187,8 +187,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             )
             
             # TODO for now only show applied action if not cooking, but could also show when cooking
-            if not cooking:
-                self.action_window.draw(self.action_effective)
+            # if not cooking:
+            #    self.action_window.draw(self.action_effective)
 
     def close(self) -> None:
         self.closed = True

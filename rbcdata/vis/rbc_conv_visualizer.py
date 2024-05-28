@@ -25,7 +25,7 @@ class RBCConvectionVisualizer(ABC):
         # Matplotlib settings
         self.closed = False
         if show:
-            matplotlib.use("TkAgg")
+            matplotlib.use("QtAgg")
             plt.ion()
         else:
             matplotlib.use("Agg")

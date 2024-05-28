@@ -24,14 +24,15 @@ def run_env(cfg: DictConfig) -> None:
 
     # Run simulation
     while True:
-        if env.env_steps == 4:
-            env.simulation.bcT[0] = 3
+        # if env.env_steps == 4:
+        #     env.simulation.bcT[0] = 3
         # Simulation step
         action = np.linspace(-1, 1, 10)
         # action = -1 + np.random.rand(cfg.segments) * 2
         # action = np.array([1] * cfg.segments)
         # action = np.array([-cfg.action_scaling] * cfg.segments)
         _, _, terminated, truncated, _ = env.step(action)
+        print(env.action_effective)
         state = env.get_state()
         print(state[-1][-1])
         # Termination criterion

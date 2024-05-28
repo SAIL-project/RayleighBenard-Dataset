@@ -40,7 +40,7 @@ class Tfunc:
         count = 0
         while count < self.nb_seg - 1:  # Temperatures will vary between: 2 +- 0.75
 
-            x0 = count * xmax / self.nb_seg
+            x0 = count * xmax / self.nb_seg     # TODO "x0" and "x1" should not be symbolic...
             x1 = (count + 1) * xmax / self.nb_seg
 
             T1 = 2 + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
