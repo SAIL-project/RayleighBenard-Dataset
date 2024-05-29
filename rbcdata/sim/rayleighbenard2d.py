@@ -37,7 +37,6 @@ class RayleighBenard(KMM):
         Pr=0.7,
         dt=0.025,
         bcT=(2, 1),
-        bcT_avg=(2, 1),
         filename="data/shenfun/RB_2D",
         padding_factor=(1, 1.5),
         modsave=10000,

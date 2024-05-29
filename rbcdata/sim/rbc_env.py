@@ -36,6 +36,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         modshow: int = 20,
         render_mode: str | None = None,
         tqdm_position: int = 0,
+        fraction_length_smoothing=0.1
     ) -> None:
         super().__init__()
 
@@ -57,13 +58,22 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Action configuration, starting temperatures
         self.temperature_segments = np.ones(nr_segments) * sim_cfg.bcT[0]
 
-        # The reinforcement learning should take actions between [-1, 1] on the bottom segments
+        # The reinforcement learning should take actions between [-1, 1] on the bottom segments according to Vignon...
         self.action_space = gym.spaces.Box(
             -1,
             1,
             shape=(nr_segments,),
             dtype=np.float32,
         )
+
+        # TODO but this may be better in order to limit to physical constraints on the heating:
+        # It will depend on the type of physical constraint that we assume on the heating.
+        # self.action_space = gym.spaces.Box(
+        #     -action_scaling,
+        #     action_scaling,
+        #     shape=(nr_segments,),
+        #     dtype=np.float32,
+        # )
 
         # Observation Space
         self.observation_space = gym.spaces.Box(
@@ -86,7 +96,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=sim_cfg.checkpoint_path,
         )
         self.t_func = Tfunc(
-            nr_segments=nr_segments, domain=self.simulation.domain, action_scaling=action_scaling
+            nr_segments=nr_segments,
+            domain=self.simulation.domain,
+            action_scaling=action_scaling,
+            fraction_length_smoothing=fraction_length_smoothing
         )
 
         # Render configuration
@@ -101,7 +114,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 show_u=True,
             )
 
-            # self.action_window = RBCActionVisualizer(True, self.simulation.domain[1], n_segments_plot=100) 
+            self.action_window = RBCActionVisualizer(True, self.simulation.domain[1], n_segments_plot=100) 
         self.render_mode = render_mode
 
     def reset(
@@ -147,6 +160,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.temperature_segments[i] = action[i]    # apply given temperature value to each segment
         self.action_effective = self.t_func.apply_T(self.temperature_segments, x=y, bcT_avg=self.simulation.bcT_avg)   # Returns Sympy Piecewise for the action
         self.simulation.update_actuation((self.action_effective, 1))
+        # Update rendering of the action that is being applied
+        self.render_action(self.action_effective)
         # PDE stepping, simulates the system while performing the action for action_duration nr. of steps
         for _ in range(self.solver_steps):
             self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
@@ -174,9 +189,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 cooking=cooking,
             )
             
-            # TODO for now only show applied action if not cooking, but could also show when cooking
-            # if not cooking:
-            #    self.action_window.draw(self.action_effective)
+
+    def render_action(self, action_effective) -> None:
+        # TODO for now only show applied action if not cooking, but could also show when cooking
+        self.action_window.draw(action_effective, y, self.sim_t)
+            
 
     def close(self) -> None:
         self.closed = True

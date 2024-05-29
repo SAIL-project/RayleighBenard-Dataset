@@ -10,12 +10,16 @@
 import numpy as np
 import sympy
 
-
+# TODO not sure if we need this whole functionality, it really depends on the type of physical constraint that we assume.
 class Tfunc:
 
-    def __init__(self, nr_segments, domain, action_scaling):
-        """N = number of actuators/segments on the hot boundary layer
-        dicTemp = temperature variations of the segments: Ti' = Tnormal + Ti, Tnormal = 0.6 here"""
+    def __init__(self, nr_segments, domain, action_scaling, fraction_length_smoothing):
+        """
+        nr_segments: number of actuators/segments on the hot boundary layer
+        domain: physical domain in both coordinates, horizontal direction last
+        action_scaling: this is the maximum fluctuation around the mean Tb that can be applied TODO why is this not just 1?
+        fraction_length_smoothing: the fraction of the cell that is used for smoothing (both ends have this fraction)
+        """
 
         self.nr_segments = nr_segments
         self.domain = domain
@@ -23,8 +27,11 @@ class Tfunc:
         # Amplitude of variation of T
         self.ampl = action_scaling
 
+        self.xmax = float(self.domain[1][1])    # TODO xmax was not a numerical value here, is that intended?
+
         # half-length of the interval on which we do the smoothing
-        self.dx = 0.03
+        self.dx = 0.5 * fraction_length_smoothing * self.xmax / nr_segments
+        # self.dx = 0.03
 
     def apply_T(self, temperature_segments, x, bcT_avg):
         """
@@ -41,9 +48,7 @@ class Tfunc:
         # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.nr_segments)).max() / self.ampl)
         print(K2)
-        # Position:
-        xmax = float(self.domain[1][1])    # TODO xmax was not a numerical value here, is that intended?
-
+        xmax = self.xmax
         seq = []
         i = 0
         while i < self.nr_segments - 1:  # Temperatures will vary between: Tb +- self.ampl
