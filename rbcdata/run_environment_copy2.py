@@ -13,7 +13,7 @@ def run_env(cfg: DictConfig) -> None:
     # Set up gym environment
     env = RayleighBenardEnv(
         sim_cfg=cfg.sim,
-        segments=cfg.segments,
+        nr_segments=cfg.nr_segments,
         action_scaling=cfg.action_scaling,
         action_duration=cfg.action_duration,
         modshow=cfg.modshow,

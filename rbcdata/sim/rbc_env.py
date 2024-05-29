@@ -30,7 +30,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __init__(
         self,
         sim_cfg: RBCSimConfig,
-        segments: int = 10,
+        nr_segments: int = 10,
         action_scaling: float = 0.75,
         action_duration: int = 1,
         modshow: int = 20,
@@ -41,7 +41,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # Env configuration
         self.cfg = sim_cfg
-        self.segments = segments
+        self.nr_segments = nr_segments
         self.action_scaling = action_scaling
         self.solver_steps = math.floor(action_duration / sim_cfg.dt)
         self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)
@@ -54,24 +54,14 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             total=self.cook_steps + self.sim_steps, leave=False, position=tqdm_position
         )
 
-        # Action configuration
-        self.dicTemp = {}
-        # starting temperatures
-        for i in range(segments):
-            self.dicTemp["T" + str(i)] = sim_cfg.bcT[0]
+        # Action configuration, starting temperatures
+        self.temperature_segments = np.ones(nr_segments) * sim_cfg.bcT[0]
 
-        # TODO Should this be -1, 1?
-        # self.action_space = gym.spaces.Box(
-        #     -action_scaling,
-        #     action_scaling,
-        #     shape=(segments,),
-        #     dtype=np.float32,
-        # )
-
+        # The reinforcement learning should take actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(
             -1,
             1,
-            shape=(segments,),
+            shape=(nr_segments,),
             dtype=np.float32,
         )
 
@@ -96,7 +86,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=sim_cfg.checkpoint_path,
         )
         self.t_func = Tfunc(
-            nb_seg=segments, domain=self.simulation.domain, action_scaling=action_scaling
+            nb_seg=nr_segments, domain=self.simulation.domain, action_scaling=action_scaling
         )
 
         # Render configuration
@@ -140,8 +130,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.pbar.set_description("Episode")
 
         # Reset action
-        self.action = np.array([0.0] * self.segments)
-        self.action_effective = np.array([0.0 * self.segments])
+        self.action = np.array([0.0] * self.nr_segments)
+        self.action_effective = np.array([0.0 * self.nr_segments])
 
         return self.get_obs(), self.__get_info()
 
@@ -153,11 +143,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         truncated = False
         # Apply action
         self.action = action # TODO this should be set to the action that is truly applied after t_func?
-        for i in range(self.segments):
-            self.dicTemp.update({"T" + str(i): action[i]})  # apply the value to each segment
-        self.action_effective = self.t_func.apply_T(dicTemp=self.dicTemp, x=y, bcT_avg=self.simulation.bcT_avg)   # Returns Sympy Piecewise for the action
-        # print(self.t_func.apply_T(dicTemp=self.dicTemp, x=y))
-        # print(self.dicTemp)
+        for i in range(self.nr_segments):
+            self.temperature_segments[i] = action[i]    # apply given temperature value to each segment
+        self.action_effective = self.t_func.apply_T(self.temperature_segments, x=y, bcT_avg=self.simulation.bcT_avg)   # Returns Sympy Piecewise for the action
         self.simulation.update_actuation((self.action_effective, 1))
         # PDE stepping, simulates the system while performing the action for action_duration nr. of steps
         for _ in range(self.solver_steps):

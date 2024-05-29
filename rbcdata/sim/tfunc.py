@@ -26,9 +26,9 @@ class Tfunc:
         # half-length of the interval on which we do the smoothing
         self.dx = 0.03
 
-    def apply_T(self, dicTemp, x, bcT_avg):
+    def apply_T(self, temperature_segments, x, bcT_avg):
         Tb_avg = bcT_avg[0]
-        values = self.ampl * np.array(list(dicTemp.values()))
+        values = self.ampl * temperature_segments 
         Mean = values.mean()
         # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.nb_seg)).max() / self.ampl)
@@ -38,18 +38,19 @@ class Tfunc:
         # ind = sympy.floor(self.nb_seg * x // xmax)
 
         seq = []
-        count = 0
-        while count < self.nb_seg - 1:  # Temperatures will vary between: Tb +- 0.75
+        i = 0
+        while i < self.nb_seg - 1:  # Temperatures will vary between: Tb +- 0.75
 
-            x0 = count * xmax / self.nb_seg     # TODO "x0" and "x1" should not be symbolic...
-            x1 = (count + 1) * xmax / self.nb_seg
+            x0 = i * xmax / self.nb_seg     # TODO "x0" and "x1" should not be symbolic...
+            x1 = (i + 1) * xmax / self.nb_seg
 
-            T1 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
-            T2 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count + 1)) - Mean) / K2
-            if count == 0:
-                T0 = Tb_avg + (self.ampl * dicTemp.get("T" + str(self.nb_seg - 1)) - Mean) / K2
+            T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2
+            T2 = Tb_avg + (self.ampl * temperature_segments[i + 1] - Mean) / K2
+            # MS: periodic boundary conditions?
+            if i == 0:
+                T0 = Tb_avg + (self.ampl * temperature_segments[self.nb_seg - 1] - Mean) / K2
             else:
-                T0 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
+                T0 = Tb_avg + (self.ampl * temperature_segments[i - 1] - Mean) / K2
 
             seq.append(
                 (
@@ -71,14 +72,14 @@ class Tfunc:
                 )
             )  # cubic smoothing
 
-            count += 1
+            i += 1
 
-            if count == self.nb_seg - 1:
-                x0 = count * xmax / self.nb_seg
-                x1 = (count + 1) * xmax / self.nb_seg
-                T0 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
-                T1 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
-                T2 = Tb_avg + (self.ampl * dicTemp.get("T0") - Mean) / K2
+            if i == self.nb_seg - 1:
+                x0 = i * xmax / self.nb_seg
+                x1 = (i + 1) * xmax / self.nb_seg
+                T0 = Tb_avg + (self.ampl * temperature_segments[i - 1] - Mean) / K2
+                T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2
+                T2 = Tb_avg + (self.ampl * temperature_segments[0] - Mean) / K2
 
                 seq.append(
                     (
@@ -99,5 +100,6 @@ class Tfunc:
                         True,
                     )
                 )
-
+        # MS: how does this sympy.Piecewise object work, it seems to be more messy than necessary with a lot of
+        # superfluous conditions.
         return sympy.Piecewise(*seq)
