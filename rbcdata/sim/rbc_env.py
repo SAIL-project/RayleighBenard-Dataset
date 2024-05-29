@@ -155,7 +155,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action = action # TODO this should be set to the action that is truly applied after t_func?
         for i in range(self.segments):
             self.dicTemp.update({"T" + str(i): action[i]})  # apply the value to each segment
-        self.action_effective = self.t_func.apply_T(dicTemp=self.dicTemp, x=y)   # Sympy Piecewise for the action
+        self.action_effective = self.t_func.apply_T(dicTemp=self.dicTemp, x=y, bcT_avg=self.simulation.bcT_avg)   # Returns Sympy Piecewise for the action
         # print(self.t_func.apply_T(dicTemp=self.dicTemp, x=y))
         # print(self.dicTemp)
         self.simulation.update_actuation((self.action_effective, 1))

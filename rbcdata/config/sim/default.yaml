@@ -3,6 +3,6 @@ cook_length: 200
 N: [64, 96]
 ra: 100_000
 pr: 0.7
-dt: 0.025
+dt: 0.0125
 bcT: [2, 1]
 checkpoint_path: shenfun/ra${sim.ra}/RB_2D

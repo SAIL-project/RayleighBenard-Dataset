@@ -24,8 +24,8 @@ def run_env(cfg: DictConfig) -> None:
 
     # Run simulation
     while True:
-        # if env.env_steps == 4:
-        #     env.simulation.bcT[0] = 3
+        if env.env_steps == 4:
+            env.simulation.bcT_avg[0] = 3 
         # Simulation step
         action = np.linspace(-1, 1, 10)
         # action = -1 + np.random.rand(cfg.segments) * 2

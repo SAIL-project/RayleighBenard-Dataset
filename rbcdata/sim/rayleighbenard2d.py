@@ -37,6 +37,7 @@ class RayleighBenard(KMM):
         Pr=0.7,
         dt=0.025,
         bcT=(2, 1),
+        bcT_avg=(2, 1),
         filename="data/shenfun/RB_2D",
         padding_factor=(1, 1.5),
         modsave=10000,
@@ -69,6 +70,7 @@ class RayleighBenard(KMM):
         # parameters
         self.kappa = 1.0 / np.sqrt(Pr * Ra)
         self.bcT = bcT
+        self.bcT_avg = bcT_avg
         self.domain = domain
         dt = self.dt
         kappa = self.kappa

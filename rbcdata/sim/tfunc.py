@@ -26,29 +26,30 @@ class Tfunc:
         # half-length of the interval on which we do the smoothing
         self.dx = 0.03
 
-    def apply_T(self, dicTemp, x):
+    def apply_T(self, dicTemp, x, bcT_avg):
+        Tb_avg = bcT_avg[0]
         values = self.ampl * np.array(list(dicTemp.values()))
         Mean = values.mean()
         # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.nb_seg)).max() / self.ampl)
 
         # Position:
-        xmax = self.domain[1][1]    # TODO xmax is not a numerical value here, is that intended?
+        xmax = float(self.domain[1][1])    # TODO xmax was not a numerical value here, is that intended?
         # ind = sympy.floor(self.nb_seg * x // xmax)
 
         seq = []
         count = 0
-        while count < self.nb_seg - 1:  # Temperatures will vary between: 2 +- 0.75
+        while count < self.nb_seg - 1:  # Temperatures will vary between: Tb +- 0.75
 
             x0 = count * xmax / self.nb_seg     # TODO "x0" and "x1" should not be symbolic...
             x1 = (count + 1) * xmax / self.nb_seg
 
-            T1 = 2 + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
-            T2 = 2 + (self.ampl * dicTemp.get("T" + str(count + 1)) - Mean) / K2
+            T1 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
+            T2 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count + 1)) - Mean) / K2
             if count == 0:
-                T0 = 2 + (self.ampl * dicTemp.get("T" + str(self.nb_seg - 1)) - Mean) / K2
+                T0 = Tb_avg + (self.ampl * dicTemp.get("T" + str(self.nb_seg - 1)) - Mean) / K2
             else:
-                T0 = 2 + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
+                T0 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
 
             seq.append(
                 (
@@ -75,9 +76,9 @@ class Tfunc:
             if count == self.nb_seg - 1:
                 x0 = count * xmax / self.nb_seg
                 x1 = (count + 1) * xmax / self.nb_seg
-                T0 = 2 + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
-                T1 = 2 + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
-                T2 = 2 + (self.ampl * dicTemp.get("T0") - Mean) / K2
+                T0 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
+                T1 = Tb_avg + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
+                T2 = Tb_avg + (self.ampl * dicTemp.get("T0") - Mean) / K2
 
                 seq.append(
                     (
