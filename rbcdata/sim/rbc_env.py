@@ -86,7 +86,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=sim_cfg.checkpoint_path,
         )
         self.t_func = Tfunc(
-            nb_seg=nr_segments, domain=self.simulation.domain, action_scaling=action_scaling
+            nr_segments=nr_segments, domain=self.simulation.domain, action_scaling=action_scaling
         )
 
         # Render configuration

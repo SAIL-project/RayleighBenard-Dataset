@@ -70,7 +70,7 @@ class RayleighBenard(KMM):
         # parameters
         self.kappa = 1.0 / np.sqrt(Pr * Ra)
         self.bcT = bcT
-        self.bcT_avg = bcT_avg
+        self.bcT_avg = bcT  # datamember to remember the desired average temps
         self.domain = domain
         dt = self.dt
         kappa = self.kappa

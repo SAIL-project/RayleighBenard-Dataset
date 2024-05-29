@@ -13,11 +13,11 @@ import sympy
 
 class Tfunc:
 
-    def __init__(self, nb_seg, domain, action_scaling):
+    def __init__(self, nr_segments, domain, action_scaling):
         """N = number of actuators/segments on the hot boundary layer
         dicTemp = temperature variations of the segments: Ti' = Tnormal + Ti, Tnormal = 0.6 here"""
 
-        self.nb_seg = nb_seg
+        self.nr_segments = nr_segments
         self.domain = domain
 
         # Amplitude of variation of T
@@ -27,28 +27,35 @@ class Tfunc:
         self.dx = 0.03
 
     def apply_T(self, temperature_segments, x, bcT_avg):
+        """
+        apply_T: current implementation does the following:
+        if fluctuations around mean are larger than 1:
+            the max value of in the output with be self.ampl and the rest proportionally
+        else:
+            The temperature profile will just be scaled by self.ampl
+        Cubic smoothing is applied between cells.
+        """
         Tb_avg = bcT_avg[0]
         values = self.ampl * temperature_segments 
         Mean = values.mean()
         # TODO find out what K2 is?
-        K2 = max(1, np.abs(values - np.array([Mean] * self.nb_seg)).max() / self.ampl)
-
+        K2 = max(1, np.abs(values - np.array([Mean] * self.nr_segments)).max() / self.ampl)
+        print(K2)
         # Position:
         xmax = float(self.domain[1][1])    # TODO xmax was not a numerical value here, is that intended?
-        # ind = sympy.floor(self.nb_seg * x // xmax)
 
         seq = []
         i = 0
-        while i < self.nb_seg - 1:  # Temperatures will vary between: Tb +- 0.75
+        while i < self.nr_segments - 1:  # Temperatures will vary between: Tb +- self.ampl
 
-            x0 = i * xmax / self.nb_seg     # TODO "x0" and "x1" should not be symbolic...
-            x1 = (i + 1) * xmax / self.nb_seg
+            x0 = i * xmax / self.nr_segments     # physical value of the left bound of the segment 
+            x1 = (i + 1) * xmax / self.nr_segments   # physical value of the right bound of the segment
 
-            T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2
+            T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2     
             T2 = Tb_avg + (self.ampl * temperature_segments[i + 1] - Mean) / K2
             # MS: periodic boundary conditions?
             if i == 0:
-                T0 = Tb_avg + (self.ampl * temperature_segments[self.nb_seg - 1] - Mean) / K2
+                T0 = Tb_avg + (self.ampl * temperature_segments[self.nr_segments - 1] - Mean) / K2
             else:
                 T0 = Tb_avg + (self.ampl * temperature_segments[i - 1] - Mean) / K2
 
@@ -74,9 +81,9 @@ class Tfunc:
 
             i += 1
 
-            if i == self.nb_seg - 1:
-                x0 = i * xmax / self.nb_seg
-                x1 = (i + 1) * xmax / self.nb_seg
+            if i == self.nr_segments - 1:
+                x0 = i * xmax / self.nr_segments
+                x1 = (i + 1) * xmax / self.nr_segments
                 T0 = Tb_avg + (self.ampl * temperature_segments[i - 1] - Mean) / K2
                 T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2
                 T2 = Tb_avg + (self.ampl * temperature_segments[0] - Mean) / K2
@@ -100,6 +107,4 @@ class Tfunc:
                         True,
                     )
                 )
-        # MS: how does this sympy.Piecewise object work, it seems to be more messy than necessary with a lot of
-        # superfluous conditions.
         return sympy.Piecewise(*seq)
