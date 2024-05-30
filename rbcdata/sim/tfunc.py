@@ -13,7 +13,7 @@ import sympy
 # TODO not sure if we need this whole functionality, it really depends on the type of physical constraint that we assume.
 class Tfunc:
 
-    def __init__(self, nr_segments, domain, action_scaling, fraction_length_smoothing):
+    def __init__(self, nr_segments, domain, action_scaling, fraction_length_smoothing=0.1):
         """
         nr_segments: number of actuators/segments on the hot boundary layer
         domain: physical domain in both coordinates, horizontal direction last
@@ -47,7 +47,6 @@ class Tfunc:
         Mean = values.mean()
         # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.nr_segments)).max() / self.ampl)
-        print(K2)
         xmax = self.xmax
         seq = []
         i = 0

@@ -67,7 +67,7 @@ class RayleighBenard(KMM):
         )
 
         # parameters
-        self.kappa = 1.0 / np.sqrt(Pr * Ra)
+        self.kappa = 1.0 / np.sqrt(Pr * Ra)  # thermal diffusivity
         self.bcT = bcT
         self.bcT_avg = bcT  # datamember to remember the desired average temps
         self.domain = domain
@@ -207,7 +207,7 @@ class RayleighBenard(KMM):
         self.obs_flat = obs_flat
 
     def compute_nusselt(self):
-        div = self.kappa * (2.0 - self.bcT[1]) / 2  # H = 2, Tb = 2.
+        div = self.kappa * (self.bcT_avg[0] - self.bcT_avg[1]) / (self.domain[0][1] - self.domain[0][0])  # H = 2, Tb = 2.
 
         uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
         T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))

@@ -16,7 +16,10 @@ nr_segments = 10
 tfunc_in = tfunc.Tfunc(nr_segments, domain, max_fluctuation)
 # %%
 # play around with tfunc to understand what it does
-action_agent = np.linspace(-1, 1, 10)
+# action_agent = np.linspace(-1, 1, 10)
+action_agent = np.zeros(10)
+action_agent[0:5] = -1 
+action_agent[5:] = 1
 # action_agent = 500 * np.concatenate([np.ones(nr_segments // 2) * -1, np.ones(nr_segments // 2) * 1])
 # action_agent = np.random.rand(nr_segments) *  
 action_effective = tfunc_in.apply_T(action_agent, y, [3, 1])
