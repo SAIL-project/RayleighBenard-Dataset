@@ -39,6 +39,7 @@ def run_env(cfg: DictConfig) -> None:
         # action = np.array([1] * cfg.segments)
         # action = np.array([-cfg.action_scaling] * cfg.segments)
         _, _, terminated, truncated, _ = env.step(action)
+        print(f"Nusselt nr. full state: {env.simulation.compute_nusselt(from_obs=False):.4f}, from observations: {env.simulation.compute_nusselt(from_obs=True):.4f}")
         # print(env.action_effective)
         state = env.get_state()
         # Find out if last row temperate of state is approximately equal to Piecewise action

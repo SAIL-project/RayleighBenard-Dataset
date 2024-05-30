@@ -146,7 +146,8 @@ class RayleighBenard(KMM):
         t = self.checkpoint.f.attrs["t"]
         self.checkpoint.close()
         return t, tstep
-
+    
+    # TODO: MS: look more into the initialization
     def initialize(self, rand=0.001, from_checkpoint=False):
         if from_checkpoint:
             self.checkpoint.read(self.u_, "U", step=0)
@@ -206,11 +207,21 @@ class RayleighBenard(KMM):
         )
         self.obs_flat = obs_flat
 
-    def compute_nusselt(self):
+    def compute_nusselt(self, from_obs=True):
+        """
+        Computes the nusselt number.
+        from_obs: if True, computes the Nusselt number on the sparse observation, otherwise on the full state
+        """
         div = self.kappa * (self.bcT_avg[0] - self.bcT_avg[1]) / (self.domain[0][1] - self.domain[0][0])  # H = 2, Tb = 2.
 
-        uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
-        T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))
+        if from_obs:
+            uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
+            T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))
+        else:
+            # MS: CAUTION HERE, IN THE STATE Y VELOCITIES ARE IN THE FIRST INDEX
+            uyT_ = np.mean(np.mean(np.multiply(self.state[0], self.state[2]), axis=1), axis=0)
+            T_ = np.mean(np.gradient(np.mean(self.state[2], axis=1), axis=0))
+
         return (uyT_ - self.kappa * T_) / div
 
     def compute_kinematic_energy(self):

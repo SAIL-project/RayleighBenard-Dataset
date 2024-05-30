@@ -163,6 +163,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Update rendering of the action that is being applied
         self.render_action(self.action_effective)
         # PDE stepping, simulates the system while performing the action for action_duration nr. of steps
+        # TODO MS how to speed this part up, is that what MPI can target?
         for _ in range(self.solver_steps):
             self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
             self.pbar.update(1)

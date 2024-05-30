@@ -10,7 +10,7 @@
 import numpy as np
 import sympy
 
-# TODO not sure if we need this whole functionality, it really depends on the type of physical constraint that we assume.
+# TODO MS: not sure if we always need this whole functionality, it really depends on the type of physical constraint that we assume.
 class Tfunc:
 
     def __init__(self, nr_segments, domain, action_scaling, fraction_length_smoothing=0.1):
