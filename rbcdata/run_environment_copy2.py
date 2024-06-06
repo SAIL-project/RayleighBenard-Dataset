@@ -3,7 +3,6 @@ import numpy as np
 import rootutils
 from omegaconf import DictConfig
 import matplotlib.pyplot as plt
-# from rbcdata.utils.rbc_field import RBCField
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 

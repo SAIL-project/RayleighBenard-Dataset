@@ -65,9 +65,9 @@ class RBCConvectionVisualizer(ABC):
             self.image,
             cax=cbar,
             orientation="vertical",
-            ticks=[vmin, 0, vmax / 2, vmax],
+            ticks=[vmin, vmin / 2, 0, vmax / 2, vmax],
         )
-        cbar.set_yticklabels([-0.1, 0, 0.1, 0.2])
+        # cbar.set_yticklabels([-0.1, 0, 0.1, 0.2])
         fig.canvas.mpl_connect("close_event", self.close)
         self.ax = ax
         self.fig = fig

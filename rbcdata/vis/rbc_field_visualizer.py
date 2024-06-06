@@ -105,18 +105,23 @@ class RBCFieldVisualizer(ABC):
         """
         Show an image or update the image being shown
         """
+
+        # TODO maybe a better, way, but show max velocity in title for now
+        max_velo = np.max(np.sqrt(ux**2 + uy**2))
+
         # Update T image
         self.image_T.set_array(T)
         if cooking:
             self.ax.set_title(
-                f"Cooking Time active at t={round(t, 3)}",
+                f"Cooking Time active at t={round(t, 3)}. Max velocity: {max_velo:.3f}",
                 loc="left",
             )
         else:
             self.ax.set_title(
-                f"Temperature Field at t={round(t, 3)}",
+                f"Temperature Field at t={round(t, 3)}. Max velocity: {max_velo:.3f}",
                 loc="left",
             )
+        
 
         # Update u image
         if self.show_u:
