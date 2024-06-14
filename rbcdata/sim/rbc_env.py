@@ -44,10 +44,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.cfg = sim_cfg
         self.nr_segments = nr_segments
         self.action_scaling = action_scaling
-        self.solver_steps = math.floor(action_duration / sim_cfg.dt)
-        self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)
-        self.env_steps = math.floor(self.sim_steps / self.solver_steps)
-        self.cook_steps = round(sim_cfg.cook_length / sim_cfg.dt)
+        self.solver_steps = math.floor(action_duration / sim_cfg.dt)        # simulation steps taken for one action
+        self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)         # simulation steps taken in one episode (after cooking)
+        self.env_steps = math.floor(self.sim_steps / self.solver_steps)     # The total number of actions taken over the whole episode
+        self.cook_steps = round(sim_cfg.cook_length / sim_cfg.dt)           # The number simulation steps for cooking
         self.closed = False
 
         # Progress bar

@@ -8,7 +8,7 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
 from rbcdata.sim.rbc_env import RayleighBenardEnv
 
-# In this environment I am playing with dynamic temperature at the bottom, which seems to work.
+# In this environment I am applying a manual control between the cells, in order to see if it will break the two-cell setup.
 
 def run_env(cfg: DictConfig) -> None:
     # Set up gym environment
@@ -22,22 +22,26 @@ def run_env(cfg: DictConfig) -> None:
     )
     _, _ = env.reset(seed=cfg.seed)
 
+    print(env.get_state()[-1][5])
 
     fig, ax = plt.subplots()
     # Run simulation
     while True:
-        if env.env_step == 2:
-            env.simulation.bcT_avg = (3, 1)
-        if env.env_step > 20:
-            action = np.zeros(cfg.nr_segments)
-            action[:cfg.nr_segments // 2] = -1 
-            action[cfg.nr_segments // 2:] = 1
-        else: 
-            action = -1 + np.random.rand(cfg.nr_segments) * 2
+        
+        # if env.env_step == 2:
+        #     env.simulation.bcT_avg = (3, 1)
+        # if env.env_step > 20:
+        #     action = np.zeros(cfg.nr_segments)
+        #     action[:cfg.nr_segments // 2] = -1 
+        #     action[cfg.nr_segments // 2:] = 1
+        # else:
+        #     action = -1 + np.random.rand(cfg.nr_segments) * 2
         # Simulation step
         # action = np.linspace(-1, 1, cfg.nr_segments)
         # action = np.array([1] * cfg.segments)
         # action = np.array([-cfg.action_scaling] * cfg.segments)
+
+        action = np.zeros(cfg.nr_segments)
         _, _, terminated, truncated, _ = env.step(action)
         print(f"Nusselt nr. full state: {env.simulation.compute_nusselt(from_obs=False):.4f}, from observations: {env.simulation.compute_nusselt(from_obs=True):.4f}")
         # print(env.action_effective)
@@ -56,6 +60,7 @@ def run_env(cfg: DictConfig) -> None:
 
 @hydra.main(version_base=None, config_path="config", config_name="run")
 def main(cfg: DictConfig) -> None:
+    np.random.seed(cfg.seed)    # numpy seed
     run_env(cfg=cfg)
 
 
