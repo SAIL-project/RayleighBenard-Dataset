@@ -138,24 +138,26 @@ class RayleighBenard(KMM):
         self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
         self.file_T.write(tstep, {"T": [self.T_.backward(mesh="uniform")]})
 
-    def init_from_checkpoint(self):
+    
+    def init_from_checkpoint(self, filename=None):
+        old_filename = self.checkpoint.filename
+        if filename is not None:
+            self.checkpoint.filename = filename     # temporarily switch the filename of the Checkpoint instance
         self.checkpoint.read(self.u_, "U", step=0)
         self.checkpoint.read(self.T_, "T", step=0)
         self.checkpoint.open()
         tstep = self.checkpoint.f.attrs["tstep"]
         t = self.checkpoint.f.attrs["t"]
         self.checkpoint.close()
+        self.checkpoint.filename = old_filename     # restore the old filename of the Checkpoint instance (which was changed if filename is given to function)
+        self.checkpoint.f = None
         return t, tstep
     
+
     # TODO: MS: look more into the initialization
-    def initialize(self, rand=0.001, from_checkpoint=False):
-        if from_checkpoint:
-            self.checkpoint.read(self.u_, "U", step=0)
-            self.checkpoint.read(self.T_, "T", step=0)
-            self.checkpoint.open()
-            tstep = self.checkpoint.f.attrs["tstep"]
-            t = self.checkpoint.f.attrs["t"]
-            self.checkpoint.close()
+    def initialize(self, rand=0.001, filename=None):
+        if filename is not None:
+            t, tstep = self.init_from_checkpoint(filename)
             self.update_bc(t)
             return t, tstep
 

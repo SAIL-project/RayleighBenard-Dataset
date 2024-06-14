@@ -20,9 +20,10 @@ def run_env(cfg: DictConfig) -> None:
         modshow=cfg.modshow,
         render_mode=cfg.render_mode,
     )
-    _, _ = env.reset(seed=cfg.seed)
+    _, _ = env.reset(seed=cfg.seed, filename='../06-14-15-21-39/shenfun/ra10000/RB_2D')
 
     print(env.get_state()[-1][5])
+    
 
     fig, ax = plt.subplots()
     # Run simulation

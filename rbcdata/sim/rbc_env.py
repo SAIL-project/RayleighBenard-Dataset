@@ -118,12 +118,14 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.render_mode = render_mode
 
     def reset(
-        self, seed: int | None = None, options: Dict[str, Any] | None = None
+        self, seed: int | None = None, options: Dict[str, Any] | None = None, filename=None
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
         super().reset(seed=seed)
 
         # init PDE simulation
-        self.sim_t, self.sim_step = self.simulation.initialize()
+        self.sim_t, self.sim_step = self.simulation.initialize(filename=filename)
+        self.sim_t = 0.0
+        self.sim_step = 0
         self.env_step = 0
         self.simulation.assemble()
 
