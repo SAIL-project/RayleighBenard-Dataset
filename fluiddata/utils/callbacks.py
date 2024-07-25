@@ -5,10 +5,14 @@ import h5py
 import matplotlib
 import numpy as np
 import seaborn as sns
-from firedrake import FunctionSpace, VertexOnlyMesh, assemble
-from firedrake.__future__ import interpolate
-from hydrogym.core import CallbackBase, PDEBase
 from matplotlib import pyplot as plt
+
+try:
+    from firedrake import FunctionSpace, VertexOnlyMesh, assemble
+    from firedrake.__future__ import interpolate
+    from hydrogym.core import CallbackBase, PDEBase
+except ImportError:
+    print("Hydrogym/Firedrake not found, Cylinder simulation is not available")
 
 
 class CylinderVisCallback(CallbackBase):
