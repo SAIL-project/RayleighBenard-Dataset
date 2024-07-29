@@ -1,12 +1,13 @@
 defaults:
   - sim/default
+  - controller/zero
 
 seed: 42
 segments: 10
+action_start: 20
 action_scaling: 0.75
 action_duration: 1.5
-modshow: 40
-render_mode: live
+interval: 1
 
 hydra:
   job:

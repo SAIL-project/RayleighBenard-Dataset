@@ -5,13 +5,10 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 import sympy
-from tqdm import tqdm
 
 from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
-from rbcdata.utils.rbc_field import RBCField
-from rbcdata.vis import RBCFieldVisualizer
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -29,9 +26,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         segments: int = 10,
         action_scaling: float = 0.75,
         action_duration: int = 1,
-        modshow: int = 20,
-        render_mode: str | None = None,
-        tqdm_position: int = 0,
     ) -> None:
         super().__init__()
 
@@ -42,13 +36,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.solver_steps = math.floor(action_duration / sim_cfg.dt)
         self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)
         self.env_steps = math.floor(self.sim_steps / self.solver_steps)
-        self.cook_steps = round(sim_cfg.cook_length / sim_cfg.dt)
         self.closed = False
-
-        # Progress bar
-        self.pbar = tqdm(
-            total=self.cook_steps + self.sim_steps, leave=False, position=tqdm_position
-        )
 
         # Action configuration
         self.dicTemp = {}
@@ -87,43 +75,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             nb_seg=segments, domain=self.simulation.domain, action_scaling=action_scaling
         )
 
-        # Render configuration
-        assert render_mode is None or render_mode in self.metadata["render_modes"]
-        self.modshow = modshow
-        if render_mode == "live":
-            self.window = RBCFieldVisualizer(
-                size=sim_cfg.N,
-                vmin=sim_cfg.bcT[1],
-                vmax=sim_cfg.bcT[0] + action_scaling,
-                show=True,
-                show_u=True,
-            )
-        self.render_mode = render_mode
-
     def reset(
         self, seed: int | None = None, options: Dict[str, Any] | None = None
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
         super().reset(seed=seed)
 
-        # init PDE simulation
+        # init PDE simulation and do one step
         self.sim_t, self.sim_step = self.simulation.initialize()
         self.env_step = 0
         self.simulation.assemble()
-
-        # init visualizer
-        if self.render_mode is not None:
-            self.visualizer = None
-
-        # cook system
-        self.pbar.set_description("Cook System...")
-        for _ in range(self.cook_steps):
-            self.sim_t, self.sim_step = self.simulation.step(self.sim_t, self.sim_step)
-            if self.sim_step > 1:
-                self.render(cooking=True)
-            self.pbar.update(1)
-
-        # Reset progress bar description
-        self.pbar.set_description("Episode")
+        self.simulation.step(self.sim_t, self.sim_step)
 
         # Reset action
         self.action = np.array([0.0] * self.segments)
@@ -140,33 +101,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # PDE stepping
         for _ in range(self.solver_steps):
             self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
-            self.pbar.update(1)
 
         # Check for truncation
         self.env_step += 1
         if self.env_step >= self.env_steps:
             truncated = True
 
-        # Update vis
-        self.render()
-
         return self.get_obs(), 0, self.closed, truncated, self.__get_info()
-
-    def render(self, cooking: bool = False) -> None:
-        if self.render_mode == "live" and self.sim_step % self.modshow == 0:
-            state = self.get_state()
-            self.window.draw(
-                state[RBCField.T],
-                state[RBCField.UX],
-                state[RBCField.UY],
-                self.sim_step * self.cfg.dt,
-                cooking=cooking,
-            )
 
     def close(self) -> None:
         self.closed = True
-        if self.render_mode == "live":
-            self.window.close()
 
     def get_obs(self) -> RBCObservation:
         return self.simulation.obs_flat.astype(np.float32)
@@ -181,4 +125,4 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return float(-self.simulation.compute_nusselt())
 
     def __get_info(self) -> dict[str, Any]:
-        return {"step": self.env_step, "sim_step": self.sim_step, "sim_t": round(self.sim_t, 7)}
+        return {"step": self.env_step, "t": round(self.sim_t, 7)}
