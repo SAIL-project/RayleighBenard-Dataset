@@ -7,7 +7,7 @@ segments: 10
 action_start: 20
 action_scaling: 0.75
 action_duration: 1.5
-interval: 1
+interval: 20
 
 hydra:
   job:

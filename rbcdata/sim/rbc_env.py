@@ -1,4 +1,3 @@
-import math
 from typing import Any, Dict, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -17,7 +16,6 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
-    metadata = {"render_modes": ["live", "rgb_array"]}
     reward_range = (-float("inf"), float("inf"))
 
     def __init__(
@@ -33,9 +31,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.cfg = sim_cfg
         self.segments = segments
         self.action_scaling = action_scaling
-        self.solver_steps = math.floor(action_duration / sim_cfg.dt)
-        self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)
-        self.env_steps = math.floor(self.sim_steps / self.solver_steps)
+        self.env_steps = round(sim_cfg.episode_length / sim_cfg.dt)
         self.closed = False
 
         # Action configuration
@@ -98,9 +94,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         for i in range(self.segments):
             self.dicTemp.update({"T" + str(i): action[i]})
         self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
-        # PDE stepping
-        for _ in range(self.solver_steps):
-            self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
+        # PDE step
+        self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
 
         # Check for truncation
         self.env_step += 1
