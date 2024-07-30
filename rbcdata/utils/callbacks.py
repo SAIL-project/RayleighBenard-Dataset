@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from rbcdata.utils.rbc_field import RBCField
+from rbcdata.vis.control_visualizer import ControlVisualizer
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
 
 
@@ -95,3 +96,20 @@ class LogNusseltNumberCallback(CallbackBase):
 
         ax.grid()
         fig.savefig("nusselt.png")
+
+
+class ControlVisCallback(CallbackBase):
+    def __init__(
+        self,
+        size,
+        interval: Optional[int] = 1,
+    ):
+        super().__init__(interval=interval)
+        self.window = ControlVisualizer(size=size, show=True)
+
+    def __call__(self, env, obs, reward, info):
+        if super().__call__(env, obs, reward, info):
+            self.window.draw(env.action)
+
+    def close(self):
+        self.window.close()

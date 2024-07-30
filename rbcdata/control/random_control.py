@@ -6,11 +6,11 @@ from rbcdata.control.controller import Controller
 class RandomController(Controller):
     def __init__(
         self,
-        start_time: float,
-        control_duration: float,
-        zero_control: Any,
+        start: float,
+        duration: float,
+        zero: Any,
     ) -> None:
-        super().__init__(start_time, control_duration, zero_control)
+        super().__init__(start, duration, zero)
 
     def __call__(self, env, obs, info) -> float:
         if super().__call__(env, obs, info):

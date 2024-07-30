@@ -8,9 +8,9 @@
             "name": "Debug Generate",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rbcdata/generate_dataset.py",
+            "program": "${workspaceFolder}/rbcdata/run.py",
             "console": "integratedTerminal",
-            "args": "generate=controlled random_control=true count=1 sim.cook_length=10 sim.episode_length=20",
+            "args": "sim.episode_length=100 +controller=random",
             "justMyCode": false,
         },
     ]

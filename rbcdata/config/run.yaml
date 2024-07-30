@@ -3,10 +3,12 @@ defaults:
   - controller/zero
 
 seed: 42
-segments: 10
-action_start: 20
-action_scaling: 0.75
+
+action_segments: 96
+action_start: 0
+action_limit: 0.75
 action_duration: 1.5
+
 interval: 20
 
 hydra:

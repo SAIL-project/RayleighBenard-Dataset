@@ -1,5 +1,4 @@
-episode_length: 250
-cook_length: 200
+episode_length: 100
 N: [64, 96]
 ra: 10_000
 pr: 0.7

@@ -21,16 +21,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __init__(
         self,
         sim_cfg: RBCSimConfig,
-        segments: int = 10,
-        action_scaling: float = 0.75,
-        action_duration: int = 1,
+        segments: int,
+        action_limit: float,
     ) -> None:
         super().__init__()
 
         # Env configuration
         self.cfg = sim_cfg
         self.segments = segments
-        self.action_scaling = action_scaling
+        self.action_limit = action_limit
         self.env_steps = round(sim_cfg.episode_length / sim_cfg.dt)
         self.closed = False
 
@@ -41,8 +40,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.dicTemp["T" + str(i)] = sim_cfg.bcT[1]
 
         self.action_space = gym.spaces.Box(
-            -action_scaling,
-            action_scaling,
+            -action_limit,
+            action_limit,
             shape=(segments,),
             dtype=np.float32,
         )
@@ -68,7 +67,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=sim_cfg.checkpoint_path,
         )
         self.t_func = Tfunc(
-            nb_seg=segments, domain=self.simulation.domain, action_scaling=action_scaling
+            nb_seg=segments, domain=self.simulation.domain, action_scaling=action_limit
         )
 
     def reset(
@@ -90,10 +89,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
         truncated = False
         # Apply action
-        self.action = action
-        for i in range(self.segments):
-            self.dicTemp.update({"T" + str(i): action[i]})
-        self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
+        if not np.array_equiv(action, self.action):
+            self.action = action
+            for i in range(self.segments):
+                self.dicTemp.update({"T" + str(i): action[i]})
+            self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
         # PDE step
         self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
 

@@ -21,7 +21,7 @@ def create_dataset(cfg: DictConfig, seed: int, path: pathlib.Path, num: int) -> 
     env = RayleighBenardEnv(
         sim_cfg=cfg.sim,
         segments=cfg.segments,
-        action_scaling=cfg.action_scaling,
+        action_limit=cfg.action_scaling,
         action_duration=cfg.action_duration,
         tqdm_position=2 * num + 1,
     )
