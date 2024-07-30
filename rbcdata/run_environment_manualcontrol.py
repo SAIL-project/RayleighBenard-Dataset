@@ -20,29 +20,18 @@ def run_env(cfg: DictConfig) -> None:
         modshow=cfg.modshow,
         render_mode=cfg.render_mode,
     )
-    _, _ = env.reset(seed=cfg.seed, filename='../06-14-15-21-39/shenfun/ra10000/RB_2D')
-
-    print(env.get_state()[-1][5])
-    
+    # _, _ = env.reset(seed=cfg.seed, filename='../06-14-15-21-39/shenfun/ra10000/RB_2D')
+    _, _ = env.reset(seed=cfg.seed, filename='../06-14-20-37-38/shenfun/ra10000/RB_2D')
+    # _, _ = env.reset(seed=cfg.seed)
 
     fig, ax = plt.subplots()
     # Run simulation
     while True:
         
-        # if env.env_step == 2:
-        #     env.simulation.bcT_avg = (3, 1)
-        # if env.env_step > 20:
-        #     action = np.zeros(cfg.nr_segments)
-        #     action[:cfg.nr_segments // 2] = -1 
-        #     action[cfg.nr_segments // 2:] = 1
-        # else:
-        #     action = -1 + np.random.rand(cfg.nr_segments) * 2
-        # Simulation step
-        # action = np.linspace(-1, 1, cfg.nr_segments)
-        # action = np.array([1] * cfg.segments)
-        # action = np.array([-cfg.action_scaling] * cfg.segments)
-
-        action = np.zeros(cfg.nr_segments)
+        # action = np.zeros(cfg.nr_segments)
+        action = -1 * np.ones(cfg.nr_segments)
+        action[3] = 1
+        action[8] = 1
         _, _, terminated, truncated, _ = env.step(action)
         print(f"Nusselt nr. full state: {env.simulation.compute_nusselt(from_obs=False):.4f}, from observations: {env.simulation.compute_nusselt(from_obs=True):.4f}")
         # print(env.action_effective)
