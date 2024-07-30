@@ -10,44 +10,58 @@
 import numpy as np
 import sympy
 
-
+# TODO MS: not sure if we always need this whole functionality, it really depends on the type of physical constraint that we assume.
 class Tfunc:
 
-    def __init__(self, nb_seg, domain, action_scaling):
-        """N = number of actuators/segments on the hot boundary layer
-        dicTemp = temperature variations of the segments: Ti' = Tnormal + Ti, Tnormal = 0.6 here"""
+    def __init__(self, segments, domain, action_limit, fraction_length_smoothing=0.1):
+        """
+        nr_segments: number of actuators/segments on the hot boundary layer
+        domain: physical domain in both coordinates, horizontal direction last
+        action_scaling: this is the maximum fluctuation around the mean Tb that can be applied TODO why is this not just 1?
+        fraction_length_smoothing: the fraction of the cell that is used for smoothing (both ends have this fraction)
+        """
 
-        self.nb_seg = nb_seg
+        self.segments = segments
         self.domain = domain
 
         # Amplitude of variation of T
-        self.ampl = action_scaling
+        self.ampl = action_limit
+
+        self.xmax = float(self.domain[1][1])    # TODO xmax was not a numerical value here, is that intended?
 
         # half-length of the interval on which we do the smoothing
-        self.dx = 0.03
+        self.dx = 0.5 * fraction_length_smoothing * self.xmax / segments
+        # self.dx = 0.03
 
-    def apply_T(self, dicTemp, x):
-        values = self.ampl * np.array(list(dicTemp.values()))
+    def apply_T(self, temperature_segments, x, bcT_avg):
+        """
+        apply_T: current implementation does the following:
+        if fluctuations around mean are larger than 1:
+            the max value of in the output with be self.ampl and the rest proportionally
+        else:
+            The temperature profile will just be scaled by self.ampl
+        Cubic smoothing is applied between cells.
+        """
+        Tb_avg = bcT_avg[0]
+        values = self.ampl * temperature_segments 
         Mean = values.mean()
-        K2 = max(1, np.abs(values - np.array([Mean] * self.nb_seg)).max() / self.ampl)
-
-        # Position:
-        xmax = self.domain[1][1]
-        # ind = sympy.floor(self.nb_seg * x // xmax)
-
+        # TODO find out what K2 is?
+        K2 = max(1, np.abs(values - np.array([Mean] * self.segments)).max() / self.ampl)
+        xmax = self.xmax
         seq = []
-        count = 0
-        while count < self.nb_seg - 1:  # Temperatures will vary between: 2 +- 0.75
+        i = 0
+        while i < self.segments - 1:  # Temperatures will vary between: Tb +- self.ampl
 
-            x0 = count * xmax / self.nb_seg
-            x1 = (count + 1) * xmax / self.nb_seg
+            x0 = i * xmax / self.segments     # physical value of the left bound of the segment 
+            x1 = (i + 1) * xmax / self.segments   # physical value of the right bound of the segment
 
-            T1 = 2 + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
-            T2 = 2 + (self.ampl * dicTemp.get("T" + str(count + 1)) - Mean) / K2
-            if count == 0:
-                T0 = 2 + (self.ampl * dicTemp.get("T" + str(self.nb_seg - 1)) - Mean) / K2
+            T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2     
+            T2 = Tb_avg + (self.ampl * temperature_segments[i + 1] - Mean) / K2
+            # MS: periodic boundary conditions?
+            if i == 0:
+                T0 = Tb_avg + (self.ampl * temperature_segments[self.segments - 1] - Mean) / K2
             else:
-                T0 = 2 + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
+                T0 = Tb_avg + (self.ampl * temperature_segments[i - 1] - Mean) / K2
 
             seq.append(
                 (
@@ -69,14 +83,14 @@ class Tfunc:
                 )
             )  # cubic smoothing
 
-            count += 1
+            i += 1
 
-            if count == self.nb_seg - 1:
-                x0 = count * xmax / self.nb_seg
-                x1 = (count + 1) * xmax / self.nb_seg
-                T0 = 2 + (self.ampl * dicTemp.get("T" + str(count - 1)) - Mean) / K2
-                T1 = 2 + (self.ampl * dicTemp.get("T" + str(count)) - Mean) / K2
-                T2 = 2 + (self.ampl * dicTemp.get("T0") - Mean) / K2
+            if i == self.segments - 1:
+                x0 = i * xmax / self.segments
+                x1 = (i + 1) * xmax / self.segments
+                T0 = Tb_avg + (self.ampl * temperature_segments[i - 1] - Mean) / K2
+                T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2
+                T2 = Tb_avg + (self.ampl * temperature_segments[0] - Mean) / K2
 
                 seq.append(
                     (
@@ -97,5 +111,4 @@ class Tfunc:
                         True,
                     )
                 )
-
         return sympy.Piecewise(*seq)

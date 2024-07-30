@@ -17,19 +17,19 @@ def run_env(cfg: DictConfig) -> None:
     env = RayleighBenardEnv(
         sim_cfg=cfg.sim,
         segments=cfg.segments,
-        action_scaling=cfg.action_scaling,
+        action_limit=cfg.action_limit,
         action_duration=cfg.action_duration,
     )
 
     callbacks = [
         TqdmCallback(total=cfg.sim.episode_length),
-        RBCVisCallback(
-            size=cfg.sim.N,
-            vmin=cfg.sim.bcT[1],
-            vmax=cfg.sim.bcT[0],
-            interval=cfg.interval,
-        ),
-        LogNusseltNumberCallback(interval=1),
+        # RBCVisCallback(
+        #     size=cfg.sim.N,
+        #     vmin=cfg.sim.bcT[1],
+        #     vmax=cfg.sim.bcT[0] + cfg.action_limit,
+        #     interval=cfg.interval,
+        # ),
+        #LogNusseltNumberCallback(interval=1),
     ]
 
     # Controller

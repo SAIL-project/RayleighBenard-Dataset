@@ -15,8 +15,8 @@ def integrate(
     # Run environment
     while True:
         # Controller
-        if controller is not None:
-            action = controller(env, obs, info)
+        # if controller is not None:
+        #     action = controller(env, obs, info)
         # Simulation step
         obs, reward, terminated, truncated, info = env.step(action)
         # Callbacks
