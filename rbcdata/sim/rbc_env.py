@@ -44,9 +44,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.cfg = sim_cfg
         self.nr_segments = nr_segments
         self.action_scaling = action_scaling
-        self.solver_steps = math.floor(action_duration / sim_cfg.dt)        # simulation steps taken for one action
+        self.solver_steps_action = math.floor(action_duration / sim_cfg.dt)        # simulation steps taken for one action
         self.sim_steps = round(sim_cfg.episode_length / sim_cfg.dt)         # simulation steps taken in one episode (after cooking)
-        self.env_steps = math.floor(self.sim_steps / self.solver_steps)     # The total number of actions taken over the whole episode
+        self.env_steps = math.floor(self.sim_steps / self.solver_steps_action)     # The total number of actions taken over the whole episode
         self.cook_steps = round(sim_cfg.cook_length / sim_cfg.dt)           # The number simulation steps for cooking
         self.closed = False
 
@@ -166,7 +166,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.render_action(self.action_effective)
         # PDE stepping, simulates the system while performing the action for action_duration nr. of steps
         # TODO MS how to speed this part up, is that what MPI can target?
-        for _ in range(self.solver_steps):
+        for _ in range(self.solver_steps_action):
             self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
             self.pbar.update(1)
 
@@ -181,8 +181,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.get_obs(), 0, self.closed, truncated, self.__get_info()
 
     def render(self, cooking: bool = False) -> None:
-        # TODO: isn't it better to make the second test in units of env_step, i.e. env_step % modshow == 0?
-        if self.render_mode == "live" and self.sim_step % self.modshow == 0:
+        if self.render_mode == "live" and self.env_step % self.modshow == 0:
             state = self.get_state()
             self.window.draw(
                 state[RBCField.T],
