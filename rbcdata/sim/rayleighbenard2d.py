@@ -67,8 +67,9 @@ class RayleighBenard(KMM):
         )
 
         # parameters
-        self.kappa = 1.0 / np.sqrt(Pr * Ra)
+        self.kappa = 1.0 / np.sqrt(Pr * Ra)  # thermal diffusivity
         self.bcT = bcT
+        self.bcT_avg = bcT  # datamember to remember the desired average temps
         self.domain = domain
         dt = self.dt
         kappa = self.kappa
@@ -137,23 +138,26 @@ class RayleighBenard(KMM):
         self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
         self.file_T.write(tstep, {"T": [self.T_.backward(mesh="uniform")]})
 
-    def init_from_checkpoint(self):
+    
+    def init_from_checkpoint(self, filename=None):
+        old_filename = self.checkpoint.filename
+        if filename is not None:
+            self.checkpoint.filename = filename     # temporarily switch the filename of the Checkpoint instance
         self.checkpoint.read(self.u_, "U", step=0)
         self.checkpoint.read(self.T_, "T", step=0)
         self.checkpoint.open()
         tstep = self.checkpoint.f.attrs["tstep"]
         t = self.checkpoint.f.attrs["t"]
         self.checkpoint.close()
+        self.checkpoint.filename = old_filename     # restore the old filename of the Checkpoint instance (which was changed if filename is given to function)
+        self.checkpoint.f = None
         return t, tstep
+    
 
-    def initialize(self, rand=0.001, from_checkpoint=False):
-        if from_checkpoint:
-            self.checkpoint.read(self.u_, "U", step=0)
-            self.checkpoint.read(self.T_, "T", step=0)
-            self.checkpoint.open()
-            tstep = self.checkpoint.f.attrs["tstep"]
-            t = self.checkpoint.f.attrs["t"]
-            self.checkpoint.close()
+    # TODO: MS: look more into the initialization
+    def initialize(self, rand=0.001, filename=None):
+        if filename is not None:
+            t, tstep = self.init_from_checkpoint(filename)
             self.update_bc(t)
             return t, tstep
 
@@ -205,11 +209,21 @@ class RayleighBenard(KMM):
         )
         self.obs_flat = obs_flat
 
-    def compute_nusselt(self):
-        div = self.kappa * (2.0 - self.bcT[1]) / 2  # H = 2, Tb = 2.
+    def compute_nusselt(self, from_obs=True):
+        """
+        Computes the nusselt number.
+        from_obs: if True, computes the Nusselt number on the sparse observation, otherwise on the full state
+        """
+        div = self.kappa * (self.bcT_avg[0] - self.bcT_avg[1]) / (self.domain[0][1] - self.domain[0][0])  # H = 2, Tb = 2.
 
-        uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
-        T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))
+        if from_obs:
+            uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
+            T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))
+        else:
+            # MS: CAUTION HERE, IN THE STATE Y VELOCITIES ARE IN THE FIRST INDEX
+            uyT_ = np.mean(np.mean(np.multiply(self.state[0], self.state[2]), axis=1), axis=0)
+            T_ = np.mean(np.gradient(np.mean(self.state[2], axis=1), axis=0))
+
         return (uyT_ - self.kappa * T_) / div
 
     def compute_kinematic_energy(self):

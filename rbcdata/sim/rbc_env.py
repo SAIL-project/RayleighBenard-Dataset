@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -21,8 +22,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __init__(
         self,
         sim_cfg: RBCSimConfig,
-        segments: int,
-        action_limit: float,
+        segments: int = 10,
+        action_limit: float = 0.75,
+        action_duration: int = 1,
+        fraction_length_smoothing=0.1,
     ) -> None:
         super().__init__()
 
@@ -30,18 +33,25 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.cfg = sim_cfg
         self.segments = segments
         self.action_limit = action_limit
-        self.env_steps = round(sim_cfg.episode_length / sim_cfg.dt)
+        self.solver_steps_action = math.floor(
+            action_duration / sim_cfg.dt
+        )  # simulation steps taken for one action
+        self.sim_steps = round(
+            sim_cfg.episode_length / sim_cfg.dt
+        )  # simulation steps taken in one episode (after cooking)
+        self.env_steps = math.floor(
+            self.sim_steps / self.solver_steps_action
+        )  # The total number of actions taken over the whole episode
         self.closed = False
 
-        # Action configuration
-        self.dicTemp = {}
-        # starting temperatures
-        for i in range(segments):
-            self.dicTemp["T" + str(i)] = sim_cfg.bcT[1]
+        # Action configuration, starting temperatures
+        self.temperature_segments = np.ones(segments) * sim_cfg.bcT[0]
 
+        # The reinforcement learning should take actions between [-1, 1] on the bottom segments
+        # according to Vignon...
         self.action_space = gym.spaces.Box(
-            -action_limit,
-            action_limit,
+            -1,
+            1,
             shape=(segments,),
             dtype=np.float32,
         )
@@ -49,7 +59,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Observation Space
         self.observation_space = gym.spaces.Box(
             sim_cfg.bcT[1],
-            sim_cfg.bcT[0],
+            sim_cfg.bcT[0] + action_limit,
             shape=(
                 1,
                 sim_cfg.N[0] * sim_cfg.N[1] * 3,
@@ -67,34 +77,49 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=sim_cfg.checkpoint_path,
         )
         self.t_func = Tfunc(
-            nb_seg=segments, domain=self.simulation.domain, action_scaling=action_limit
+            segments=segments,
+            domain=self.simulation.domain,
+            action_limit=action_limit,
+            fraction_length_smoothing=fraction_length_smoothing,
         )
 
     def reset(
-        self, seed: int | None = None, options: Dict[str, Any] | None = None
+        self, seed: int | None = None, options: Dict[str, Any] | None = None, filename=None
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
         super().reset(seed=seed)
 
-        # init PDE simulation and do one step
-        self.sim_t, self.sim_step = self.simulation.initialize()
+        # init PDE simulation
+        self.sim_t, self.sim_step = self.simulation.initialize(filename=filename)
+        self.sim_t = 0.0
+        self.sim_step = 0
         self.env_step = 0
         self.simulation.assemble()
         self.simulation.step(self.sim_t, self.sim_step)
 
         # Reset action
         self.action = np.array([0.0] * self.segments)
+        self.action_effective = np.array([0.0] * self.segments)
 
         return self.get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
+        """
+        Function to perform one step of the environment using action "action", i.e.
+        (state(t), action(t)) -> state(t+1)
+        """
         truncated = False
         # Apply action
         if not np.array_equiv(action, self.action):
             self.action = action
             for i in range(self.segments):
-                self.dicTemp.update({"T" + str(i): action[i]})
-            self.simulation.update_actuation((self.t_func.apply_T(dicTemp=self.dicTemp, x=y), 1))
-        # PDE step
+                self.temperature_segments[i] = action[
+                    i
+                ]  # apply given temperature value to each segment
+            self.action_effective = self.t_func.apply_T(
+                self.temperature_segments, x=y, bcT_avg=self.simulation.bcT_avg
+            )  # Returns Sympy Piecewise for the action
+            self.simulation.update_actuation((self.action_effective, 1))
+
         self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
 
         # Check for truncation

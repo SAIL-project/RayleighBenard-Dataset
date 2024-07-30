@@ -4,14 +4,14 @@ from typing import List
 import numpy as np
 import numpy.typing as npt
 
-try:
-    import matplotlib
-    import matplotlib.pyplot as plt
-    from matplotlib.backend_bases import Event
-    from matplotlib.figure import Figure
-except ImportError:
-    print("Matplotlib not found, visualization is not available")
-    exit(1)
+# try:
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.backend_bases import Event
+from matplotlib.figure import Figure
+# except ImportError:
+#     print("Matplotlib not found, visualization is not available")
+#     exit(1)
 
 
 class RBCConvectionVisualizer(ABC):
@@ -25,7 +25,7 @@ class RBCConvectionVisualizer(ABC):
         # Matplotlib settings
         self.closed = False
         if show:
-            matplotlib.use("TkAgg")
+            matplotlib.use("QtAgg")
             plt.ion()
         else:
             matplotlib.use("Agg")
@@ -65,9 +65,9 @@ class RBCConvectionVisualizer(ABC):
             self.image,
             cax=cbar,
             orientation="vertical",
-            ticks=[vmin, 0, vmax / 2, vmax],
+            ticks=[vmin, vmin / 2, 0, vmax / 2, vmax],
         )
-        cbar.set_yticklabels([-0.1, 0, 0.1, 0.2])
+        # cbar.set_yticklabels([-0.1, 0, 0.1, 0.2])
         fig.canvas.mpl_connect("close_event", self.close)
         self.ax = ax
         self.fig = fig
