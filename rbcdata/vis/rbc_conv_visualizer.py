@@ -1,17 +1,12 @@
 from abc import ABC
 from typing import List
 
-import numpy as np
-import numpy.typing as npt
-
-# try:
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing as npt
 from matplotlib.backend_bases import Event
 from matplotlib.figure import Figure
-# except ImportError:
-#     print("Matplotlib not found, visualization is not available")
-#     exit(1)
 
 
 class RBCConvectionVisualizer(ABC):

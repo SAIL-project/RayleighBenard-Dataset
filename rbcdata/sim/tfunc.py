@@ -10,30 +10,48 @@
 import numpy as np
 import sympy
 
-# TODO MS: not sure if we always need this whole functionality, it really depends on the type of physical constraint that we assume.
+
+# TODO MS: not sure if we always need this whole functionality, it really depends on the
+# type of physical constraint that we assume.
 class Tfunc:
 
-    def __init__(self, segments, domain, action_limit, fraction_length_smoothing=0.1):
+    def __init__(
+        self,
+        segments,
+        domain,
+        action_limit,
+        bcT_avg,
+        x,
+        fraction_length_smoothing=0.1,
+    ):
         """
         nr_segments: number of actuators/segments on the hot boundary layer
         domain: physical domain in both coordinates, horizontal direction last
-        action_scaling: this is the maximum fluctuation around the mean Tb that can be applied TODO why is this not just 1?
-        fraction_length_smoothing: the fraction of the cell that is used for smoothing (both ends have this fraction)
+        action_scaling: this is the maximum fluctuation around the mean Tb that can be applied
+            TODO why is this not just 1?
+        fraction_length_smoothing: the fraction of the cell that is used for smoothing
+            (both ends have this fraction)
         """
 
         self.segments = segments
         self.domain = domain
+        self.bcT_avg = bcT_avg
+        self.x = x
+        self.last_input = None
+        self.last_action = None
 
         # Amplitude of variation of T
         self.ampl = action_limit
 
-        self.xmax = float(self.domain[1][1])    # TODO xmax was not a numerical value here, is that intended?
+        self.xmax = float(
+            self.domain[1][1]
+        )  # TODO xmax was not a numerical value here, is that intended?
 
         # half-length of the interval on which we do the smoothing
         self.dx = 0.5 * fraction_length_smoothing * self.xmax / segments
         # self.dx = 0.03
 
-    def apply_T(self, temperature_segments, x, bcT_avg):
+    def apply_T(self, temperature_segments):
         """
         apply_T: current implementation does the following:
         if fluctuations around mean are larger than 1:
@@ -42,8 +60,12 @@ class Tfunc:
             The temperature profile will just be scaled by self.ampl
         Cubic smoothing is applied between cells.
         """
-        Tb_avg = bcT_avg[0]
-        values = self.ampl * temperature_segments 
+        if np.array_equal(self.last_input, temperature_segments):
+            return self.last_action
+
+        x = self.x
+        Tb_avg = self.bcT_avg[0]
+        values = self.ampl * temperature_segments
         Mean = values.mean()
         # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.segments)).max() / self.ampl)
@@ -52,10 +74,10 @@ class Tfunc:
         i = 0
         while i < self.segments - 1:  # Temperatures will vary between: Tb +- self.ampl
 
-            x0 = i * xmax / self.segments     # physical value of the left bound of the segment 
-            x1 = (i + 1) * xmax / self.segments   # physical value of the right bound of the segment
+            x0 = i * xmax / self.segments  # physical value of the left bound of the segment
+            x1 = (i + 1) * xmax / self.segments  # physical value of the right bound of the segment
 
-            T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2     
+            T1 = Tb_avg + (self.ampl * temperature_segments[i] - Mean) / K2
             T2 = Tb_avg + (self.ampl * temperature_segments[i + 1] - Mean) / K2
             # MS: periodic boundary conditions?
             if i == 0:
@@ -111,4 +133,5 @@ class Tfunc:
                         True,
                     )
                 )
-        return sympy.Piecewise(*seq)
+        self.last_action = sympy.Piecewise(*seq)
+        return self.last_action

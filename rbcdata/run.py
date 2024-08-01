@@ -5,28 +5,32 @@ from omegaconf import DictConfig
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.sim.rbc_env import RayleighBenardEnv
-from rbcdata.utils.callbacks import LogNusseltNumberCallback, TqdmCallback
+from rbcdata.utils.callbacks import (
+    ControlVisCallback,
+    LogNusseltNumberCallback,
+    RBCVisCallback,
+    TqdmCallback,
+)
 from rbcdata.utils.integrate import integrate
 
 
 def run_env(cfg: DictConfig) -> None:
     env = RayleighBenardEnv(
         sim_cfg=cfg.sim,
-        segments=cfg.action_segments,
+        action_segments=cfg.action_segments,
         action_limit=cfg.action_limit,
-        action_duration=cfg.action_duration,
     )
 
     callbacks = [
         TqdmCallback(total=cfg.sim.episode_length),
-        # RBCVisCallback(
-        #    size=cfg.sim.N,
-        #    vmin=cfg.sim.bcT[1],
-        #    vmax=cfg.sim.bcT[0] + cfg.action_limit,
-        #    interval=cfg.interval,
-        # ),
         LogNusseltNumberCallback(interval=1),
-        # ControlVisCallback(size=cfg.action_segments, interval=cfg.interval),
+        RBCVisCallback(
+            size=cfg.sim.N,
+            vmin=cfg.sim.bcT[1],
+            vmax=cfg.sim.bcT[0] + cfg.action_limit,
+            interval=cfg.interval,
+        ),
+        ControlVisCallback(x_domain=env.simulation.domain[1], interval=cfg.interval),
     ]
 
     # Controller
@@ -34,7 +38,7 @@ def run_env(cfg: DictConfig) -> None:
         cfg.controller,
         start=cfg.action_start,
         duration=cfg.action_duration,
-        zero=np.array([0.0] * env.segments),
+        zero=np.array([0.0] * env.action_segments),
     )
 
     integrate(

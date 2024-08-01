@@ -1,21 +1,30 @@
 from abc import ABC
 from typing import Any
 
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
+import sympy
+from matplotlib.backend_bases import Event
+from matplotlib.figure import Figure
 from spb import plot_piecewise
 from sympy import Piecewise
 
-try:
-    import matplotlib
-    import matplotlib.pyplot as plt
-    from matplotlib.backend_bases import Event
-    from matplotlib.figure import Figure
-except ImportError:
-    print("Matplotlib not found, visualization is not available")
+x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
 class RBCActionVisualizer(ABC):
-    def __init__(self, show: bool = True, x_domain=(0, 2 * np.pi), n_segments_plot=100) -> None:
+    def __init__(
+        self,
+        show: bool = True,
+        x_domain=(0, 2 * np.pi),
+        bcT=(2, 1),
+        action_limit=0.75,
+        n_segments_plot=100,
+    ) -> None:
+        self.x_domain = x_domain
+        self.action_limit = action_limit
+        self.bcT = bcT
         # Matplotlib settings
         self.closed = False
         if show:
@@ -24,33 +33,18 @@ class RBCActionVisualizer(ABC):
         else:
             matplotlib.use("Agg")
 
-        # Rendering
-        self.last_image_shown = None
-
         # Create the figure and axes
-        plt.rcParams["font.size"] = 15
-
+        plt.rcParams["font.size"] = 10
         self.fig, self.action_ax = plt.subplots(
-            figsize=(10, 6),
+            figsize=(5, 4),
         )
-        self.x_domain = x_domain
-        # y axis
-        self.action_ax.set_ylabel("Applied temperature")
-        # self.ax.set_yticks([0, 32, 63])
-        # self.ax.set_yticklabels([-1, 0, 1])
-        # X axis
-        self.action_ax.set_xlabel("spatial x")
-        # self.ax.set_xticks([0, 48, 95])
-        # self.ax.set_xticklabels([0, r"$\pi$", r"2$\pi$"])
-
-        self.fig.canvas.mpl_connect("close_event", self.close)
-        # Velocity Field
 
         # Show
         if show:
+            self.fig.canvas.mpl_connect("close_event", self.close)
             plt.show(block=False)
 
-    def draw(self, action_effective: Piecewise, y, sim_t) -> Figure:
+    def draw(self, action_effective: Piecewise, t: float) -> Figure:
         """
         Show an action curve or update the action curve.
         """
@@ -62,14 +56,17 @@ class RBCActionVisualizer(ABC):
             (y, float(self.x_domain[0]), float(self.x_domain[1])),
             ax=self.action_ax,
         )
-        self.action_ax.set_title(f"Action taken at t={sim_t:.3f}")
-        self.action_ax.set_ylabel("Applied temperature")
-        self.action_ax.set_xlabel("Spatial x coordinate")
-
+        self.set_axis(t)
         self.fig.canvas.draw()
-        # self.fig.canvas.flush_events()
 
         return self.fig
+
+    def set_axis(self, t: float):
+        self.action_ax.set_title(f"Action taken at t={t:.3f}")
+        self.action_ax.set_ylabel("Applied temperature")
+        self.action_ax.set_xlabel("Spatial x coordinate")
+        self.action_ax.set_ylim(self.bcT[1], self.bcT[0] + self.action_limit)
+        self.fig.tight_layout()
 
     def close(self, event: Event | None = None) -> Any:
         """

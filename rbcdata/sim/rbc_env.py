@@ -1,4 +1,4 @@
-import math
+import copy
 from typing import Any, Dict, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -22,39 +22,27 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __init__(
         self,
         sim_cfg: RBCSimConfig,
-        segments: int = 10,
+        action_segments: int = 10,
         action_limit: float = 0.75,
-        action_duration: int = 1,
+        action_duration: float = 1.0,
         fraction_length_smoothing=0.1,
     ) -> None:
         super().__init__()
 
         # Env configuration
         self.cfg = sim_cfg
-        self.segments = segments
-        self.action_limit = action_limit
-        self.solver_steps_action = math.floor(
-            action_duration / sim_cfg.dt
-        )  # simulation steps taken for one action
-        self.sim_steps = round(
-            sim_cfg.episode_length / sim_cfg.dt
-        )  # simulation steps taken in one episode (after cooking)
-        self.env_steps = math.floor(
-            self.sim_steps / self.solver_steps_action
-        )  # The total number of actions taken over the whole episode
+        self.episode_length = sim_cfg.episode_length
+        self.episode_steps = int(sim_cfg.episode_length / sim_cfg.dt)
         self.closed = False
 
-        # Action configuration, starting temperatures
-        self.temperature_segments = np.ones(segments) * sim_cfg.bcT[0]
+        # Action configuration
+        self.action_limit = action_limit
+        self.action_duration = action_duration
+        self.action_segments = action_segments
 
         # The reinforcement learning should take actions between [-1, 1] on the bottom segments
         # according to Vignon...
-        self.action_space = gym.spaces.Box(
-            -1,
-            1,
-            shape=(segments,),
-            dtype=np.float32,
-        )
+        self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)
 
         # Observation Space
         self.observation_space = gym.spaces.Box(
@@ -77,9 +65,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             filename=sim_cfg.checkpoint_path,
         )
         self.t_func = Tfunc(
-            segments=segments,
+            segments=action_segments,
             domain=self.simulation.domain,
             action_limit=action_limit,
+            bcT_avg=self.simulation.bcT_avg,
+            x=y,
             fraction_length_smoothing=fraction_length_smoothing,
         )
 
@@ -89,16 +79,13 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().reset(seed=seed)
 
         # init PDE simulation
-        self.sim_t, self.sim_step = self.simulation.initialize(filename=filename)
-        self.sim_t = 0.0
-        self.sim_step = 0
-        self.env_step = 0
+        self.t, self.tstep = self.simulation.initialize(filename=filename)
         self.simulation.assemble()
-        self.simulation.step(self.sim_t, self.sim_step)
+        self.simulation.step(self.t, self.tstep)
 
         # Reset action
-        self.action = np.array([0.0] * self.segments)
-        self.action_effective = np.array([0.0] * self.segments)
+        self.action = np.array([0.0])
+        self.action_effective = None  # TODO sympy zero
 
         return self.get_obs(), self.__get_info()
 
@@ -109,22 +96,14 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         truncated = False
         # Apply action
-        if not np.array_equiv(action, self.action):
-            self.action = action
-            for i in range(self.segments):
-                self.temperature_segments[i] = action[
-                    i
-                ]  # apply given temperature value to each segment
-            self.action_effective = self.t_func.apply_T(
-                self.temperature_segments, x=y, bcT_avg=self.simulation.bcT_avg
-            )  # Returns Sympy Piecewise for the action
-            self.simulation.update_actuation((self.action_effective, 1))
+        self.action = action
+        self.action_effective = self.t_func.apply_T(copy.deepcopy(action))
+        self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
 
-        self.sim_t, self.sim_step = self.simulation.step(tstep=self.sim_step, t=self.sim_t)
+        self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
 
         # Check for truncation
-        self.env_step += 1
-        if self.env_step >= self.env_steps:
+        if self.t >= self.episode_length:
             truncated = True
 
         return self.get_obs(), 0, self.closed, truncated, self.__get_info()
@@ -145,4 +124,4 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return float(-self.simulation.compute_nusselt())
 
     def __get_info(self) -> dict[str, Any]:
-        return {"step": self.env_step, "t": round(self.sim_t, 7)}
+        return {"step": self.tstep, "t": round(self.t, 8)}

@@ -9,13 +9,15 @@ class Controller(ABC):
         duration: float,
         zero: Any,
     ) -> None:
-        self.time = start
-        self.duration = duration
+        # Params
+        self.start = start
         self.last = -10
+        self.duration = duration
         self.control = zero
 
     def __call__(self, env, obs, info) -> bool:
-        if info["t"] < self.time:
+        # check if the controller should apply a new action
+        if info["t"] < self.start:
             return False
         elif info["t"] - self.last > self.duration:
             self.last = info["t"]

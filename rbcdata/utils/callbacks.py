@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from rbcdata.utils.rbc_field import RBCField
-from rbcdata.vis.control_visualizer import ControlVisualizer
+from rbcdata.vis.rbc_action_visualizer import RBCActionVisualizer
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
 
 
@@ -101,15 +101,15 @@ class LogNusseltNumberCallback(CallbackBase):
 class ControlVisCallback(CallbackBase):
     def __init__(
         self,
-        size,
+        x_domain,
         interval: Optional[int] = 1,
     ):
         super().__init__(interval=interval)
-        self.window = ControlVisualizer(size=size, show=True)
+        self.window = RBCActionVisualizer(x_domain=x_domain)
 
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
-            self.window.draw(env.action)
+            self.window.draw(env.action_effective, info["t"])
 
     def close(self):
         self.window.close()

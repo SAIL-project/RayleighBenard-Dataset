@@ -14,6 +14,13 @@ def normalize_control(
     return control
 
 
+def segment_control(control: np.ndarray, segments: int):
+    segments = np.array_split(
+        control, segments
+    )  # TODO how to split if segments is not a factor of array size
+    return np.array([np.mean(seg) for seg in segments])
+
+
 def err_optimal_conductive_state(state):
     """Beintema 2020"""
     pass

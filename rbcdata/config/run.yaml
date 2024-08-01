@@ -4,10 +4,10 @@ defaults:
 
 seed: 42
 
-action_segments: 96
+action_segments: 32
 action_start: 0
 action_limit: 0.75
-action_duration: 1.5
+action_duration: 1
 
 interval: 20
 

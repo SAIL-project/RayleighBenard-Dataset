@@ -1,7 +1,9 @@
 from typing import Any, List
 
+import numpy as np
+
 from rbcdata.control.controller import Controller
-from rbcdata.control.utils import err_midline_temperature, normalize_control
+from rbcdata.control.utils import err_midline_temperature, segment_control
 
 
 class PDController(Controller):
@@ -24,6 +26,8 @@ class PDController(Controller):
     def __call__(self, env, obs, info) -> float:
         if super().__call__(env, obs, info):
             err = err_midline_temperature(env.get_state(), self.bcT[0], self.bcT[1])
-            self.control = -normalize_control(self.kp * err, self.limit)  # TODO Derivative term
+            control = -self.kp * err  # TODO Derivative term
+            control = segment_control(control, env.action_segments)
+            self.control = np.clip(control, -1, 1)
 
         return self.control
