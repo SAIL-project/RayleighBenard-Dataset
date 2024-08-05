@@ -21,9 +21,10 @@ def run_env(cfg: DictConfig) -> None:
         action_limit=cfg.action_limit,
     )
 
+    # Callbacks
     callbacks = [
-        TqdmCallback(total=cfg.sim.episode_length),
         LogNusseltNumberCallback(interval=1),
+        TqdmCallback(total=cfg.sim.episode_length),
     ]
     # Visualization callbacks
     if cfg.vis:
@@ -55,10 +56,12 @@ def run_env(cfg: DictConfig) -> None:
         controller=controller,
     )
 
+    return callbacks[0].average()
+
 
 @hydra.main(version_base=None, config_path="config", config_name="run")
 def main(cfg: DictConfig) -> None:
-    run_env(cfg=cfg)
+    return run_env(cfg=cfg)
 
 
 if __name__ == "__main__":

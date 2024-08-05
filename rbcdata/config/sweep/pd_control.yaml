@@ -1,0 +1,34 @@
+# @package _global_
+
+# python run.py -m sweep=pd_control
+
+defaults:
+  - override /hydra/sweeper: optuna
+  - override /hydra/sweeper/sampler: tpe
+  - override /hydra/launcher: joblib
+
+optimized_metric: "nusselt"
+hydra:
+  mode: "MULTIRUN"
+  launcher:
+    n_jobs: 4
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+    storage: "sqlite:///logs/optuna_pdcontrol_ra${sim.ra}.db"
+    study_name: Sweep-PD-NoMotion-Ra10_000
+    direction: minimize
+    n_jobs: 4
+    n_trials: 50
+
+    # hyperparameter search space
+    params:
+      controller.kp: range(0, 1_000, step=10)
+      controller.kd: range(0, 10_000, step=100)
+      # semi fixed params
+      sim.ra: 10_000 # 100_000 1_000_000
+      sim.episode_length: 300
+      action_start: 0
+      # fixed params
+      controller: pd
+      vis: false
+      vis_action: false

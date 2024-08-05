@@ -87,6 +87,9 @@ class LogNusseltNumberCallback(CallbackBase):
             self.nusselts.append(env.simulation.compute_nusselt())
             self.time.append(info["t"])
 
+    def average(self):
+        return np.mean(self.nusselts)
+
     def close(self):
         df = pd.DataFrame({"nusselt": np.array(self.nusselts), "time": np.array(self.time)})
         # Save nusselt numbers to file

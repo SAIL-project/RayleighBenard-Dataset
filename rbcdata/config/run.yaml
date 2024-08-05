@@ -1,20 +1,17 @@
 defaults:
-  - sim/default
-  - controller/zero
+  - _self_
+  - hydra: default
+  - sim: default
+  - controller: zero
+  - sweep: null
 
 seed: 42
-vis: true
-vis_action: true
-
-action_segments: 32
-action_start: 0
-action_limit: 0.75
-action_duration: 1
-
 interval: 40
 
-hydra:
-  job:
-    chdir: true
-  run:
-    dir: ./logs/run/${now:%m-%d-%H-%M-%S}/
+action_segments: 10
+action_start: 0
+action_limit: 0.75
+action_duration: 1.5
+
+vis: true
+vis_action: true
