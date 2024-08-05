@@ -40,8 +40,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action_duration = action_duration
         self.action_segments = action_segments
 
-        # The reinforcement learning should take actions between [-1, 1] on the bottom segments
-        # according to Vignon...
+        # The agent takes actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)
 
         # Observation Space
