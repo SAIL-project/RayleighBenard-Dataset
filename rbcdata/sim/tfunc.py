@@ -25,10 +25,9 @@ class Tfunc:
         fraction_length_smoothing=0.1,
     ):
         """
-        nr_segments: number of actuators/segments on the hot boundary layer
+        segments: number of actuators/segments on the hot boundary layer
         domain: physical domain in both coordinates, horizontal direction last
-        action_scaling: this is the maximum fluctuation around the mean Tb that can be applied
-            TODO why is this not just 1?
+        action_limit: this is the maximum fluctuation around the mean Tb that can be applied
         fraction_length_smoothing: the fraction of the cell that is used for smoothing
             (both ends have this fraction)
         """
@@ -45,7 +44,7 @@ class Tfunc:
 
         self.xmax = float(
             self.domain[1][1]
-        )  # TODO xmax was not a numerical value here, is that intended?
+        )
 
         # half-length of the interval on which we do the smoothing
         self.dx = 0.5 * fraction_length_smoothing * self.xmax / segments
@@ -67,7 +66,6 @@ class Tfunc:
         Tb_avg = self.bcT_avg[0]
         values = self.ampl * temperature_segments
         Mean = values.mean()
-        # TODO find out what K2 is?
         K2 = max(1, np.abs(values - np.array([Mean] * self.segments)).max() / self.ampl)
         xmax = self.xmax
         seq = []
