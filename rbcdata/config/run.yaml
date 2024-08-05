@@ -3,13 +3,15 @@ defaults:
   - controller/zero
 
 seed: 42
+vis: true
+vis_action: true
 
 action_segments: 32
 action_start: 0
 action_limit: 0.75
 action_duration: 1
 
-interval: 20
+interval: 40
 
 hydra:
   job:

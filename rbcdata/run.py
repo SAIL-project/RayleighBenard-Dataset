@@ -24,14 +24,21 @@ def run_env(cfg: DictConfig) -> None:
     callbacks = [
         TqdmCallback(total=cfg.sim.episode_length),
         LogNusseltNumberCallback(interval=1),
-        RBCVisCallback(
-            size=cfg.sim.N,
-            vmin=cfg.sim.bcT[1],
-            vmax=cfg.sim.bcT[0] + cfg.action_limit,
-            interval=cfg.interval,
-        ),
-        ControlVisCallback(x_domain=env.simulation.domain[1], interval=cfg.interval),
     ]
+    # Visualization callbacks
+    if cfg.vis:
+        callbacks.append(
+            RBCVisCallback(
+                size=cfg.sim.N,
+                vmin=cfg.sim.bcT[1],
+                vmax=cfg.sim.bcT[0] + cfg.action_limit,
+                interval=cfg.interval,
+            )
+        )
+    if cfg.vis_action:
+        callbacks.append(
+            ControlVisCallback(x_domain=env.simulation.domain[1], interval=cfg.interval),
+        )
 
     # Controller
     controller = hydra.utils.instantiate(

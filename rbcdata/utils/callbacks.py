@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
@@ -86,6 +88,10 @@ class LogNusseltNumberCallback(CallbackBase):
             self.time.append(info["t"])
 
     def close(self):
+        df = pd.DataFrame({"nusselt": np.array(self.nusselts), "time": np.array(self.time)})
+        # Save nusselt numbers to file
+        df.to_hdf("nusselt.h5", key="df", mode="w")
+        # Plot nusselt number
         fig, ax = plt.subplots()
 
         # Plot lift
