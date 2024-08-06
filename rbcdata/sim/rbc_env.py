@@ -25,6 +25,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         action_segments: int = 10,
         action_limit: float = 0.75,
         action_duration: float = 1.0,
+        action_start: float = 0.0,
         fraction_length_smoothing=0.1,
     ) -> None:
         super().__init__()
@@ -39,6 +40,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action_limit = action_limit
         self.action_duration = action_duration
         self.action_segments = action_segments
+        self.action_start = action_start
 
         # The agent takes actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)

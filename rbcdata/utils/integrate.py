@@ -19,12 +19,13 @@ def integrate(
             action = controller(env, obs, info)
         # Simulation step
         obs, reward, terminated, truncated, info = env.step(action)
-        # Callbacks
-        for callback in callbacks:
-            callback(env, obs, reward, info)
         # Termination criterion
         if terminated or truncated:
             break
+        # Callbacks
+        for callback in callbacks:
+            callback(env, obs, reward, info)
+
     # Close
     env.close()
     for callback in callbacks:
