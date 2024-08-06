@@ -15,7 +15,7 @@ hydra:
   sweeper:
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
     storage: "sqlite:///logs/optuna_pdcontrol.db"
-    study_name: Sweep-PD-NoMotion-10e4
+    study_name: Sweep-PD-NoMotion-10e5
     direction: minimize
     n_jobs: 5
     n_trials: 50
@@ -25,11 +25,11 @@ hydra:
       controller.kp: range(0, 1_000, step=10)
       controller.kd: range(0, 100_000, step=1000)
       # semi fixed params
-      sim.ra: 10_000 # 100_000 1_000_000
+      sim.ra: 100_000 # 10_000 100_000 1_000_000
       sim.episode_length: 300
-      sim.dt: 0.05
+      sim.dt: 0.025
       action_start: 0
       # fixed params
-      controller: pd
+    controller: pd
       vis: false
       vis_action: false
