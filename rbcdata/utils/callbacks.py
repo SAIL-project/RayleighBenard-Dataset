@@ -108,6 +108,7 @@ class LogNusseltNumberCallback(CallbackBase):
 
         ax.grid()
         fig.savefig("nusselt.png")
+        plt.close(fig)
 
 
 class ControlVisCallback(CallbackBase):

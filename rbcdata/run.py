@@ -54,6 +54,7 @@ def run_env(cfg: DictConfig) -> None:
         callbacks=callbacks,
         seed=cfg.seed,
         controller=controller,
+        checkpoint=cfg.checkpoint,
     )
 
     return callbacks[0].average()

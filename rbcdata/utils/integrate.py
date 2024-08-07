@@ -8,9 +8,10 @@ def integrate(
     callbacks: list[callable] = [],
     controller: Controller = None,
     seed: int | None = None,
+    checkpoint: str | None = None,
 ):
     # Set up gym environment
-    obs, info = env.reset(seed=seed)
+    obs, info = env.reset(seed=seed, filename=checkpoint)
     action = env.action
     # Run environment
     while True:

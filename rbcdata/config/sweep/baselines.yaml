@@ -22,9 +22,6 @@ hydra:
 
     # hyperparameter search space
     params:
-      # controller.kp: range(0, 1_000, step=10)
-      # controller.kd: range(0, 10_000, step=100)
-      # semi fixed params
       sim.ra: choice(10_000, 100_000, 1_000_000)
       sim.episode_length: 300
       sim.dt: 0.025
