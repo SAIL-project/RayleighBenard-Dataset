@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/rbcdata/run.py",
             "console": "integratedTerminal",
-            "args": "sim.episode_length=1000 controller=zero",
+            "args": "sim.episode_length=5 callbacks=dataset",
             "justMyCode": false,
         },
     ]

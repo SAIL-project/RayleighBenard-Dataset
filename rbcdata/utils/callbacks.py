@@ -2,9 +2,11 @@ import os
 from typing import List, Optional
 
 import h5py
+import hydra
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from omegaconf import DictConfig
 from tqdm import tqdm
 
 from rbcdata.sim.rbc_env import RayleighBenardEnv
@@ -24,19 +26,41 @@ class CallbackBase:
         pass
 
 
+def instantiate_callbacks(callbacks_cfg: DictConfig) -> List[CallbackBase]:
+    """Instantiates callbacks from config.
+
+    :param callbacks_cfg: A DictConfig object containing callback configurations.
+    :return: A list of instantiated callbacks.
+    """
+    callbacks: List[CallbackBase] = []
+
+    if not callbacks_cfg:
+        print("No callback configs found! Skipping..")
+        return callbacks
+
+    if not isinstance(callbacks_cfg, DictConfig):
+        raise TypeError("Callbacks config must be a DictConfig!")
+
+    for _, cb_conf in callbacks_cfg.items():
+        if isinstance(cb_conf, DictConfig) and "_target_" in cb_conf:
+            callbacks.append(hydra.utils.instantiate(cb_conf))
+
+    return callbacks
+
+
 class RBCVisCallback(CallbackBase):
     def __init__(
         self,
         size: List[int],
-        vmin: float,
-        vmax: float,
+        bcT: List[float],
+        action_limit: float,
         interval: Optional[int] = 1,
     ):
         super().__init__(interval=interval)
         self.window = RBCFieldVisualizer(
             size=size,
-            vmin=vmin,
-            vmax=vmax,
+            vmin=bcT[1],
+            vmax=bcT[0] + action_limit,
         )
 
     def __call__(self, env, obs, reward, info):
@@ -114,11 +138,10 @@ class LogNusseltNumberCallback(CallbackBase):
 class ControlVisCallback(CallbackBase):
     def __init__(
         self,
-        x_domain,
         interval: Optional[int] = 1,
     ):
         super().__init__(interval=interval)
-        self.window = RBCActionVisualizer(x_domain=x_domain)
+        self.window = RBCActionVisualizer()
 
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
@@ -149,19 +172,21 @@ class LogActionCallback(CallbackBase):
 class LogDatasetCallback(CallbackBase):
     def __init__(
         self,
-        env: RayleighBenardEnv,
         seed: int,
         interval: Optional[int] = 1,
     ):
         super().__init__(interval=interval)
+        self.seed = seed
+        self.initialized = False
 
+    def initialize(self, env: RayleighBenardEnv):
         # Create dataset on disk
-        file_name = f"dataset/ra{env.cfg.ra}/rbc{seed}.h5"
+        file_name = f"dataset/ra{env.cfg.ra}/rbc{self.seed}.h5"
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         self.file = h5py.File(file_name, "w")
 
         # Create datasets for Temperature and velocity field
-        steps = env.episode_steps // interval
+        steps = env.episode_steps // self.interval
         self.states = self.file.create_dataset(
             "states",
             (steps, 3, env.cfg.N[0], env.cfg.N[1]),
@@ -178,10 +203,10 @@ class LogDatasetCallback(CallbackBase):
         )
 
         # Save commonly used parameters of the simulation
-        self.file.attrs["seed"] = seed
+        self.file.attrs["seed"] = self.seed
         self.file.attrs["steps"] = steps
         self.file.attrs["episode_length"] = env.episode_length
-        self.file.attrs["dt"] = env.cfg.dt * interval
+        self.file.attrs["dt"] = env.cfg.dt * self.interval
         self.file.attrs["N"] = env.cfg.N
         self.file.attrs["ra"] = env.cfg.ra
         self.file.attrs["pr"] = env.cfg.pr
@@ -191,10 +216,15 @@ class LogDatasetCallback(CallbackBase):
         self.file.attrs["action_limit"] = env.action_limit
         self.file.attrs["action_duration"] = env.action_duration
         self.file.attrs["action_start"] = env.action_start
+        # Set initialized flag
+        self.initialized = True
 
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
-            idx = info["step"] // self.interval
+            if not self.initialized:
+                self.initialize(env)
+
+            idx = info["step"] // self.interval - 1
             self.states[idx] = env.get_state()
             self.actions[idx] = env.get_action()
 

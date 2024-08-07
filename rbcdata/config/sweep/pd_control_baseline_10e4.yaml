@@ -32,5 +32,4 @@ hydra:
       # fixed params
       checkpoint: ../../../../data/checkpoints/ra10000
       controller: pd
-      vis: false
-      vis_action: false
+      callbacks: sweep

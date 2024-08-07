@@ -1,0 +1,3 @@
+log_nusselt:
+  _target_: rbcdata.utils.callbacks.LogNusseltNumberCallback
+  interval: 1

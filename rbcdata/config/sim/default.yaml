@@ -1,4 +1,4 @@
-episode_length: 300
+episode_length: 700
 N: [64, 96]
 ra: 10_000
 pr: 0.7

@@ -1,3 +1,5 @@
+from typing import List
+
 import hydra
 import numpy as np
 import rootutils
@@ -6,10 +8,9 @@ from omegaconf import DictConfig
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.sim.rbc_env import RayleighBenardEnv
 from rbcdata.utils.callbacks import (
-    ControlVisCallback,
+    CallbackBase,
     LogNusseltNumberCallback,
-    RBCVisCallback,
-    TqdmCallback,
+    instantiate_callbacks,
 )
 from rbcdata.utils.integrate import integrate
 
@@ -22,24 +23,7 @@ def run_env(cfg: DictConfig) -> None:
     )
 
     # Callbacks
-    callbacks = [
-        LogNusseltNumberCallback(interval=1),
-        TqdmCallback(total=cfg.sim.episode_length),
-    ]
-    # Visualization callbacks
-    if cfg.vis:
-        callbacks.append(
-            RBCVisCallback(
-                size=cfg.sim.N,
-                vmin=cfg.sim.bcT[1],
-                vmax=cfg.sim.bcT[0] + cfg.action_limit,
-                interval=cfg.interval,
-            )
-        )
-    if cfg.vis_action:
-        callbacks.append(
-            ControlVisCallback(x_domain=env.simulation.domain[1], interval=cfg.interval),
-        )
+    callbacks: List[CallbackBase] = instantiate_callbacks(cfg.get("callbacks"))
 
     # Controller
     controller = hydra.utils.instantiate(
@@ -49,6 +33,7 @@ def run_env(cfg: DictConfig) -> None:
         zero=np.array([0.0] * env.action_segments),
     )
 
+    # Rollout
     integrate(
         env=env,
         callbacks=callbacks,
@@ -57,7 +42,11 @@ def run_env(cfg: DictConfig) -> None:
         checkpoint=cfg.checkpoint,
     )
 
-    return callbacks[0].average()
+    # Return average nusselt for sweep
+    for callback in callbacks:
+        if isinstance(callback, LogNusseltNumberCallback):
+            return callback.average()
+    return None
 
 
 @hydra.main(version_base=None, config_path="config", config_name="run")

@@ -1,0 +1,6 @@
+defaults:
+  - log_nusselt
+  - tqdm
+  - rbc_vis
+  - control_vis
+  - _self_

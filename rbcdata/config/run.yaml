@@ -3,16 +3,14 @@ defaults:
   - hydra: default
   - sim: default
   - controller: zero
+  - callbacks: default
   - sweep: null
 
 seed: 42
-interval: 40
-checkpoint: ../../../data/checkpoints/ra10000
+interval: 16
+checkpoint: null #../../../data/checkpoints/ra10000
 
 action_segments: 10
-action_start: 0
+action_start: 400
 action_limit: 0.75
 action_duration: 1.5
-
-vis: true
-vis_action: true

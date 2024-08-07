@@ -1,0 +1,4 @@
+log_dataset:
+  _target_: rbcdata.utils.callbacks.LogDatasetCallback
+  seed: ${seed}
+  interval: 1

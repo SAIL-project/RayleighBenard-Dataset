@@ -28,5 +28,4 @@ hydra:
       action_start: 0
       # fixed params
       controller: zero
-      vis: false
-      vis_action: false
+      callbacks: sweep
