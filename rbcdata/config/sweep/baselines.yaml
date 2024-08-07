@@ -23,7 +23,7 @@ hydra:
     # hyperparameter search space
     params:
       sim.ra: choice(10_000, 100_000, 1_000_000)
-      sim.episode_length: 300
+      sim.episode_length: 400
       sim.dt: 0.025
       action_start: 0
       # fixed params

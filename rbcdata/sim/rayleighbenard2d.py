@@ -65,7 +65,6 @@ class RayleighBenard(KMM):
             checkpoint=checkpoint,
             dpdy=0,
         )
-
         # parameters
         self.kappa = 1.0 / np.sqrt(Pr * Ra)  # thermal diffusivity
         self.bcT = bcT
@@ -157,11 +156,14 @@ class RayleighBenard(KMM):
         return t, tstep
 
     # TODO: MS: look more into the initialization
-    def initialize(self, rand=0.001, filename=None):
+    def initialize(self, rand=0.001, filename=None, np_random=None):
         if filename is not None:
             t, tstep = self.init_from_checkpoint(filename)
             self.update_bc(t)
             return t, tstep
+
+        if np_random is None:
+            np_random = np.random.default_rng()
 
         X = self.X
 
@@ -179,7 +181,7 @@ class RayleighBenard(KMM):
             + 0.5 * self.bcT[1]
             - X[0] / (1 + self.bcT[1])
             + 0.125 * (2 - self.bcT[1]) * np.sin(np.pi * X[0])
-        ) * fun + rand * np.random.randn(*self.Tb.shape) * (1 - X[0]) * (1 + X[0])
+        ) * fun + rand * np_random.standard_normal(self.Tb.shape) * (1 - X[0]) * (1 + X[0])
         self.T_ = self.Tb.forward(self.T_)
         self.T_.mask_nyquist(self.mask)
         return 0, 0

@@ -80,7 +80,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().reset(seed=seed)
 
         # init PDE simulation
-        self.t, self.tstep = self.simulation.initialize(filename=filename)
+        self.t, self.tstep = self.simulation.initialize(
+            filename=filename,
+            np_random=self._np_random,
+        )
         self.simulation.assemble()
         self.simulation.step(self.t, self.tstep)
 
