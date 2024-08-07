@@ -22,14 +22,15 @@ hydra:
 
     # hyperparameter search space
     params:
-      controller.kp: range(0, 1_000, step=10)
-      controller.kd: range(0, 100_000, step=1000)
+      controller.kp: range(0, 1_000)
+      controller.kd: range(0, 100_000)
       # semi fixed params
       sim.ra: 10_000
       sim.episode_length: 700
       sim.dt: 0.05
-      action_start: 300
+      action_start: 400
       # fixed params
+      checkpoint: ../../../../data/checkpoints/ra10000
       controller: pd
       vis: false
       vis_action: false

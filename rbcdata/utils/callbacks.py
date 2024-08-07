@@ -90,8 +90,8 @@ class LogNusseltNumberCallback(CallbackBase):
             self.nusselts.append(env.simulation.compute_nusselt())
             self.time.append(info["t"])
 
-    def average(self):
-        return np.mean(self.nusselts)
+    def average(self, window: int = 30):
+        return np.mean(self.nusselts[-window:])
 
     def close(self):
         df = pd.DataFrame({"nusselt": np.array(self.nusselts), "time": np.array(self.time)})
