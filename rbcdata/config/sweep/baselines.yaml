@@ -18,10 +18,11 @@ hydra:
     study_name: Baselines
     direction: minimize
     n_jobs: 5
-    n_trials: 50
+    n_trials: 100
 
     # hyperparameter search space
     params:
+      seed: range(42, 79, step=1)
       sim.ra: choice(10_000, 100_000, 1_000_000)
       sim.episode_length: 400
       sim.dt: 0.025
