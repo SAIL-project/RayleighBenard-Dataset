@@ -207,7 +207,7 @@ class RayleighBenard(KMM):
         obs_flat = copy.copy(obs)
         obs_flat[0] *= 1.5
         obs_flat[1] *= 1.5
-        obs_flat[2] = 2 * (obs_flat[2] - 0.8)
+        obs_flat[2] = 2 * (obs_flat[2] - 0.8) # TODO: What is re-scaling for?
         obs_flat = obs_flat.reshape(
             3 * self.obsGrid[0] * self.obsGrid[1],
         )
