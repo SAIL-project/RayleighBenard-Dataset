@@ -15,10 +15,11 @@ class PDController(Controller):
         bcT: List[float],
         limit: float,
         start: float,
+        end: float,
         duration: float,
         zero: Any,
     ) -> None:
-        super().__init__(start, duration, zero)
+        super().__init__(start, end, duration, zero)
         self.kp = kp
         self.kd = kd
         self.bcT = bcT

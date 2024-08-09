@@ -5,6 +5,7 @@ import h5py
 import hydra
 import numpy as np
 import pandas as pd
+import yaml
 from matplotlib import pyplot as plt
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -113,9 +114,6 @@ class LogNusseltNumberCallback(CallbackBase):
         if super().__call__(env, obs, reward, info):
             self.nusselts.append(env.simulation.compute_nusselt())
             self.time.append(info["t"])
-
-    def average(self, window: int = 30):
-        return np.mean(self.nusselts[-window:])
 
     def close(self):
         df = pd.DataFrame({"nusselt": np.array(self.nusselts), "time": np.array(self.time)})
@@ -230,3 +228,38 @@ class LogDatasetCallback(CallbackBase):
 
     def close(self):
         self.file.close()
+
+
+class SweepMetricCallback(CallbackBase):
+    def __init__(
+        self,
+        action_start: float,
+        action_end: float,
+        interval: Optional[int] = 1,
+    ):
+        super().__init__(interval=interval)
+        self.action_start = action_start
+        self.action_end = action_end
+        self.nusselt_start = []
+        self.nusselt_end = []
+
+    def __call__(self, env, obs, reward, info):
+        if super().__call__(env, obs, reward, info):
+            if info["t"] < self.action_start:
+                return
+            elif info["t"] < self.action_end:
+                self.nusselt_start.append(env.simulation.compute_nusselt())
+            else:
+                self.nusselt_end.append(env.simulation.compute_nusselt())
+
+    def result(self):
+        return {
+            "nu_mean_action": np.mean(self.nusselt_start).item(),
+            "nu_std_action": np.std(self.nusselt_start).item(),
+            "nu_mean_end": np.mean(self.nusselt_end).item(),
+            "nu_std_end": np.std(self.nusselt_end).item(),
+        }
+
+    def close(self):
+        with open("sweep_metric.yml", "w") as outfile:
+            yaml.dump(self.result(), outfile)
