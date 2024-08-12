@@ -19,6 +19,8 @@ from shenfun import (
     la,
 )
 
+import ray
+
 from .channelflow2d import KMM
 
 # global settings for numpy, sympy and MPI

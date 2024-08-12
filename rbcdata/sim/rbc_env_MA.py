@@ -13,12 +13,19 @@ from rbcdata.sim.tfunc import Tfunc
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
 
+from ray.rllib.env.multi_agent_env import MultiAgentEnv
+
 x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
-class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
+class RayleighBenardEnv(MultiAgentEnv):
+    # gym.Env[RBCAction, RBCObservation] # TODO previously extended the gym env, look for action and observation space definitions.
+    """
+    Multi-Agent env in which each agent controls a different segment of the bottom boundary.
+    All agents step simultaneously in this environment.
+    Each agent has the same action space, but different local observation spaces.
+    """
     reward_range = (-float("inf"), float("inf"))
-
     def __init__(
         self,
         sim_cfg: RBCSimConfig,
@@ -28,6 +35,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         action_start: float = 0.0,
         fraction_length_smoothing=0.1,
     ) -> None:
+        """
+        Initialize the environment with the given configuration. 
+        Args:
+            sim_cfg: The configuration for the PDE simulation.
+            action_segments: the number of heaters on the bottom boundary, i.e. the number of agents.
+            action_limit: The maximum fluctuation of each agent's output on top of the average temperature.
+            action_duration: The duration of the action in relative simulation time.
+            action_start: The starting absolute simulation time of the action. 
+            fraction_length_smoothing: The fraction of the length of the domain to smooth the action.
+        """
         super().__init__()
 
         # Env configuration
@@ -42,9 +59,14 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action_segments = action_segments
         self.action_start = action_start
 
+        # TODO: See if we need a mapping here from agent ID to its action space
         # The agent takes actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)
 
+        # TODO see if we need a mapping here from agent ID to its observation space
+        # TODO How important is the observation space for the agents?
+        # Because the agents only use the local reward signal to learn, which is computed from the local observation.
+        # Maybe only the reward function uses the observation space?
         # Observation Space
         self.observation_space = gym.spaces.Box(
             sim_cfg.bcT[1],
@@ -65,6 +87,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
             filename=sim_cfg.checkpoint_path,
         )
+        # The Tfunc class is used to compute the effective action on the domain, respecting the action limit.
+        # and smoothing the action over a fraction of the domain length.
         self.t_func = Tfunc(
             segments=action_segments,
             domain=self.simulation.domain,
@@ -77,8 +101,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def reset(
         self, seed: int | None = None, options: Dict[str, Any] | None = None, filename=None
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
-        """Resets the environment to an initial state. If seed is provided, it will be used to seed the environment.
-        If filename is provided, it will be used to load the initial state from a checkpoint."""
         super().reset(seed=seed)
 
         # init PDE simulation
@@ -111,12 +133,17 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.t >= self.episode_length:
             truncated = True
 
+        # TODO note that the second return value is the reward, to be implemented still.
+        # The reward should also be returned as a dict, with the agent ID as key.
         return self.get_obs(), 0, self.closed, truncated, self.__get_info()
 
     def close(self) -> None:
         self.closed = True
 
     def get_obs(self) -> RBCObservation:
+        """
+        Returns a dictionary that maps agent IDs to their local observations.
+        """
         return self.simulation.obs_flat.astype(np.float32)
 
     def get_state(self) -> RBCObservation:
