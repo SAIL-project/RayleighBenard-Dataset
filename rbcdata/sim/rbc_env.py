@@ -52,23 +52,23 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # The agent takes actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)
 
-
-        # self.observation_space = gym.spaces.B
-
         # Observation Space
+        nr_probes = sim_cfg.N_obs[0] * sim_cfg.N_obs[1]
+        # For every dimension we need to define min and max values
+        # The structure of the observations is as follows: first the two velocity components, then the temperature.
+        lows = np.concatenate([np.repeat(-np.inf, nr_probes * 2), np.repeat(sim_cfg.bcT[1], nr_probes)])
+        highs = np.concatenate([np.repeat(np.inf, nr_probes * 2), np.repeat(sim_cfg.bcT[0] + action_limit, nr_probes)])
         self.observation_space = gym.spaces.Box(
-            sim_cfg.bcT[1],
-            sim_cfg.bcT[0] + action_limit,
-            shape=(
-                1,
-                sim_cfg.N[0] * sim_cfg.N[1] * 3,
-            ),
+            lows,
+            highs,
+            shape=(nr_probes * 3,),
             dtype=np.float32,
         )
 
         # PDE configuration
         self.simulation = RayleighBenard(
             N_state=(sim_cfg.N[0], sim_cfg.N[1]),
+            N_obs=(sim_cfg.N_obs[0], sim_cfg.N_obs[1]),
             Ra=sim_cfg.ra,
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
@@ -127,6 +127,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.closed = True
 
     def get_obs(self) -> RBCObservation:
+        # TODO Change this so the Y-velocity is the first channel! For now it's OK.
         return self.simulation.obs_flat.astype(np.float32)
 
     def get_state(self) -> RBCObservation:

@@ -15,12 +15,6 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 # Environment imports
 from rbcdata.sim.rbc_env import RayleighBenardEnv   # the environment that the single agent will interact with
 
-# def env_creator(env_config):
-#     RayleighBenardEnv(
-#         sim_cfg=cfg.sim,
-#         action_segments=cfg.action_segments,
-#         action_limit=cfg.action_limit,
-#     )
 
 def run_env(cfg: DictConfig) -> None:
     # Structure of the code (based on examples of RLlib)
@@ -34,8 +28,6 @@ def run_env(cfg: DictConfig) -> None:
 
     # Do we need to register the environment with gym if we also register it with Raylib?
     # gym.register("RayleighBenardEnv", RayleighBenardEnv)  # register the environment with gym, so that it can be used by RLlib
-
-
 
     # reset the environment to the initial state
     # obs, info = env.reset() # TODO maybe load a checkpoint here from the created checkpoints. Reset is probably handled by Raylib itself.
@@ -57,8 +49,7 @@ def run_env(cfg: DictConfig) -> None:
         }
     )    # here I set the environment for where this policy acts in
     config = config.framework("torch")  # we use PyTorch as the framework for the policy
-    # config = config.training()    # for now we don't set any training parameters, we use the default ones
-
+    # config = config.training()   # for now we don't set any training parameters, we use the default ones
 
 
     # TODO FYI, using a Tuner from ray, one can optimize the hyperparameters of the policy
@@ -74,7 +65,7 @@ def run_env(cfg: DictConfig) -> None:
 
     # Only applies to parallel environments: We need an EnvRunnerGroup where the 
     # remote workers run the environment and collect experiences and the local
-    # worker updates the policy based on these experiences.
+    # worker updates the policy based on these experiences in a SGD fashion with repeated updates, possibly on a GPU.
 
     # Next we train the policy on the environment:
     rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train

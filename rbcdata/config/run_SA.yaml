@@ -3,7 +3,7 @@
 defaults:
   - _self_
   - hydra: default
-  - sim: default
+  - sim: SA
   - controller: zero
   - callbacks: default
   - sweep: null

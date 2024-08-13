@@ -205,9 +205,11 @@ class RayleighBenard(KMM):
 
         # obs_flat
         obs_flat = copy.copy(obs)
-        obs_flat[0] *= 1.5
-        obs_flat[1] *= 1.5
-        obs_flat[2] = 2 * (obs_flat[2] - 0.8)
+        # obs_flat[0] *= 1.5    # M: I have no idea what this up-scaling is for, so I commented it out
+        # obs_flat[1] *= 1.5
+        # M: The following linear transformation is mapping the the temperature to [0.4, 4], no idea why this is done currently
+        # So I commented it out, since it also interferes with the limits of the Box of the observation space in the environment.
+        # obs_flat[2] = 2 * (obs_flat[2] - 0.8) 
         obs_flat = obs_flat.reshape(
             3 * self.obsGrid[0] * self.obsGrid[1],
         )
