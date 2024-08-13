@@ -19,16 +19,23 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
 
-    def __init__(
-        self,
-        sim_cfg: RBCSimConfig,
-        action_segments: int = 10,
-        action_limit: float = 0.75,
-        action_duration: float = 1.0,
-        action_start: float = 0.0,
-        fraction_length_smoothing=0.1,
-    ) -> None:
+    
+    def __init__(self, config: Dict) -> None:
+        """
+        Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
+        Note that I had to change the constructor to work with Ray and custom environments
+        Further, the config dict should have the following handy properties in addition added by Ray runtime:
+        num_env_runners, worker_index, vector_index, and remote.
+        """
         super().__init__()
+
+        sim_cfg = config['sim_cfg']
+        # handle the default values
+        action_segments = config.get('action_segments', 10)
+        action_limit = config.get('action_limit', 0.75)
+        action_duration = config.get('action_duration', 1.0)
+        action_start = config.get('action_start', 0.0)
+        fraction_length_smoothing = config.get('fraction_length_smoothing', 0.1)
 
         # Env configuration
         self.cfg = sim_cfg
@@ -44,6 +51,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # The agent takes actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)
+
+
+        # self.observation_space = gym.spaces.B
 
         # Observation Space
         self.observation_space = gym.spaces.Box(
