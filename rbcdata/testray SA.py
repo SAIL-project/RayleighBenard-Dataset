@@ -1,6 +1,7 @@
 # File for testing single agent reinforcement learning with Raylib
 # General python imports
 import rootutils
+import logging
 import hydra    # for loading the configuration
 from omegaconf import DictConfig  # datatype for the configuration
 
@@ -73,6 +74,9 @@ def run_env(cfg: DictConfig) -> None:
 
 @hydra.main(version_base=None, config_path="config", config_name="run_SA")
 def main(cfg: DictConfig) -> None:
+    # Configure the logger
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # Run the environment and reinforcement learning algorithm using specified configuration
     return run_env(cfg=cfg)
 
 if __name__ == "__main__":

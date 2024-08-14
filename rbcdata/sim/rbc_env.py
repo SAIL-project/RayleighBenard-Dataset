@@ -1,4 +1,5 @@
 import copy
+import logging
 from typing import Any, Dict, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -15,6 +16,7 @@ RBCObservation: TypeAlias = npt.NDArray[np.float32]
 
 x, y, tt = sympy.symbols("x,y,t", real=True)
 
+logger = logging.getLogger(__name__)
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
@@ -29,6 +31,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         super().__init__()
 
+        self.config = config    # This is the Ray config dictionary passed to the environment
         sim_cfg = config['sim_cfg']
         # handle the default values
         action_segments = config.get('action_segments', 10)
@@ -84,6 +87,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             fraction_length_smoothing=fraction_length_smoothing,
         )
 
+        logger.warning("Reward scaling in env currently only implemented with values for Ra=1e4, maybe suboptimal for other values.")
+
     def reset(
         self, seed: int | None = None, options: Dict[str, Any] | None = None, filename=None
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
@@ -91,6 +96,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         If filename is provided, it will be used to load the initial state from a checkpoint."""
         super().reset(seed=seed)
 
+        # TODO M: If checkpoint is provided, maybe we should consider to set time to 0 as well
+        # because is the time that we took the checkpoint meaningful? It may complicate things.
         # init PDE simulation
         self.t, self.tstep = self.simulation.initialize(
             filename=filename, np_random=self._np_random, rand=0.000001
@@ -102,6 +109,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action = np.array([0.0])
         self.action_effective = None  # TODO sympy zero
 
+        if filename is None:
+            logger.info(f"Environment reset to random init: t={self.t}")
+        else:
+            logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
+
         return self.get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
@@ -112,16 +124,25 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         truncated = False
         # Apply action
         self.action = action
-        self.action_effective = self.t_func.apply_T(copy.deepcopy(action))
+        # self.action_effective = self.t_func.apply_T(copy.deepcopy(action))  # TODO Why was deepcopy necessary again? There is no writing to the action.
+        self.action_effective = self.t_func.apply_T(action) # action_effective is a sympy piecewise expression.
         self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
 
-        self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
+        # Perform simulation steps for the action duration
+        for _ in range(int(self.action_duration / self.simulation.dt)):
+            self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
 
         # Check for truncation
         if self.t >= self.episode_length:
             truncated = True
 
-        return self.get_obs(), 0, self.closed, truncated, self.__get_info()
+        # Compute the reward
+        reward = self.get_reward()
+        # scale the reward to [0, 1] approximately. 0 associated with highest Nusselt number, 1 with lowest achievable
+        # TODO scaling is currently only implemented with values for Ra=1e4, maybe suboptimal for other values
+        reward = (reward + 2.67) / 2.67 # TODO find out more about what the lowest achievable Nusselt number is
+        logger.debug(f"Action done: t={self.t}, reward={reward}")
+        return self.get_obs(), reward, self.closed, truncated, self.__get_info()
 
     def close(self) -> None:
         self.closed = True

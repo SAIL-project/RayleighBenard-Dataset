@@ -9,11 +9,11 @@ defaults:
   - sweep: null
 
 seed: 42
-interval: 16
-checkpoint: null #../../../data/checkpoints/ra10000
+interval: 16  # TODO find out what this is for
+checkpoint: ../data/checkpoints/ra1000/train/baseline42.chk.h5 # null for random initialization I guess, or specify the path to the checkpoint folder?, for now only one checkpoint
 
 action_segments: 10
-action_start: 0 #400  # not sure if these are applicable to the SA case.
+action_start: 0 #400  # not sure if these are applicable to the SA case. TODO: I think we should always have time 0 even for checkpoint.
 action_end: 800 #700
 action_limit: 0.75
 action_duration: 1.5
