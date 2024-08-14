@@ -7,8 +7,8 @@ import numpy.typing as npt
 import sympy
 
 from rbcdata.config import RBCSimConfig
-from rbcdata.sim.rayleighbenard2d import RayleighBenard
-from rbcdata.sim.tfunc import Tfunc
+from rbcdata.envs.sim.rayleighbenard2d import RayleighBenard
+from rbcdata.envs.sim.tfunc import Tfunc
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -17,12 +17,10 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
-    reward_range = (-float("inf"), float("inf"))
-
     def __init__(
         self,
         sim_cfg: RBCSimConfig,
-        action_segments: int = 10,
+        action_segments: int = 12,
         action_limit: float = 0.75,
         action_duration: float = 1.0,
         action_start: float = 0.0,
@@ -59,6 +57,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # PDE configuration
         self.simulation = RayleighBenard(
             N_state=(sim_cfg.N[0], sim_cfg.N[1]),
+            N_obs=(sim_cfg.N_obs[0], sim_cfg.N_obs[1]),
             Ra=sim_cfg.ra,
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
@@ -90,7 +89,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action = np.array([0.0])
         self.action_effective = None  # TODO sympy zero
 
-        return self.get_obs(), self.__get_info()
+        return self.__get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
         """
@@ -109,22 +108,26 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.t >= self.episode_length:
             truncated = True
 
-        return self.get_obs(), 0, self.closed, truncated, self.__get_info()
+        return self.__get_obs(), self.__get_reward(), self.closed, truncated, self.__get_info()
 
     def close(self) -> None:
         self.closed = True
 
-    def get_obs(self) -> RBCObservation:
-        return self.simulation.obs_flat.astype(np.float32)
-
     def get_state(self) -> RBCObservation:
-        return self.simulation.state.astype(np.float32)
+        return self.simulation.get_state().astype(np.float32)
 
     def get_action(self) -> RBCAction:
         return self.action
 
-    def get_reward(self) -> float:
-        return float(-self.simulation.compute_nusselt())
+    def __get_obs(self) -> RBCObservation:
+        return self.simulation.get_obs().astype(np.float32)
+
+    def __get_reward(self, from_obs=False) -> float:
+        if from_obs:
+            state = self.__get_obs()
+        else:
+            state = self.get_state()
+        return float(-self.simulation.compute_nusselt(state))
 
     def __get_info(self) -> dict[str, Any]:
         return {"step": self.tstep, "t": round(self.t, 8)}

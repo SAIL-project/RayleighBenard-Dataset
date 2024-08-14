@@ -13,5 +13,13 @@
             "args": "sim.episode_length=5 callbacks=dataset",
             "justMyCode": false,
         },
+        {
+            "name": "RayTest",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/ray_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
     ]
 }

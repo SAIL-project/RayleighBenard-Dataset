@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from rbcdata.sim.rbc_env import RayleighBenardEnv
+from rbcdata.envs.rbc_env import RayleighBenardEnv
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.rbc_action_visualizer import RBCActionVisualizer
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
@@ -112,7 +112,7 @@ class LogNusseltNumberCallback(CallbackBase):
 
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
-            self.nusselts.append(env.simulation.compute_nusselt())
+            self.nusselts.append(env.simulation.compute_nusselt(obs))
             self.time.append(info["t"])
 
     def close(self):
@@ -248,9 +248,9 @@ class SweepMetricCallback(CallbackBase):
             if info["t"] < self.action_start:
                 return
             elif info["t"] < self.action_end:
-                self.nusselt_start.append(env.simulation.compute_nusselt())
+                self.nusselt_start.append(env.simulation.compute_nusselt(obs))
             else:
-                self.nusselt_end.append(env.simulation.compute_nusselt())
+                self.nusselt_end.append(env.simulation.compute_nusselt(obs))
 
     def result(self):
         return {

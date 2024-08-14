@@ -8,7 +8,7 @@ defaults:
 
 seed: 42
 interval: 16
-checkpoint: null #../../../data/checkpoints/ra10000
+checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
 
 action_segments: 10
 action_start: 10 #400

@@ -1,4 +1,3 @@
-import copy
 import warnings
 from pathlib import Path
 
@@ -19,6 +18,8 @@ from shenfun import (
     la,
 )
 
+from rbcdata.utils.sympy_helper import evalf_tuple
+
 from .channelflow2d import KMM
 
 # global settings for numpy, sympy and MPI
@@ -31,7 +32,7 @@ class RayleighBenard(KMM):
     def __init__(
         self,
         N_state=(64, 96),
-        N_obs=(8, 32),
+        N_obs=(8, 48),
         domain=((-1, 1), (0, 2 * sympy.pi)),
         Ra=10000.0,
         Pr=0.7,
@@ -114,14 +115,20 @@ class RayleighBenard(KMM):
             latex=r"\frac{\partial T}{\partial t} = \kappa \nabla^2 T - \nabla \cdot \vec{u}T",
         )
 
-        # Observation outputs
+        # Construct probes grid
         self.state = None
         self.obs = None
-        self.obs_flat = None
 
-        # Others
-        self.obsGrid = N_obs
-        self.Nstep = (N_state[0] // self.obsGrid[0], N_state[1] // self.obsGrid[1])
+        # get observation grid
+        self.N_obs = N_obs
+        domain = evalf_tuple(domain)
+        spaces = []
+        for d, N in zip(domain, N_obs):
+            step = (d[1] - d[0]) / N
+            spaces.append(np.linspace(d[0] + (step / 2), d[1] - (step / 2), N))
+        s1, s2 = np.meshgrid(spaces[1], spaces[0])
+        s2 = np.flipud(s2)  # TODO TM: Why is it flipped?
+        self.obs_points = np.vstack([s2.ravel(), s1.ravel()])
 
     def update_bc(self, t):
         # Update time-dependent bcs.
@@ -186,52 +193,40 @@ class RayleighBenard(KMM):
         self.T_.mask_nyquist(self.mask)
         return 0, 0
 
-    def outputs(self):
+    def get_state(self):
+        return self.state
+
+    def get_obs(self):
+        return self.obs
+
+    def compute_outputs(self):
+        # evaluate functions at collocation points
         ub = self.u_.backward(self.ub)
         Tb = self.T_.backward(self.Tb)
 
-        # state
+        # construct state
         state = np.zeros((3, self.N[0], self.N[1]))
         state[0:2] = ub
         state[2] = Tb
-        self.state = state
 
-        # obs
-        obs = np.zeros((3, self.obsGrid[0], self.obsGrid[1]))
-        obs[0] = ub[1, :: self.Nstep[0], :: self.Nstep[1]]  # horizontal (x) axis
-        obs[1] = ub[0, :: self.Nstep[0], :: self.Nstep[1]]  # vertical (y) axis
-        obs[2] = Tb[:: self.Nstep[0], :: self.Nstep[1]]
+        # construct observation
+        h, w = self.N_obs
+        obs = np.zeros((3, h, w))
+        obs[0:2] = self.u_.eval(self.obs_points).reshape(-1, h, w)
+        obs[2] = self.T_.eval(self.obs_points).reshape(-1, h, w)
+
+        self.state = state
         self.obs = obs
 
-        # obs_flat
-        obs_flat = copy.copy(obs)
-        obs_flat[0] *= 1.5
-        obs_flat[1] *= 1.5
-        obs_flat[2] = 2 * (obs_flat[2] - 0.8)
-        obs_flat = obs_flat.reshape(
-            3 * self.obsGrid[0] * self.obsGrid[1],
-        )
-        self.obs_flat = obs_flat
-
-    def compute_nusselt(self, from_obs=True):
-        """
-        Computes the nusselt number.
-        from_obs: if True, computes the Nusselt number on the sparse observation,
-            otherwise on the full state
-        """
+    def compute_nusselt(self, state):
         div = (
             self.kappa
             * (self.bcT_avg[0] - self.bcT_avg[1])
             / (self.domain[0][1] - self.domain[0][0])
         )  # H = 2, Tb = 2.
 
-        if from_obs:
-            uyT_ = np.mean(np.mean(np.multiply(self.obs[1], self.obs[2]), axis=1), axis=0)
-            T_ = np.mean(np.gradient(np.mean(self.obs[2], axis=1), axis=0))
-        else:
-            # MS: CAUTION HERE, IN THE STATE Y VELOCITIES ARE IN THE FIRST INDEX
-            uyT_ = np.mean(np.mean(np.multiply(self.state[0], self.state[2]), axis=1), axis=0)
-            T_ = np.mean(np.gradient(np.mean(self.state[2], axis=1), axis=0))
+        uyT_ = np.mean(np.mean(np.multiply(state[0], state[2]), axis=1), axis=0)
+        T_ = np.mean(np.gradient(np.mean(state[2], axis=1), axis=0))
 
         return (uyT_ - self.kappa * T_) / div
 
@@ -270,7 +265,7 @@ class RayleighBenard(KMM):
             self.tofile(tstep)
 
         # update outputs and time
-        self.outputs()
+        self.compute_outputs()
         return t + self.dt, tstep + 1
 
     def clean(self):

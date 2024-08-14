@@ -42,9 +42,7 @@ class Tfunc:
         # Amplitude of variation of T
         self.ampl = action_limit
 
-        self.xmax = float(
-            self.domain[1][1]
-        )
+        self.xmax = float(self.domain[1][1])
 
         # half-length of the interval on which we do the smoothing
         self.dx = 0.5 * fraction_length_smoothing * self.xmax / segments
