@@ -1,16 +1,14 @@
 # Config file for running the Single-Agent (SA) version of the RBC controller
 
 defaults:
-  - _self_
+#  - _self_
   - hydra: default
   - sim: SA
-  - controller: zero
-  - callbacks: default
-  - sweep: null
+#  - callbacks: default
+#  - sweep: null
 
 seed: 42
 interval: 16  # TODO find out what this is for
-checkpoint: ../data/checkpoints/ra1000/train/baseline42.chk.h5 # null for random initialization I guess, or specify the path to the checkpoint folder?, for now only one checkpoint
 
 action_segments: 10
 action_start: 0 #400  # not sure if these are applicable to the SA case. TODO: I think we should always have time 0 even for checkpoint.

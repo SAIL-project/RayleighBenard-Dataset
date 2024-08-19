@@ -7,6 +7,10 @@ import numpy as np
 import numpy.typing as npt
 import sympy
 
+import glob
+from os import listdir
+from os.path import isdir, isfile, join
+
 from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
@@ -30,7 +34,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         num_env_runners, worker_index, vector_index, and remote.
         """
         super().__init__()
-
+        print(__name__)
         self.config = config    # This is the Ray config dictionary passed to the environment
         sim_cfg = config['sim_cfg']
         # handle the default values
@@ -68,6 +72,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             dtype=np.float32,
         )
 
+        load_checkpoint_path = sim_cfg.load_checkpoint_path # Path to checkpoint file or directory for loading checkpoints on env.reset()
+        self.load_checkpoint_files = []
+        if sim_cfg.load_checkpoint_path is not None:
+            if isdir(load_checkpoint_path):
+                self.load_checkpoint_files = glob.glob(join(load_checkpoint_path, "*.h5")) 
+                if len(self.load_checkpoint_files) == 0:
+                    raise ValueError(f"No checkpoint files found in directory: {sim_cfg.load_checkpoint_path}")
+            elif isfile(load_checkpoint_path): 
+                self.load_checkpoint_files = [sim_cfg.load_checkpoint_path]
+            else:
+                raise ValueError(f"Invalid path to checkpoint file or directory: {sim_cfg.load_checkpoint_path}")
+
+
         # PDE configuration
         self.simulation = RayleighBenard(
             N_state=(sim_cfg.N[0], sim_cfg.N[1]),
@@ -76,7 +93,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
-            filename=sim_cfg.checkpoint_path,
+            filename=sim_cfg.save_checkpoint_path,
         )
         self.t_func = Tfunc(
             segments=action_segments,
@@ -99,9 +116,17 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # TODO M: If checkpoint is provided, maybe we should consider to set time to 0 as well
         # because is the time that we took the checkpoint meaningful? It may complicate things.
         # init PDE simulation
+        # M: we should reset the boundary conditions here as well I guess, before the initialize method is called, becauses it uses the boundary conditions.
+        self.simulation.update_actuation(self.simulation.bcT_avg)
+        if len(self.load_checkpoint_files) > 0:
+            # choose a random checkpoint file to load from
+            file_idx = self._np_random.choice(len(self.load_checkpoint_files))
+            filename = self.load_checkpoint_files[file_idx]
+        # initialize the simulation from a file or randomly depending on whether filename is none or not 
         self.t, self.tstep = self.simulation.initialize(
             filename=filename, np_random=self._np_random, rand=0.000001
         )
+
         self.simulation.assemble()
         self.simulation.step(self.t, self.tstep)
 
@@ -148,6 +173,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.closed = True
 
     def get_obs(self) -> RBCObservation:
+        """
+        Returns the observation of the current state. Note that the state is observed at the probes only, so it 
+        is a partially observed state.
+        """
         # TODO Change this so the Y-velocity is the first channel! For now it's OK.
         return self.simulation.obs_flat.astype(np.float32)
 

@@ -37,7 +37,7 @@ class RayleighBenard(KMM):
         Pr=0.7,
         dt=0.025,
         bcT=(2, 1),
-        filename="data/shenfun/RB_2D",
+        checkpoint_path="data/shenfun/RB_2D",
         padding_factor=(1, 1.5),
         modsave=10000,
         checkpoint=10,
@@ -58,7 +58,7 @@ class RayleighBenard(KMM):
             nu=np.sqrt(Pr / Ra),
             dt=dt,
             conv=0,
-            filename=filename,
+            filename=checkpoint_path,
             family=family,
             padding_factor=padding_factor,
             modsave=modsave,
@@ -83,9 +83,9 @@ class RayleighBenard(KMM):
         self.Tb = Array(self.TT)
 
         # Create files
-        Path(filename).parent.mkdir(parents=True, exist_ok=True)
+        Path(checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
         self.file_T = ShenfunFile(
-            "_".join((filename, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
+            "_".join((checkpoint_path, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
         )
 
         # Modify checkpoint file
@@ -146,20 +146,21 @@ class RayleighBenard(KMM):
         self.checkpoint.read(self.u_, "U", step=0)
         self.checkpoint.read(self.T_, "T", step=0)
         self.checkpoint.open()
-        tstep = self.checkpoint.f.attrs["tstep"]
-        t = self.checkpoint.f.attrs["t"]
+        #(Michiel): If not necessary we should not restore the simulation time from the checkpoint, because it may complicate things. 
+        # tstep = self.checkpoint.f.attrs["tstep"]
+        # t = self.checkpoint.f.attrs["t"]
         self.checkpoint.close()
         # restore the old filename of the Checkpoint
         # instance (which was changed if filename is given to function)
         self.checkpoint.filename = old_filename
         self.checkpoint.f = None
-        return t, tstep
+        return 0, 0
 
     # TODO: MS: look more into the initialization
     def initialize(self, rand=0.001, filename=None, np_random=None):
         if filename is not None:
             t, tstep = self.init_from_checkpoint(filename)
-            self.update_bc(t)
+            self.update_bc(t)   # (Michiel) # TODO what is this for?
             return t, tstep
 
         if np_random is None:

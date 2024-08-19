@@ -1,5 +1,6 @@
 # File for testing single agent reinforcement learning with Raylib
 # General python imports
+import os
 import rootutils
 import logging
 import hydra    # for loading the configuration
@@ -40,19 +41,21 @@ def run_env(cfg: DictConfig) -> None:
     config = config.training(gamma=0.9, lr=1e-2) # discount factor, learning rate, TODO check if we need to set more parameters like train_batch_size, kl_coeff, etc.
     config = config.resources(num_gpus=0) # we don't use GPU for now, TODO check if we can use GPU for policy updates
     config = config.env_runners(num_env_runners=0) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
+    # config = config.debugging(log_level="DEBUG")
     # Next, in the config.environment, we specify the environment options as well
     config = config.environment(
         env="RayleighBenardEnv",
         env_config={
            "sim_cfg": cfg.sim,
            "action_segments": cfg.action_segments,
-           "action_limit": cfg.action_limit
+           "action_limit": cfg.action_limit,
+           "action_duration": cfg.action_duration,
         }
     )    # here I set the environment for where this policy acts in
     config = config.framework("torch")  # we use PyTorch as the framework for the policy
     # config = config.training()   # for now we don't set any training parameters, we use the default ones
 
-
+    print('working directory: ' + os.getcwd())
     # TODO FYI, using a Tuner from ray, one can optimize the hyperparameters of the policy
     # the optimization space should not have to be too large for PPO, as it is a robust algorithm
 
@@ -69,13 +72,19 @@ def run_env(cfg: DictConfig) -> None:
     # worker updates the policy based on these experiences in a SGD fashion with repeated updates, possibly on a GPU.
 
     # Next we train the policy on the environment:
+    # The next line is a function that will take care of the whole training loop inside
     rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train
+
+    # here we write the training loop ourselves to have more control over the training process
+    # nr_iterations = 100 # TODO put this in a config somewhere
+    # for i in range(nr_iterations):
+
 
 
 @hydra.main(version_base=None, config_path="config", config_name="run_SA")
 def main(cfg: DictConfig) -> None:
-    # Configure the logger
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # Note that Hydra intializes logging for us, we don't need the line below. 
+    # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
     # Run the environment and reinforcement learning algorithm using specified configuration
     return run_env(cfg=cfg)
 
