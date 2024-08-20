@@ -15,8 +15,6 @@ from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
 
-import hydra
-from hydra.core.hydra_config import HydraConfig
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -39,6 +37,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().__init__()
         print(__name__)
         self.config = config    # This is the Ray config dictionary passed to the environment
+        logger.info(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv")
+
         sim_cfg = config['sim_cfg']
         # handle the default values
         action_segments = config.get('action_segments', 10)
@@ -97,7 +97,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
-            save_checkpoint_path=join(HydraConfig.get().runtime.output_dir, sim_cfg.save_checkpoint_path),
+            save_checkpoint_path=join(config["hydra_output_dir"], f"worker{config.worker_index}", sim_cfg.save_checkpoint_path),
         )
         self.t_func = Tfunc(
             segments=action_segments,

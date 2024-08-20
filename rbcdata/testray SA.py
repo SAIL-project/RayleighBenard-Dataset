@@ -13,9 +13,20 @@ from ray.tune.registry import register_env  # allows to register custom environm
 
 import gymnasium as gym
 
+from hydra.core.hydra_config import HydraConfig
+
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 # Environment imports
 from rbcdata.sim.rbc_env import RayleighBenardEnv   # the environment that the single agent will interact with
+
+logger = logging.getLogger(__name__)
+
+def checkpoints_to_nodes():
+    """
+    This function is able to move the local checkpoints to all the nodes in the Ray cluster,
+    that need to have access to them for resetting their environments.
+    """
+    logger.warning("TODO: Not implemented the moving of the checkpoints for remote nodes yet")
 
 
 @hydra.main(version_base=None, config_path="config", config_name="run_SA")
@@ -23,13 +34,16 @@ def run_env(cfg: DictConfig) -> None:
     """
     This function runs the environment with a single agent using the PPO algorithm from Raylib library using the given config.
     """
-
+    if cfg.sim.load_checkpoint_path is not None and cfg.ray.env_runners > 0:
+        checkpoints_to_nodes()
     # Define a Ray runtime_env
+    # runtime_env = {"conda": "./environment_rbcdata.yml"}  # (Michiel): this line is used when we need to install dependencies on other worker nodes
+    runtime_env = {"conda": "/home/michiel/miniconda3/envs/rbcdata"}    #  This line is used if the worker nodes can use an already installed environment from the filesystem
 
     # Structure of the code (based on examples of RLlib)
-    # https://docs.ray.io/en/latest/ray-core/handling-dependencies.html TODO for handling dependencies on the Ray cluster
-    ray.init()  # initialize the Ray runtime 
-    # ray.init(runtime_env=)  # initialize the Ray runtime with 8 CPUs, for now we don't use a cluster
+    # https://docs.ray.io/en/latest/ray-core/handling-dependencies.html  for handling dependencies on the Ray cluster
+    # ray.init()  # initialize the Ray runtime 
+    ray.init(runtime_env=runtime_env)  # initialize the Ray runtime using the above dictionary. # TODO Look at logging in Ray workers later
 
     # We need to define an environment (RayleighBenardEnvironment)
     # An RLlib environment or Gym environment consists of: action space (all possible actions), state space
@@ -49,7 +63,7 @@ def run_env(cfg: DictConfig) -> None:
     config = PPOConfig()
     config = config.training(gamma=0.9, lr=1e-2) # discount factor, learning rate, TODO check if we need to set more parameters like train_batch_size, kl_coeff, etc.
     config = config.resources(num_gpus=0) # we don't use GPU for now, TODO check if we can use GPU for policy updates
-    config = config.env_runners(num_env_runners=0) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
+    config = config.env_runners(num_env_runners=cfg.ray.env_runners) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
     # config = config.debugging(log_level="DEBUG")
     # Next, in the config.environment, we specify the environment options as well
     config = config.environment(
@@ -59,12 +73,13 @@ def run_env(cfg: DictConfig) -> None:
            "action_segments": cfg.action_segments,
            "action_limit": cfg.action_limit,
            "action_duration": cfg.action_duration,
+           "hydra_output_dir": HydraConfig.get().runtime.output_dir 
         }
     )    # here I set the environment for where this policy acts in
     config = config.framework("torch")  # we use PyTorch as the framework for the policy
     # config = config.training()   # for now we don't set any training parameters, we use the default ones
 
-    print('working directory: ' + os.getcwd())
+    logger.info('Working directory for the local Ray program: ' + os.getcwd())
     # TODO FYI, using a Tuner from ray, one can optimize the hyperparameters of the policy
     # the optimization space should not have to be too large for PPO, as it is a robust algorithm
 

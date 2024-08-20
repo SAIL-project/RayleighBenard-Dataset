@@ -4,6 +4,7 @@ defaults:
 #  - _self_
   - hydra: default
   - sim: SA
+  - ray: default
 #  - callbacks: default
 #  - sweep: null
 
@@ -15,3 +16,5 @@ action_start: 0 #400  # not sure if these are applicable to the SA case. TODO: I
 action_end: 800 #700
 action_limit: 0.75
 action_duration: 1.5
+
+# Ray configuration (TODO move to above categorized configs section)

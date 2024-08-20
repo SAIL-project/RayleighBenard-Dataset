@@ -1,0 +1,1 @@
+env_runners: 8  # These processes will be doing policy rollouts in parallel
