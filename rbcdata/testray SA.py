@@ -18,9 +18,18 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.sim.rbc_env import RayleighBenardEnv   # the environment that the single agent will interact with
 
 
+@hydra.main(version_base=None, config_path="config", config_name="run_SA")
 def run_env(cfg: DictConfig) -> None:
+    """
+    This function runs the environment with a single agent using the PPO algorithm from Raylib library using the given config.
+    """
+
+    # Define a Ray runtime_env
+
     # Structure of the code (based on examples of RLlib)
-    ray.init()  # TODO see whether this call is necessary. It initializes the Ray runtime supposedly.
+    # https://docs.ray.io/en/latest/ray-core/handling-dependencies.html TODO for handling dependencies on the Ray cluster
+    ray.init()  # initialize the Ray runtime 
+    # ray.init(runtime_env=)  # initialize the Ray runtime with 8 CPUs, for now we don't use a cluster
 
     # We need to define an environment (RayleighBenardEnvironment)
     # An RLlib environment or Gym environment consists of: action space (all possible actions), state space
@@ -81,15 +90,11 @@ def run_env(cfg: DictConfig) -> None:
 
 
 
-@hydra.main(version_base=None, config_path="config", config_name="run_SA")
-def main(cfg: DictConfig) -> None:
-    # Note that Hydra intializes logging for us, we don't need the line below. 
-    # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
-    # Run the environment and reinforcement learning algorithm using specified configuration
-    return run_env(cfg=cfg)
-
+# def main(cfg: DictConfig) -> None:
+#     return run_env(cfg=cfg)
+# 
 if __name__ == "__main__":
-    main()
+    run_env()
 
 # Here we can evaluate the policy on the environment:
 # for agent in env.agent_iter():

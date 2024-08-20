@@ -37,7 +37,7 @@ class RayleighBenard(KMM):
         Pr=0.7,
         dt=0.025,
         bcT=(2, 1),
-        checkpoint_path="data/shenfun/RB_2D",
+        save_checkpoint_path="data/shenfun/RB_2D",
         padding_factor=(1, 1.5),
         modsave=10000,
         checkpoint=10,
@@ -58,7 +58,7 @@ class RayleighBenard(KMM):
             nu=np.sqrt(Pr / Ra),
             dt=dt,
             conv=0,
-            filename=checkpoint_path,
+            filename=save_checkpoint_path,
             family=family,
             padding_factor=padding_factor,
             modsave=modsave,
@@ -83,9 +83,9 @@ class RayleighBenard(KMM):
         self.Tb = Array(self.TT)
 
         # Create files
-        Path(checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(save_checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
         self.file_T = ShenfunFile(
-            "_".join((checkpoint_path, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
+            "_".join((save_checkpoint_path, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
         )
 
         # Modify checkpoint file

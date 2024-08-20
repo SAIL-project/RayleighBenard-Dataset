@@ -15,6 +15,9 @@ from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
 
+import hydra
+from hydra.core.hydra_config import HydraConfig
+
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
 
@@ -83,6 +86,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 self.load_checkpoint_files = [sim_cfg.load_checkpoint_path]
             else:
                 raise ValueError(f"Invalid path to checkpoint file or directory: {sim_cfg.load_checkpoint_path}")
+        logger.debug("Checkpoint files from which episodes will be initialized: ", self.load_checkpoint_files)
 
 
         # PDE configuration
@@ -93,7 +97,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
-            filename=sim_cfg.save_checkpoint_path,
+            save_checkpoint_path=join(HydraConfig.get().runtime.output_dir, sim_cfg.save_checkpoint_path),
         )
         self.t_func = Tfunc(
             segments=action_segments,
@@ -113,18 +117,18 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         If filename is provided, it will be used to load the initial state from a checkpoint."""
         super().reset(seed=seed)
 
-        # TODO M: If checkpoint is provided, maybe we should consider to set time to 0 as well
-        # because is the time that we took the checkpoint meaningful? It may complicate things.
         # init PDE simulation
-        # M: we should reset the boundary conditions here as well I guess, before the initialize method is called, becauses it uses the boundary conditions.
+        # M: we should reset the boundary conditions here as well, before the initialize method is called, becauses it uses the boundary conditions. TODO check again initialization.
         self.simulation.update_actuation(self.simulation.bcT_avg)
         if len(self.load_checkpoint_files) > 0:
             # choose a random checkpoint file to load from
-            file_idx = self._np_random.choice(len(self.load_checkpoint_files))
+            file_idx = self.np_random.choice(len(self.load_checkpoint_files))
             filename = self.load_checkpoint_files[file_idx]
         # initialize the simulation from a file or randomly depending on whether filename is none or not 
+        if filename is not None and filename.endswith(".chk.h5"):
+            filename = filename[:-7]    # cut the extension off
         self.t, self.tstep = self.simulation.initialize(
-            filename=filename, np_random=self._np_random, rand=0.000001
+            filename=filename, np_random=self.np_random, rand=0.000001
         )
 
         self.simulation.assemble()
