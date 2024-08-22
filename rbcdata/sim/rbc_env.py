@@ -21,7 +21,7 @@ RBCObservation: TypeAlias = npt.NDArray[np.float32]
 
 x, y, tt = sympy.symbols("x,y,t", real=True)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ray")
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
@@ -35,7 +35,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         num_env_runners, worker_index, vector_index, and remote.
         """
         super().__init__()
-        print(__name__)
         self.config = config    # This is the Ray config dictionary passed to the environment
         logger.info(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv")
 
@@ -86,7 +85,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 self.load_checkpoint_files = [sim_cfg.load_checkpoint_path]
             else:
                 raise ValueError(f"Invalid path to checkpoint file or directory: {sim_cfg.load_checkpoint_path}")
-        logger.debug("Checkpoint files from which episodes will be initialized: ", self.load_checkpoint_files)
+        # logger.debug("Checkpoint files from which episodes will be initialized: ", self.load_checkpoint_files)
 
 
         # PDE configuration

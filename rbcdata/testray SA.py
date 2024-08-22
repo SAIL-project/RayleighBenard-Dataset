@@ -29,6 +29,12 @@ def checkpoints_to_nodes():
     logger.warning("TODO: Not implemented the moving of the checkpoints for remote nodes yet")
 
 
+def logging_setup_func():
+    # ray_rllib_logger = logging.getLogger("ray.rllib")
+    logger = logging.getLogger("ray")
+    logger.setLevel(logging.DEBUG)
+
+
 @hydra.main(version_base=None, config_path="config", config_name="run_SA")
 def run_env(cfg: DictConfig) -> None:
     """
@@ -36,14 +42,28 @@ def run_env(cfg: DictConfig) -> None:
     """
     if cfg.sim.load_checkpoint_path is not None and cfg.ray.env_runners > 0:
         checkpoints_to_nodes()
+
     # Define a Ray runtime_env
     # runtime_env = {"conda": "./environment_rbcdata.yml"}  # (Michiel): this line is used when we need to install dependencies on other worker nodes
-    runtime_env = {"conda": "/home/michiel/miniconda3/envs/rbcdata"}    #  This line is used if the worker nodes can use an already installed environment from the filesystem
+    # This line is used if the worker nodes can use an already installed environment from the filesystem
+    runtime_env = {
+        "conda": "/home/michiel/miniconda3/envs/rbcdata",
+        "worker_process_setup_hook": logging_setup_func
+    }    
 
     # Structure of the code (based on examples of RLlib)
     # https://docs.ray.io/en/latest/ray-core/handling-dependencies.html  for handling dependencies on the Ray cluster
     # ray.init()  # initialize the Ray runtime 
-    ray.init(runtime_env=runtime_env)  # initialize the Ray runtime using the above dictionary. # TODO Look at logging in Ray workers later
+    # initialize the Ray runtime using the above dictionary. # TODO Look at logging in Ray workers later
+    # This actually initiates the so-called Ray Driver
+    context = ray.init(
+        runtime_env=runtime_env,
+        logging_level="info",
+    ) 
+    # setup logger for the driver process
+    logging_setup_func()
+
+    logger.info(f"Ray runtime initialized with context: {context}")
 
     # We need to define an environment (RayleighBenardEnvironment)
     # An RLlib environment or Gym environment consists of: action space (all possible actions), state space
