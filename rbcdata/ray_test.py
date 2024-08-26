@@ -1,22 +1,47 @@
-import hydra
+from pprint import pprint
+
+import ray
 import rootutils
-from omegaconf import DictConfig
+from ray.rllib.algorithms.ppo import PPOConfig
+from ray.tune.registry import register_env
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
-from rbcdata.envs.rbc_env import RayleighBenardEnv
 from rbcdata.envs.rbc_ma_env import RayleighBenardMultiAgentEnv
+from rbcdata.utils.ray_callbacks import LogCallback
 
 
-@hydra.main(version_base=None, config_path="config", config_name="run")
-def main(cfg: DictConfig) -> None:
-    tmp = RayleighBenardEnv(sim_cfg=cfg.sim)
-    env = RayleighBenardMultiAgentEnv(env=tmp)
+def main() -> None:
+    ray.init()
 
-    env.reset(seed=42)
+    register_env("rbc_ma_env", lambda config: RayleighBenardMultiAgentEnv(config))
+    config = (
+        PPOConfig()
+        .training(
+            train_batch_size=128,
+        )
+        .environment(
+            env="rbc_ma_env",
+            env_config={
+                "episode_length": 10,
+            },
+        )
+        .env_runners(
+            num_env_runners=4,
+            num_cpus_per_env_runner=2,
+        )
+        #  .resources(num_gpus=1)
+        .multi_agent(
+            policies={"p0"},
+            # All agents map to the exact same policy.
+            policy_mapping_fn=(lambda aid, *args, **kwargs: "p0"),
+        )
+        .callbacks(LogCallback)
+    )
 
-    action_dict = {str(idx): 0 for idx in range(len(env.get_agent_ids()))}
-    env.step(action_dict)
+    algo = config.build()
+    result = algo.train()
+    pprint(result)
 
 
 if __name__ == "__main__":

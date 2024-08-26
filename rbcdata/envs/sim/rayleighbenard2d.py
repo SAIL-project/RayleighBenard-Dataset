@@ -1,4 +1,5 @@
 import warnings
+from copy import copy
 from pathlib import Path
 
 import numpy as np
@@ -6,10 +7,10 @@ import sympy
 from mpi4py import MPI
 from shenfun import (
     Array,
+    Checkpoint,
     Dx,
     Function,
     FunctionSpace,
-    ShenfunFile,
     TensorProductSpace,
     TestFunction,
     chebyshev,
@@ -38,10 +39,9 @@ class RayleighBenard(KMM):
         Pr=0.7,
         dt=0.025,
         bcT=(2, 1),
-        filename="data/shenfun/RB_2D",
+        checkpoint=None,
         padding_factor=(1, 1.5),
         modsave=10000,
-        checkpoint=10,
         family="C",
     ):
         """Form a complex number.
@@ -59,17 +59,15 @@ class RayleighBenard(KMM):
             nu=np.sqrt(Pr / Ra),
             dt=dt,
             conv=0,
-            filename=filename,
             family=family,
             padding_factor=padding_factor,
             modsave=modsave,
-            checkpoint=checkpoint,
             dpdy=0,
         )
         # parameters
         self.kappa = 1.0 / np.sqrt(Pr * Ra)  # thermal diffusivity
         self.bcT = bcT
-        self.bcT_avg = bcT  # datamember to remember the desired average temps
+        self.bcT_avg = copy(bcT)  # datamember to remember the desired average temps
         self.domain = domain
         dt = self.dt
         kappa = self.kappa
@@ -83,14 +81,15 @@ class RayleighBenard(KMM):
         self.T_ = Function(self.TT)  # Temperature solution
         self.Tb = Array(self.TT)
 
-        # Create files
-        Path(filename).parent.mkdir(parents=True, exist_ok=True)
-        self.file_T = ShenfunFile(
-            "_".join((filename, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
-        )
-
-        # Modify checkpoint file
-        self.checkpoint.data["0"]["T"] = [self.T_]
+        # checkpoint
+        self.checkpoint = None
+        if checkpoint is not None:
+            Path(checkpoint).parent.mkdir(parents=True, exist_ok=True)
+            self.checkpoint = Checkpoint(
+                checkpoint,
+                checkevery=10,
+                data={"0": {"U": [self.u_], "T": [self.T_]}},
+            )
 
         # Chebyshev matrices are not sparse, so need a tailored solver. Legendre has simply 5
         # nonzero diagonals
@@ -140,32 +139,26 @@ class RayleighBenard(KMM):
         Tp = self.T_.backward(padding_factor=self.padding_factor)
         self.uT_ = self.up.function_space().forward(self.up * Tp, self.uT_)
 
-    def tofile(self, tstep):
-        self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
-        self.file_T.write(tstep, {"T": [self.T_.backward(mesh="uniform")]})
+    def init_from_checkpoint(self, filename):
+        checkpoint = Checkpoint(
+            filename,
+            checkevery=10,
+            data={"0": {"U": [self.u_], "T": [self.T_]}},
+        )
 
-    def init_from_checkpoint(self, filename=None):
-        old_filename = self.checkpoint.filename
-        if filename is not None:
-            self.checkpoint.filename = (
-                filename  # temporarily switch the filename of the Checkpoint instance
-            )
-        self.checkpoint.read(self.u_, "U", step=0)
-        self.checkpoint.read(self.T_, "T", step=0)
-        self.checkpoint.open()
-        tstep = self.checkpoint.f.attrs["tstep"]
+        checkpoint.read(self.u_, "U", step=0)
+        checkpoint.read(self.T_, "T", step=0)
+        checkpoint.open()
+        tstep = checkpoint.f.attrs["tstep"]
         t = self.checkpoint.f.attrs["t"]
-        self.checkpoint.close()
-        # restore the old filename of the Checkpoint
-        # instance (which was changed if filename is given to function)
-        self.checkpoint.filename = old_filename
-        self.checkpoint.f = None
+        checkpoint.close()
+
         return t, tstep
 
     # TODO: MS: look more into the initialization
-    def initialize(self, rand=0.001, filename=None, np_random=None):
-        if filename is not None:
-            t, tstep = self.init_from_checkpoint(filename)
+    def initialize(self, rand=0.001, checkpoint=None, np_random=None):
+        if checkpoint is not None:
+            t, tstep = self.init_from_checkpoint(checkpoint)
             self.update_bc(t)
             return t, tstep
 
@@ -174,20 +167,20 @@ class RayleighBenard(KMM):
 
         X = self.X
 
-        if self.bcT[0] == 1:
+        if self.bcT_avg[0] == 1:
             funT = 1
-        elif int(self.bcT[0]) == 0.6:
+        elif int(self.bcT_avg[0]) == 0.6:  # TODO TM: how can this be ever true?
             funT = 3
-        elif int(self.bcT[0]) == 2:
+        elif int(self.bcT_avg[0]) == 2:
             funT = 4
         else:
             funT = 2
         fun = {1: 1, 2: (0.9 + 0.1 * np.sin(2 * X[1])), 3: 0.6, 4: 2.0}[funT]
         self.Tb[:] = 0.5 * (
             1
-            + 0.5 * self.bcT[1]
-            - X[0] / (1 + self.bcT[1])
-            + 0.125 * (2 - self.bcT[1]) * np.sin(np.pi * X[0])
+            + 0.5 * self.bcT_avg[1]
+            - X[0] / (1 + self.bcT_avg[1])
+            + 0.125 * (2 - self.bcT_avg[1]) * np.sin(np.pi * X[0])
         ) * fun + rand * np_random.standard_normal(self.Tb.shape) * (1 - X[0]) * (1 + X[0])
         self.T_ = self.Tb.forward(self.T_)
         self.T_.mask_nyquist(self.mask)
@@ -259,10 +252,9 @@ class RayleighBenard(KMM):
             self.update_bc(t + self.dt * c[rk + 1])
             self.pdes["T"].solve_step(rk)
 
-        # update checkpoint and data files
-        self.checkpoint.update(t, tstep)
-        if tstep % self.modsave == 0:
-            self.tofile(tstep)
+        # update checkpoint
+        if self.checkpoint is not None:
+            self.checkpoint.update(t, tstep)
 
         # update outputs and time
         self.compute_outputs()

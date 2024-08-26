@@ -7,21 +7,18 @@
 # Mikael Mortenson
 #
 
-from pathlib import Path
 
 import numpy as np
 from shenfun import (
     IMEXRK3,
     Array,
     CachedArrayDict,
-    Checkpoint,
     Dx,
     Expr,
     Function,
     FunctionSpace,
     Inner,
     Project,
-    ShenfunFile,
     TensorProductSpace,
     TestFunction,
     TrialFunction,
@@ -92,18 +89,15 @@ class KMM:
         dt=0.1,
         conv=0,
         dpdy=1,
-        filename="KMM",
         family="C",
         padding_factor=(1, 1.5),
         modsave=1e8,
-        checkpoint=1000,
     ):
         self.N = N
         self.nu = nu
         self.dt = dt
         self.conv = conv
         self.modsave = modsave
-        self.filename = filename
         self.padding_factor = padding_factor
         self.dpdy = dpdy
         self.PDE = IMEXRK3
@@ -155,15 +149,6 @@ class KMM:
         self.curl = Project(curl(self.u_), self.TC)
         self.divu = Project(div(self.u_), self.TC)
         self.solP = None  # For computing pressure
-
-        # File for storing the results
-        Path(filename).parent.mkdir(parents=True, exist_ok=True)
-        self.file_u = ShenfunFile(
-            "_".join((filename, "U")), self.BD, backend="hdf5", mode="w", mesh="uniform"
-        )
-
-        # Create a checkpoint file used to restart simulations
-        self.checkpoint = Checkpoint(filename, checkevery=checkpoint, data={"0": {"U": [self.u_]}})
 
         # set up equations
         v = TestFunction(self.TB)
@@ -277,21 +262,8 @@ class KMM:
         if comm.Get_rank() == 0:
             print("Time %2.5f Energy %2.6e %2.6e div %2.6e" % (t, e0, e1, e3))
 
-    def init_from_checkpoint(self):
-        self.checkpoint.read(self.u_, "U", step=0)
-        self.checkpoint.open()
-        tstep = self.checkpoint.f.attrs["tstep"]
-        t = self.checkpoint.f.attrs["t"]
-        self.checkpoint.close()
-        return t, tstep
-
-    def initialize(self, from_checkpoint=False):
-        if from_checkpoint:
-            return self.init_from_checkpoint()
+    def initialize(self):
         raise RuntimeError("Initialize solver in subclass")
-
-    def tofile(self, tstep):
-        self.file_u.write(tstep, {"u": [self.u_.backward(mesh="uniform")]}, as_scalar=True)
 
     def prepare_step(self, rk):
         self.convection()
@@ -317,5 +289,3 @@ class KMM:
             tstep += 1
             self.update(t, tstep)
             self.checkpoint.update(t, tstep)
-            if tstep % self.modsave == 0:
-                self.tofile(tstep)
