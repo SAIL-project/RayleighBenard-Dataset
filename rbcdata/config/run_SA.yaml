@@ -5,11 +5,12 @@ defaults:
   - hydra: default
   - sim: SA
   - ray: default
+  - rl/ppo: default
 #  - callbacks: default
 #  - sweep: null
 
 seed: 42
-interval: 16  # TODO find out what this is for
+interval: 16  # Michiel: I think this is related to utils.callbacks, where it is used to determine the simulation step interval for which the callbacks are effective. Could have a more explanatory name.
 
 action_segments: 10
 action_start: 0 #400  # not sure if these are applicable to the SA case. TODO: I think we should always have time 0 even for checkpoint.

@@ -36,9 +36,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         super().__init__()
         self.config = config    # This is the Ray config dictionary passed to the environment
-        logger.info(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv")
+        self.worker_index = config.get("worker_index", 0)
+        logger.info(f"Worker {self.worker_index}: Starting init of RayleighBenardEnv")
 
-        sim_cfg = config['sim_cfg']
+        sim_cfg = config['sim']
         # handle the default values
         action_segments = config.get('action_segments', 10)
         action_limit = config.get('action_limit', 0.75)
@@ -60,6 +61,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # The agent takes actions between [-1, 1] on the bottom segments
         self.action_space = gym.spaces.Box(-1, 1, shape=(action_segments,), dtype=np.float32)
+        # self.action_space = gym.spaces.MultiBinary(action_segments)
 
         # Observation Space
         nr_probes = sim_cfg.N_obs[0] * sim_cfg.N_obs[1]
@@ -96,7 +98,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
-            save_checkpoint_path=join(config["hydra_output_dir"], f"worker{config.worker_index}", sim_cfg.save_checkpoint_path),
+            save_checkpoint_path=join(config["output_dir"], f"worker{self.worker_index}", sim_cfg.save_checkpoint_path),
         )
         self.t_func = Tfunc(
             segments=action_segments,
@@ -152,8 +154,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         truncated = False
         # Apply action
         self.action = action
+        logger.debug(f"Action that was given by the RL algorithm: {action}")
         # self.action_effective = self.t_func.apply_T(copy.deepcopy(action))  # TODO Why was deepcopy necessary again? There is no writing to the action.
         self.action_effective = self.t_func.apply_T(action) # action_effective is a sympy piecewise expression.
+        logger.debug(f"Action that was applied to the bottom boundary condition: {self.t_func.get_last_action_numeric()}")
+        # Set the Sympy expression as the new bottom boundary condition
         self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
 
         # Perform simulation steps for the action duration
@@ -164,11 +169,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.t >= self.episode_length:
             truncated = True
 
-        # Compute the reward
-        reward = self.get_reward()
+        # Compute the nusselt number necessary to calculate the reward
+        nusselt_nr = self.get_reward()
         # scale the reward to [0, 1] approximately. 0 associated with highest Nusselt number, 1 with lowest achievable
         # TODO scaling is currently only implemented with values for Ra=1e4, maybe suboptimal for other values
-        reward = (reward + 2.67) / 2.67 # TODO find out more about what the lowest achievable Nusselt number is
+        reward = (nusselt_nr + 2.67) / 2.67 # TODO find out more about what the lowest achievable Nusselt number is
         logger.debug(f"Action done: t={self.t}, reward={reward}")
         return self.get_obs(), reward, self.closed, truncated, self.__get_info()
 

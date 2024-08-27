@@ -5,6 +5,7 @@ import rootutils
 import logging
 import hydra    # for loading the configuration
 from omegaconf import DictConfig  # datatype for the configuration
+from os.path import join
 
 # All Raylib imports
 import ray
@@ -40,6 +41,8 @@ def run_env(cfg: DictConfig) -> None:
     """
     This function runs the environment with a single agent using the PPO algorithm from Raylib library using the given config.
     """
+    output_dir = HydraConfig.get().runtime.output_dir
+
     if cfg.sim.load_checkpoint_path is not None and cfg.ray.env_runners > 0:
         checkpoints_to_nodes()
 
@@ -50,7 +53,7 @@ def run_env(cfg: DictConfig) -> None:
         "conda": "/home/michiel/miniconda3/envs/rbcdata",
         "worker_process_setup_hook": logging_setup_func
     }    
-
+    print(cfg)
     # Structure of the code (based on examples of RLlib)
     # https://docs.ray.io/en/latest/ray-core/handling-dependencies.html  for handling dependencies on the Ray cluster
     # ray.init()  # initialize the Ray runtime 
@@ -59,6 +62,7 @@ def run_env(cfg: DictConfig) -> None:
     context = ray.init(
         runtime_env=runtime_env,
         logging_level="info",
+        log_to_driver=False,
     ) 
     # setup logger for the driver process
     logging_setup_func()
@@ -80,24 +84,34 @@ def run_env(cfg: DictConfig) -> None:
 
     # We need to define a policy for the single agent that controls the heaters in the RayleighBenard environment
     # TODO I read PPO is robust, so check recommended parameters for our setting, Petting Zoo provides these parameters.
-    config = PPOConfig()
-    config = config.training(gamma=0.9, lr=1e-2) # discount factor, learning rate, TODO check if we need to set more parameters like train_batch_size, kl_coeff, etc.
-    config = config.resources(num_gpus=0) # we don't use GPU for now, TODO check if we can use GPU for policy updates
-    config = config.env_runners(num_env_runners=cfg.ray.env_runners) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
-    # config = config.debugging(log_level="DEBUG")
+    algo_config = PPOConfig()
+    # training params discount factor, learning rate, TODO check if we need to set more parameters like train_batch_size, kl_coeff, etc.
+    algo_config = algo_config.training(
+        gamma=cfg.rl.ppo.gamma,
+        lr=cfg.rl.ppo.lr,
+        train_batch_size=24,    # these are the total steps (or actions) (total among all workers) that are used for one policy update session (which consists of multiple minibatch updates)
+        sgd_minibatch_size=12,  # the number of steps (or actions) that are used for one SGD update
+        num_sgd_iter=5,           # This refers to the number of traversals though the complete training batch for updating the policy.
+        shuffle_sequences=True,  # shuffle the sequences of experiences in the training batch, this is by default already true.
+        # entropy_coeff=0.01,  # the entropy coefficient for the policy, which is used to encourage exploration
+    ) 
+    # TODO Michiel: I think what happens: In each batch the Learner worker takes a permutation of the batch, then splits it into chunks of size sgd_minibatch_size, and then traverses all the chunks, updating the policy when processing each chunk.
+    # TODO how to set the neural network details (I see by default a 2-layered network with 256 neurons per layer is used, which could be a overkill for the first tests).
+    # In the Ray PPO documentation they speak about a Learner worker, which is the worker that updates the policy based on the experiences gathered by the EnvRunner workers. Right now we have 1 learner worker and multiple env runners.
+    algo_config = algo_config.resources(num_gpus=0) # we don't use GPU for now, TODO check if we can use GPU for policy updates
+    algo_config = algo_config.env_runners(num_env_runners=cfg.ray.env_runners) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
     # Next, in the config.environment, we specify the environment options as well
-    config = config.environment(
+    algo_config = algo_config.environment(
         env="RayleighBenardEnv",
         env_config={
-           "sim_cfg": cfg.sim,
+           "sim": cfg.sim,
            "action_segments": cfg.action_segments,
            "action_limit": cfg.action_limit,
            "action_duration": cfg.action_duration,
-           "hydra_output_dir": HydraConfig.get().runtime.output_dir 
+           "output_dir": output_dir,
         }
     )    # here I set the environment for where this policy acts in
-    config = config.framework("torch")  # we use PyTorch as the framework for the policy
-    # config = config.training()   # for now we don't set any training parameters, we use the default ones
+    algo_config = algo_config.framework("torch")  # we use PyTorch as the framework for the policy
 
     logger.info('Working directory for the local Ray program: ' + os.getcwd())
     # TODO FYI, using a Tuner from ray, one can optimize the hyperparameters of the policy
@@ -106,7 +120,7 @@ def run_env(cfg: DictConfig) -> None:
     # We build the policy that was configured above into an RLlib Algorithm
     # TODO we use use_copy=False right now, because it gives problems with deepcopying the RayleighBenardEnv due to the MPI usage.
     # But we may or may not need to use it for the parallel case. However, the documentation says it is only used for recycling the policy in test cases.
-    rrlib_algo = config.build(use_copy=False)
+    rrlib_algo = algo_config.build(use_copy=False)
 
     # The algorithms work on the SampleBatch or MultiAgentBatch types. In our case we have a single agent, so we use SampleBatch.
     # They store trajectories of experiences from the environment. The policy is updated based on these experiences.
@@ -117,12 +131,14 @@ def run_env(cfg: DictConfig) -> None:
 
     # Next we train the policy on the environment:
     # The next line is a function that will take care of the whole training loop inside
-    rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train
+    nr_iters = 2 # is the number of batch updates that the Learner Worker will do
+    for i in range(nr_iters):   # each iteration will acquire the nr of data (see config above) and update the policy using multiple mini batches and traversals through the data
+        train_info = rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train
+        logger.info(f"Training iteration {i + 1}/{nr_iters} completed. Avg reward throughout rollout process: {train_info['env_runners']['episode_reward_mean']}")
+        # Note that train_info gets saved to the ~/ray_results directory
 
-    # here we write the training loop ourselves to have more control over the training process
-    # nr_iterations = 100 # TODO put this in a config somewhere
-    # for i in range(nr_iterations):
-
+    save_result = rrlib_algo.save(join(output_dir, 'ray_algocheckpoint'))
+    logger.info(f"Saved the policy to {save_result}")
 
 
 # def main(cfg: DictConfig) -> None:
