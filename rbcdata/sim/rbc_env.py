@@ -15,6 +15,7 @@ from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
 
+from omegaconf import DictConfig
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -36,8 +37,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         super().__init__()
         self.config = config    # This is the Ray config dictionary passed to the environment
-        self.worker_index = config.get("worker_index", 0)
-        logger.info(f"Worker {self.worker_index}: Starting init of RayleighBenardEnv")
+        logger.info(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv")
 
         sim_cfg = config['sim']
         # handle the default values
@@ -98,7 +98,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=sim_cfg.pr,
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
-            save_checkpoint_path=join(config["output_dir"], f"worker{self.worker_index}", sim_cfg.save_checkpoint_path),
+            save_checkpoint_path=join(config["output_dir"], f"worker{config.worker_index}", sim_cfg.save_checkpoint_path),
         )
         self.t_func = Tfunc(
             segments=action_segments,

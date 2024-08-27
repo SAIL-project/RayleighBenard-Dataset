@@ -7,6 +7,7 @@ from ray.rllib.utils.metrics import (
 from ray.rllib.policy.policy import Policy
 import yaml
 import logging
+import numpy as np
 from omegaconf import DictConfig  # datatype for the configuration
 from rbcdata.utils.callbacks import RBCVisCallback
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -17,7 +18,7 @@ from rbcdata.sim.rbc_env import RayleighBenardEnv   # the environment that the s
 # TODO what is the evaluate() function used for in the Algorithm class?
 
 # Hydra output directory that we will load a checkpoint from
-experiment_dir = 'logs/runs/08-26-16-13-37/'
+experiment_dir = 'logs/runs/08-27-12-39-11/'
 
 # ray.init()
 # Here we just restore the policy from the Algorithm checkpoint
@@ -34,10 +35,16 @@ visCallback = RBCVisCallback(size=config.sim.N, bcT=config.sim.bcT, action_limit
 env = RayleighBenardEnv(config)
 obs, info = env.reset()
 
+apply_policy = True
+
 # Evaluate the agent (policy) in the environment
 for i in range(3 * int(config.sim.episode_length / config.action_duration)):
-    action = policy_SA.compute_single_action(obs)
-    logger.info(f"Step {i}: action={action[0]}")
-    obs, reward, closed, truncated, info = env.step(action[0])
+    if apply_policy:
+        action = policy_SA.compute_single_action(obs)
+        action = action[0]
+    else:
+        action = np.full(config.action_segments, config.sim.bcT[0])
+    logger.info(f"Step {i}: action={action}")
+    obs, reward, closed, truncated, info = env.step(action)
     logger.info(f"Step {i}, after applying action: reward={reward}, Nusselt={env.simulation.compute_nusselt(False)}, closed={closed}, truncated={truncated}, info={info}")
     visCallback(env, obs, reward, info)
