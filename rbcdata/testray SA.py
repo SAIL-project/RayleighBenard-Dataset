@@ -89,9 +89,9 @@ def run_env(cfg: DictConfig) -> None:
     algo_config = algo_config.training(
         gamma=cfg.rl.ppo.gamma,
         lr=cfg.rl.ppo.lr,
-        train_batch_size=216,    # these are the total steps (or actions) (total among all workers) that are used for one policy update session (which consists of multiple minibatch updates)
-        sgd_minibatch_size=24,  # the number of steps (or actions) that are used for one SGD update
-        num_sgd_iter=20,           # This refers to the number of traversals though the complete training batch for updating the policy.
+        train_batch_size=int(cfg.sim.episode_length / cfg.sim.dt) * cfg.ray.env_runners,    # these are the total steps (or actions) (total among all workers) that are used for one policy update session (which consists of multiple minibatch updates)
+        sgd_minibatch_size=100,  # the number of steps (or actions) that are used for one SGD update
+        num_sgd_iter=10,           # This refers to the number of traversals though the complete training batch for updating the policy.
         shuffle_sequences=True,  # shuffle the sequences of experiences in the training batch, this is by default already true.
         entropy_coeff=0.01,  # the entropy coefficient for the policy, which is used to encourage exploration
     ) 
@@ -99,7 +99,9 @@ def run_env(cfg: DictConfig) -> None:
     # TODO how to set the neural network details (I see by default a 2-layered network with 256 neurons per layer is used, which could be a overkill for the first tests).
     # In the Ray PPO documentation they speak about a Learner worker, which is the worker that updates the policy based on the experiences gathered by the EnvRunner workers. Right now we have 1 learner worker and multiple env runners.
     algo_config = algo_config.resources(num_gpus=0) # we don't use GPU for now, TODO check if we can use GPU for policy updates
-    algo_config = algo_config.env_runners(num_env_runners=cfg.ray.env_runners) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
+    algo_config = algo_config.env_runners(
+        num_env_runners=cfg.ray.env_runners, rollout_fragment_length=int(cfg.sim.episode_length / cfg.sim.dt)
+    ) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
     # Next, in the config.environment, we specify the environment options as well
     algo_config = algo_config.environment(
         env="RayleighBenardEnv",
