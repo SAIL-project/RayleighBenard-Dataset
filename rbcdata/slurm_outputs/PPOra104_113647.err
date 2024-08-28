@@ -1,0 +1,21 @@
+2024-08-28 21:09:12,042	INFO worker.py:1783 -- Started a local Ray instance.
+2024-08-28 21:12:02,027	INFO trainable.py:161 -- Trainable.setup took 154.261 seconds. If your trainable is slow to initialize, consider setting reuse_actors=True to reduce actor creation overheads.
+2024-08-28 21:12:02,027	WARNING util.py:61 -- Install gputil for GPU system monitoring.
+2024-08-28 21:13:02,038	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+2024-08-28 21:15:03,036	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+2024-08-28 21:17:04,197	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+2024-08-28 21:19:04,933	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+2024-08-28 21:21:05,650	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+2024-08-28 21:23:06,441	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+2024-08-28 21:25:06,940	WARNING rollout_ops.py:115 -- No samples returned from remote workers. If you have a slow environment or model, consider increasing the `sample_timeout_s` or decreasing the `rollout_fragment_length` in `AlgorithmConfig.env_runners().
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd-worker-5: error: *** JOB 113647 ON worker-5 CANCELLED AT 2024-08-28T21:25:27 ***
+slurmstepd-worker-5: error: *** STEP 113647.0 ON worker-5 CANCELLED AT 2024-08-28T21:25:27 ***
+*** SIGTERM received at time=1724873127 on cpu 70 ***
+PC: @     0x7ff3ee02d117  (unknown)  (unknown)
+    @     0x7ff3edfde520  (unknown)  (unknown)
+    @ ... and at least 1 more frames
+[2024-08-28 21:25:27,543 E 343534 343534] logging.cc:440: *** SIGTERM received at time=1724873127 on cpu 70 ***
+[2024-08-28 21:25:27,543 E 343534 343534] logging.cc:440: PC: @     0x7ff3ee02d117  (unknown)  (unknown)
+[2024-08-28 21:25:27,543 E 343534 343534] logging.cc:440:     @     0x7ff3edfde520  (unknown)  (unknown)
+[2024-08-28 21:25:27,543 E 343534 343534] logging.cc:440:     @ ... and at least 1 more frames

@@ -5,7 +5,9 @@ import rootutils
 import logging
 import hydra    # for loading the configuration
 from omegaconf import DictConfig  # datatype for the configuration
+import os
 from os.path import join
+import time
 
 # All Raylib imports
 import ray
@@ -42,6 +44,15 @@ def run_env(cfg: DictConfig) -> None:
     This function runs the environment with a single agent using the PPO algorithm from Raylib library using the given config.
     """
     output_dir = HydraConfig.get().runtime.output_dir
+    # Check if we are launched by Slurm, if so, also check whether we need to set the output_dir to the SLURM_TMPDIR for faster access
+    if "SLURM_JOB_ID" in os.environ:
+        logger.info("Program is being run by Slurm")
+        if "SLURM_TMPDIR" in os.environ:
+            logger.info("TMP dir requested. Setting the output_dir to the SLURM_TMPDIR")
+            # TODO change Ray logging and ray results dir to the os.environ["SLURM_TMPDIR"] and compare the performance to not using tmpdir
+            # Optional (update the Hydra output dir also to the tmpdir)
+            # OmegaConf.update(cfg, "hydra.run.dir", output_dir)
+            # OmegaConf.update(cfg, "hydra.job_logging.handlers.file.filename", f"{output_dir}/logs/hydra.log")
 
     if cfg.sim.load_checkpoint_path is not None and cfg.ray.env_runners > 0:
         checkpoints_to_nodes()
@@ -50,7 +61,7 @@ def run_env(cfg: DictConfig) -> None:
     # runtime_env = {"conda": "./environment_rbcdata.yml"}  # (Michiel): this line is used when we need to install dependencies on other worker nodes
     # This line is used if the worker nodes can use an already installed environment from the filesystem
     runtime_env = {
-        "conda": "/home/michiel/miniconda3/envs/rbcdata",
+        "conda": join(os.environ.get("HOME"), "miniconda3/envs/rbcdata"),
         "worker_process_setup_hook": logging_setup_func
     }    
     print(cfg)
@@ -63,6 +74,9 @@ def run_env(cfg: DictConfig) -> None:
         runtime_env=runtime_env,
         logging_level="info",
         log_to_driver=False,
+        _temp_dir=cfg.ray.log_dir,
+        num_cpus=25, # should be the same as number of CPUs requested by SLURM #TODO read about SLURM and Ray in the Ray documentation.
+        num_gpus=cfg.ray.nr_gpus_learner
     ) 
     # setup logger for the driver process
     logging_setup_func()
@@ -90,15 +104,15 @@ def run_env(cfg: DictConfig) -> None:
         gamma=cfg.rl.ppo.gamma,
         lr=cfg.rl.ppo.lr,
         train_batch_size=int(cfg.sim.episode_length / cfg.sim.dt) * cfg.ray.env_runners,    # these are the total steps (or actions) (total among all workers) that are used for one policy update session (which consists of multiple minibatch updates)
-        sgd_minibatch_size=100,  # the number of steps (or actions) that are used for one SGD update
-        num_sgd_iter=10,           # This refers to the number of traversals though the complete training batch for updating the policy.
+        sgd_minibatch_size=200,  # the number of steps (or actions) that are used for one SGD update
+        num_sgd_iter=50,           # This refers to the number of traversals though the complete training batch for updating the policy.
         shuffle_sequences=True,  # shuffle the sequences of experiences in the training batch, this is by default already true.
         entropy_coeff=0.01,  # the entropy coefficient for the policy, which is used to encourage exploration
     ) 
     # TODO Michiel: I think what happens: In each batch the Learner worker takes a permutation of the batch, then splits it into chunks of size sgd_minibatch_size, and then traverses all the chunks, updating the policy when processing each chunk.
     # TODO how to set the neural network details (I see by default a 2-layered network with 256 neurons per layer is used, which could be a overkill for the first tests).
     # In the Ray PPO documentation they speak about a Learner worker, which is the worker that updates the policy based on the experiences gathered by the EnvRunner workers. Right now we have 1 learner worker and multiple env runners.
-    algo_config = algo_config.resources(num_gpus=0) # we don't use GPU for now, TODO check if we can use GPU for policy updates
+    algo_config = algo_config.resources(num_gpus=cfg.ray.nr_gpus_learner) # we don't use GPU for now, TODO check if we can use GPU for policy updates
     algo_config = algo_config.env_runners(
         num_env_runners=cfg.ray.env_runners, rollout_fragment_length=int(cfg.sim.episode_length / cfg.sim.dt)
     ) # for simplicity first we use 1, later on should be more parallel using more workers for the rollouts.
@@ -135,11 +149,12 @@ def run_env(cfg: DictConfig) -> None:
     # The next line is a function that will take care of the whole training loop inside
     nr_iters = 1000 # is the number of batch updates that the Learner Worker will do
     for i in range(nr_iters):   # each iteration will acquire the nr of data (see config above) and update the policy using multiple mini batches and traversals through the data
+        start_time = time.time()
         train_info = rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train
-        logger.info(f"Training iteration {i + 1}/{nr_iters} completed. Avg reward throughout rollout process: {train_info['env_runners']['episode_reward_mean']}")
         # Note that train_info gets saved to the ~/ray_results directory
         save_result = rrlib_algo.save(join(output_dir, 'ray_algocheckpoint'))
-        logger.info(f"Saved the policy to {save_result}")
+        # logger.info(f"Saved the policy to {save_result}")
+        logger.info(f"Training iteration {i + 1}/{nr_iters} took {time.time() - start_time} seconds. Avg reward throughout rollout process: {train_info['env_runners']['episode_reward_mean']}")
 
 
 

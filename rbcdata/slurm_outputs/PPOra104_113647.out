@@ -1,0 +1,11 @@
+[2024-08-28 21:09:02,944][__main__][INFO] - Program is being run by Slurm
+[2024-08-28 21:09:02,944][__main__][WARNING] - TODO: Not implemented the moving of the checkpoints for remote nodes yet
+{'sim': {'episode_length': 30, 'N': [64, 96], 'N_obs': [8, 48], 'ra': 10000, 'pr': 0.7, 'dt': 0.025, 'bcT': [2, 1], 'save_checkpoint': False, 'save_checkpoint_path': 'shenfun/checkpoint/RB_2D', 'load_checkpoint_path': '../data/checkpoints/ra10000/train/baseline42.chk.h5'}, 'ray': {'env_runners': 20, 'log_dir': '/homes/mstraat/ray_logs/'}, 'rl': {'ppo': {'gamma': 0.99, 'lr': 0.001}}, 'seed': 42, 'interval': 16, 'action_segments': 10, 'action_start': 0, 'action_end': 800, 'action_limit': 0.75, 'action_duration': 1.5}
+[2024-08-28 21:09:27,322][__main__][INFO] - Ray runtime initialized with context: RayContext(dashboard_url='', python_version='3.11.8', ray_version='2.35.0', ray_commit='ba24879ff81c8c5fd77acae435ee4a1d0b3d9e0c')
+[2024-08-28 21:09:27,324][__main__][INFO] - Working directory for the local Ray program: /homes/mstraat/Projects/RayleighBenard-Dataset/rbcdata
+[2024-08-28 21:14:03,025][__main__][INFO] - Training iteration 1/1000 took 120.99686121940613 seconds. Avg reward throughout rollout process: nan
+[2024-08-28 21:16:04,185][__main__][INFO] - Training iteration 2/1000 took 121.16007971763611 seconds. Avg reward throughout rollout process: nan
+[2024-08-28 21:18:04,922][__main__][INFO] - Training iteration 3/1000 took 120.7358250617981 seconds. Avg reward throughout rollout process: nan
+[2024-08-28 21:20:05,639][__main__][INFO] - Training iteration 4/1000 took 120.71649622917175 seconds. Avg reward throughout rollout process: nan
+[2024-08-28 21:22:06,431][__main__][INFO] - Training iteration 5/1000 took 120.791579246521 seconds. Avg reward throughout rollout process: nan
+[2024-08-28 21:24:06,930][__main__][INFO] - Training iteration 6/1000 took 120.49834156036377 seconds. Avg reward throughout rollout process: nan
