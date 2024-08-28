@@ -71,8 +71,10 @@ class KMM:
         Save results to hdf5 every modsave timestep.
     moderror : int, optional
         Print diagnostics every moderror timestep
+    save_checkpoint : bool, optional
+        Whether to save a checkpoint file of the simulation
     checkpoint : int, optional
-        Save required data for restart to hdf5 every checkpoint timestep.
+        Save required data for restart to hdf5 every checkpoint timestep (only makes sense is save_checkpoint is True)
     timestepper : str, optional
         Choose timestepper
 
@@ -96,6 +98,7 @@ class KMM:
         family="C",
         padding_factor=(1, 1.5),
         modsave=1e8,
+        save_checkpoint=False,
         checkpoint=1000,
     ):
         self.N = N
@@ -108,6 +111,7 @@ class KMM:
         self.dpdy = dpdy
         self.PDE = IMEXRK3
         self.im1 = None
+        self.save_checkpoint = save_checkpoint
 
         # Regular spaces
         self.B0 = FunctionSpace(N[0], family, bc=(0, 0, 0, 0), domain=domain[0])
@@ -156,14 +160,17 @@ class KMM:
         self.divu = Project(div(self.u_), self.TC)
         self.solP = None  # For computing pressure
 
-        # File for storing the results
-        Path(filename).parent.mkdir(parents=True, exist_ok=True)
-        self.file_u = ShenfunFile(
-            "_".join((filename, "U")), self.BD, backend="hdf5", mode="w", mesh="uniform"
-        )
+        # File for storing the results, create only if save_checkpoint=True
+        if self.save_checkpoint: 
+            Path(filename).parent.mkdir(parents=True, exist_ok=True)
+            self.file_u = ShenfunFile(
+                "_".join((filename, "U")), self.BD, backend="hdf5", mode="w", mesh="uniform"
+            )
 
-        # Create a checkpoint file used to restart simulations
-        self.checkpoint = Checkpoint(filename, checkevery=checkpoint, data={"0": {"U": [self.u_]}})
+            # Create a checkpoint file used to restart simulations
+            self.checkpoint = Checkpoint(filename, checkevery=checkpoint, data={"0": {"U": [self.u_]}})
+        else:
+            self.checkpoint = None  # we set the checkpoint to None if we don't want to save checkpoints
 
         # set up equations
         v = TestFunction(self.TB)
@@ -277,17 +284,16 @@ class KMM:
         if comm.Get_rank() == 0:
             print("Time %2.5f Energy %2.6e %2.6e div %2.6e" % (t, e0, e1, e3))
 
-    def init_from_checkpoint(self):
-        self.checkpoint.read(self.u_, "U", step=0)
-        self.checkpoint.open()
-        tstep = self.checkpoint.f.attrs["tstep"]
-        t = self.checkpoint.f.attrs["t"]
-        self.checkpoint.close()
-        return t, tstep
+    def init_from_checkpoint(self, filename=None):
+        load_checkpoint = Checkpoint(filename)
+        load_checkpoint.read(self.u_, "U", step=0)
+        # load_checkpoint.read(self.T_, "T", step=0)
+        load_checkpoint.open()
+        load_checkpoint.close()
+        # MS t, tstep are also in the checkpoint attributes, but for simplicity I just return 0, 0. I think it's not necessary otherwise.
+        return 0, 0
 
-    def initialize(self, from_checkpoint=False):
-        if from_checkpoint:
-            return self.init_from_checkpoint()
+    def initialize(self):
         raise RuntimeError("Initialize solver in subclass")
 
     def tofile(self, tstep):
@@ -316,6 +322,7 @@ class KMM:
             t += self.dt
             tstep += 1
             self.update(t, tstep)
-            self.checkpoint.update(t, tstep)
-            if tstep % self.modsave == 0:
-                self.tofile(tstep)
+            if self.save_checkpoint:
+                self.checkpoint.update(t, tstep)
+                if tstep % self.modsave == 0:
+                    self.tofile(tstep)

@@ -89,11 +89,11 @@ def run_env(cfg: DictConfig) -> None:
     algo_config = algo_config.training(
         gamma=cfg.rl.ppo.gamma,
         lr=cfg.rl.ppo.lr,
-        train_batch_size=72,    # these are the total steps (or actions) (total among all workers) that are used for one policy update session (which consists of multiple minibatch updates)
-        sgd_minibatch_size=12,  # the number of steps (or actions) that are used for one SGD update
-        num_sgd_iter=15,           # This refers to the number of traversals though the complete training batch for updating the policy.
+        train_batch_size=216,    # these are the total steps (or actions) (total among all workers) that are used for one policy update session (which consists of multiple minibatch updates)
+        sgd_minibatch_size=24,  # the number of steps (or actions) that are used for one SGD update
+        num_sgd_iter=20,           # This refers to the number of traversals though the complete training batch for updating the policy.
         shuffle_sequences=True,  # shuffle the sequences of experiences in the training batch, this is by default already true.
-        # entropy_coeff=0.01,  # the entropy coefficient for the policy, which is used to encourage exploration
+        entropy_coeff=0.01,  # the entropy coefficient for the policy, which is used to encourage exploration
     ) 
     # TODO Michiel: I think what happens: In each batch the Learner worker takes a permutation of the batch, then splits it into chunks of size sgd_minibatch_size, and then traverses all the chunks, updating the policy when processing each chunk.
     # TODO how to set the neural network details (I see by default a 2-layered network with 256 neurons per layer is used, which could be a overkill for the first tests).
@@ -131,7 +131,7 @@ def run_env(cfg: DictConfig) -> None:
 
     # Next we train the policy on the environment:
     # The next line is a function that will take care of the whole training loop inside
-    nr_iters = 120 # is the number of batch updates that the Learner Worker will do
+    nr_iters = 1000 # is the number of batch updates that the Learner Worker will do
     for i in range(nr_iters):   # each iteration will acquire the nr of data (see config above) and update the policy using multiple mini batches and traversals through the data
         train_info = rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train
         logger.info(f"Training iteration {i + 1}/{nr_iters} completed. Avg reward throughout rollout process: {train_info['env_runners']['episode_reward_mean']}")

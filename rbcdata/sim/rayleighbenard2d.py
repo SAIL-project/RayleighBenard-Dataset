@@ -17,6 +17,7 @@ from shenfun import (
     div,
     grad,
     la,
+    Checkpoint
 )
 
 from .channelflow2d import KMM
@@ -40,6 +41,7 @@ class RayleighBenard(KMM):
         save_checkpoint_path="data/shenfun/RB_2D",
         padding_factor=(1, 1.5),
         modsave=10000,
+        save_checkpoint=False,
         checkpoint=10,
         family="C",
     ):
@@ -62,6 +64,7 @@ class RayleighBenard(KMM):
             family=family,
             padding_factor=padding_factor,
             modsave=modsave,
+            save_checkpoint=save_checkpoint,
             checkpoint=checkpoint,
             dpdy=0,
         )
@@ -82,14 +85,15 @@ class RayleighBenard(KMM):
         self.T_ = Function(self.TT)  # Temperature solution
         self.Tb = Array(self.TT)
 
-        # Create files
-        Path(save_checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
-        self.file_T = ShenfunFile(
-            "_".join((save_checkpoint_path, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
-        )
+        # Create files if save_checkpoint is True
+        if save_checkpoint:
+            Path(save_checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
+            self.file_T = ShenfunFile(
+                "_".join((save_checkpoint_path, "T")), self.TT, backend="hdf5", mode="w", mesh="uniform"
+            )
 
-        # Modify checkpoint file
-        self.checkpoint.data["0"]["T"] = [self.T_]
+            # Modify checkpoint file
+            self.checkpoint.data["0"]["T"] = [self.T_]
 
         # Chebyshev matrices are not sparse, so need a tailored solver. Legendre has simply 5
         # nonzero diagonals
@@ -138,23 +142,13 @@ class RayleighBenard(KMM):
         self.file_T.write(tstep, {"T": [self.T_.backward(mesh="uniform")]})
 
     def init_from_checkpoint(self, filename=None):
-        old_filename = self.checkpoint.filename
-        if filename is not None:
-            self.checkpoint.filename = (
-                filename  # temporarily switch the filename of the Checkpoint instance
-            )
-        self.checkpoint.read(self.u_, "U", step=0)
-        self.checkpoint.read(self.T_, "T", step=0)
-        self.checkpoint.open()
-        #(Michiel): If not necessary we should not restore the simulation time from the checkpoint, because it may complicate things. 
-        # tstep = self.checkpoint.f.attrs["tstep"]
-        # t = self.checkpoint.f.attrs["t"]
-        self.checkpoint.close()
-        # restore the old filename of the Checkpoint
-        # instance (which was changed if filename is given to function)
-        self.checkpoint.filename = old_filename
-        self.checkpoint.f = None
-        return 0, 0
+        load_checkpoint = Checkpoint(filename)
+        load_checkpoint.read(self.u_, "U", step=0)
+        load_checkpoint.read(self.T_, "T", step=0)
+        load_checkpoint.open()
+        load_checkpoint.close()
+        # MS t, tstep are also in the checkpoint attributes, but for simplicity I just return 0, 0. I think it's not necessary otherwise.
+        return 0, 0   
 
     # TODO: MS: look more into the initialization
     def initialize(self, rand=0.001, filename=None, np_random=None):
@@ -267,10 +261,11 @@ class RayleighBenard(KMM):
             self.update_bc(t + self.dt * c[rk + 1])
             self.pdes["T"].solve_step(rk)
 
-        # update checkpoint and data files
-        self.checkpoint.update(t, tstep)
-        if tstep % self.modsave == 0:
-            self.tofile(tstep)
+        # update checkpoint and data files if self.save_checkpoint is True
+        if self.save_checkpoint: 
+            self.checkpoint.update(t, tstep)
+            if tstep % self.modsave == 0:
+                self.tofile(tstep)
 
         # update outputs and time
         self.outputs()

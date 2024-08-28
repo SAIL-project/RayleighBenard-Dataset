@@ -99,6 +99,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             dt=sim_cfg.dt,
             bcT=(sim_cfg.bcT[0], sim_cfg.bcT[1]),
             save_checkpoint_path=join(config["output_dir"], f"worker{config.worker_index}", sim_cfg.save_checkpoint_path),
+            save_checkpoint=sim_cfg.save_checkpoint
         )
         self.t_func = Tfunc(
             segments=action_segments,
