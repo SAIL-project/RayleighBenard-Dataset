@@ -17,7 +17,7 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
-    EPISODE_LENGTH = 500
+    EPISODE_LENGTH = 300
     SIZE_STATE = [64, 96]
     SIZE_OBS = [8, 48]
     RA = 10_000
@@ -120,7 +120,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             checkpoint=self.checkpoint, np_random=self._np_random, rand=0.000001
         )
         self.simulation.assemble()
-        self.simulation.step(self.t, self.tstep)
+        self.simulation.step()
 
         # Reset action
         self.action = np.array([0.0])
@@ -171,4 +171,4 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return float(-self.simulation.compute_nusselt(state))
 
     def __get_info(self) -> dict[str, Any]:
-        return {"step": self.tstep, "t": round(self.t, 8)}
+        return {"step": self.tstep, "t": self.t}

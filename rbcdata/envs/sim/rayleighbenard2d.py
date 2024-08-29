@@ -150,7 +150,7 @@ class RayleighBenard(KMM):
         checkpoint.read(self.T_, "T", step=0)
         checkpoint.open()
         tstep = checkpoint.f.attrs["tstep"]
-        t = self.checkpoint.f.attrs["t"]
+        t = checkpoint.f.attrs["t"]
         checkpoint.close()
 
         return t, tstep
@@ -160,7 +160,7 @@ class RayleighBenard(KMM):
         if checkpoint is not None:
             t, tstep = self.init_from_checkpoint(checkpoint)
             self.update_bc(t)
-            return t, tstep
+            return 0, 0
 
         if np_random is None:
             np_random = np.random.default_rng()
@@ -258,7 +258,7 @@ class RayleighBenard(KMM):
 
         # update outputs and time
         self.compute_outputs()
-        return t + self.dt, tstep + 1
+        return round(t + self.dt, 8), int(tstep + 1)
 
     def clean(self):
         self.TT.destroy()
