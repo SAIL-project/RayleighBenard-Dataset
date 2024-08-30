@@ -112,7 +112,8 @@ class LogNusseltNumberCallback(CallbackBase):
 
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
-            self.nusselts.append(env.simulation.compute_nusselt(obs))
+            state = env.simulation.state
+            self.nusselts.append(env.simulation.compute_nusselt(state))
             self.time.append(info["t"])
 
     def close(self):
@@ -125,6 +126,7 @@ class LogNusseltNumberCallback(CallbackBase):
         # Plot lift
         ax.set_xlabel("time")
         ax.set_ylabel("Nusselt Number")
+        ax.set_ylim(0, 5)
         ax.plot(self.time, self.nusselts)
         ax.tick_params(axis="y")
 

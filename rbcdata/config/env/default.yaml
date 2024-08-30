@@ -1,0 +1,22 @@
+# gym environment
+
+# checkpoint
+write_checkpoint: False
+base_path: "logs/environment"
+checkpoint: null
+# simulation
+episode_length: 100
+size_state: [64, 96]
+size_obs: [8, 48]
+ra: 10_000
+pr: 0.7
+dt: 0.05
+solver_steps: 20
+bcT: [2, 1]
+# action config
+action_limit: 0.75
+action_segments: 12
+action_start: 0.0
+action_end: 200
+action_duration: 1.0
+fraction_length_smoothing: 0.1

@@ -22,8 +22,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     SIZE_OBS = [8, 48]
     RA = 10_000
     PR = 0.7
-    DT = 0.025
-    SOLVER_STEPS = 40
+    DT = 0.05
+    SOLVER_STEPS = 20
     BCT = [2, 1]
     BASE_PATH = "logs/environment"
     CHECKPOINT = None
@@ -111,7 +111,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         )
 
     def reset(
-        self, seed: int | None = None, options: Dict[str, Any] | None = None, filename=None
+        self,
+        seed: int | None = None,
+        options: Dict[str, Any] | None = None,
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
         super().reset(seed=seed)
 

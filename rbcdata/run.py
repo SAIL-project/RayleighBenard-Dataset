@@ -16,26 +16,22 @@ from rbcdata.utils.integrate import integrate
 
 
 def run_env(cfg: DictConfig) -> None:
-    env = RayleighBenardEnv(
-        sim_cfg=cfg.sim,
-        action_segments=cfg.action_segments,
-        action_limit=cfg.action_limit,
-    )
+    env = RayleighBenardEnv(env_config=cfg.env)
 
     # Callbacks
     callbacks: List[CallbackBase] = instantiate_callbacks(cfg.get("callbacks"))
     sweep_metric = SweepMetricCallback(
-        action_start=cfg.action_start,
-        action_end=cfg.action_end,
+        action_start=cfg.env.action_start,
+        action_end=cfg.env.action_end,
     )
     callbacks.append(sweep_metric)
 
     # Controller
     controller = hydra.utils.instantiate(
         cfg.controller,
-        start=cfg.action_start,
-        end=cfg.action_end,
-        duration=cfg.action_duration,
+        start=cfg.env.action_start,
+        end=cfg.env.action_end,
+        duration=cfg.env.action_duration,
         zero=np.array([0.0] * env.action_segments),
     )
 
@@ -45,7 +41,6 @@ def run_env(cfg: DictConfig) -> None:
         callbacks=callbacks,
         seed=cfg.seed,
         controller=controller,
-        checkpoint=cfg.checkpoint,
     )
 
     return sweep_metric.result()["nu_mean_action"]

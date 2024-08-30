@@ -1,8 +1,0 @@
-episode_length: 800
-N: [64, 96]
-N_obs: [8, 48]
-ra: 10_000
-pr: 0.7
-dt: 0.05
-bcT: [2, 1]
-checkpoint_path: shenfun/checkpoint/RB_2D

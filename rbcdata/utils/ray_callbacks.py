@@ -4,8 +4,11 @@ from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
+from ray.rllib.algorithms.algorithm import Algorithm
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.env.base_env import BaseEnv
+from ray.rllib.env.env_runner import EnvRunner
+from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.metrics import ENV_RUNNER_RESULTS
 from ray.rllib.utils.metrics.metrics_logger import MetricsLogger
 
@@ -23,7 +26,7 @@ class LogCallback(DefaultCallbacks):
         episode.user_data["nusselts"] = []
 
     def on_episode_step(self, *, worker, base_env: BaseEnv, episode, env_index, **kwargs):
-        # self.log(f"Step {episode.total_env_steps} episode {episode.episode_id}")
+        self.log(f"Step {episode.total_env_steps} episode {episode.episode_id}")
         # Nusselt Number
         env: RayleighBenardMultiAgentEnv = base_env.envs[0]
         episode.user_data["nusselts"].append(env.get_global_nusselt())
@@ -37,11 +40,41 @@ class LogCallback(DefaultCallbacks):
         self.log_episode_nusselt(nusselts, episode.episode_id)
 
     def on_train_result(self, *, algorithm, metrics_logger: MetricsLogger, result):
+        # TM: What is metrics_logger doing?
+        return
         custom_metrics = result[ENV_RUNNER_RESULTS]["custom_metrics"]
         # Log mean of nusselt number across all episodes
         for key in ["nusselt_mean_mean", "nusselt_var_mean"]:
             if key in custom_metrics:
                 metrics_logger.log_value(key, custom_metrics[key])
+
+    def on_sample_end(
+        self,
+        *,
+        env_runner: EnvRunner | None = None,
+        metrics_logger: MetricsLogger | None = None,
+        samples: SampleBatch,
+        worker: EnvRunner | None = None,
+        **kwargs,
+    ) -> None:
+        self.log(f"On sample end... Collected {len(samples)} samples")
+
+    def on_evaluate_start(
+        self,
+        *,
+        algorithm: Algorithm,
+        metrics_logger: MetricsLogger | None = None,
+    ) -> None:
+        self.log("Starting evaluation...")
+
+    def on_evaluate_end(
+        self,
+        *,
+        algorithm: Algorithm,
+        metrics_logger: MetricsLogger | None = None,
+        evaluation_metrics: dict,
+    ) -> None:
+        self.log("Ending evaluation...")
 
     def log(self, msg):
         logger = logging.getLogger("ray")
@@ -54,6 +87,7 @@ class LogCallback(DefaultCallbacks):
         # Plot lift
         ax.set_xlabel("time")
         ax.set_ylabel("Nusselt Number")
+        ax.set_ylim(0, 5)
         ax.plot(range(len(nusselts)), nusselts)
         ax.tick_params(axis="y")
         ax.grid()

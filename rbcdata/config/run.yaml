@@ -1,17 +1,10 @@
 defaults:
   - _self_
   - hydra: default
-  - sim: default
+  - env: default
   - controller: zero
   - callbacks: default
   - sweep: null
 
 seed: 42
-interval: 16
-checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
-
-action_segments: 10
-action_start: 10 #400
-action_end: 20 #700
-action_limit: 0.75
-action_duration: 1.5
+interval: 5

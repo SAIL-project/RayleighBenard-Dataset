@@ -21,44 +21,46 @@ def main() -> None:
     logger = logging.getLogger("ray")
 
     register_env("rbc_ma_env", lambda config: RayleighBenardMultiAgentEnv(config))
-    config = (
+    algo = (
         PPOConfig()
-        .training(
-            train_batch_size=EPISODE_LENGTH * ENV_RUNNERS,
-            sgd_minibatch_size=10,
-            # num_sgd_iter=15,
-        )
         .environment(
             env="rbc_ma_env",
             env_config={
                 "checkpoint": "data/checkpoints/ra10000/train/baseline42",
                 "episode_length": EPISODE_LENGTH,
+                "ra": 10_000,
             },
         )
         .env_runners(
             num_env_runners=ENV_RUNNERS,
             num_envs_per_env_runner=1,
-            # num_cpus_per_env_runner=2,
             rollout_fragment_length=EPISODE_LENGTH,
+            batch_mode="complete_episodes",
+            sample_timeout_s=2000,
         )
         .multi_agent(
             policies={"p0"},
             # All agents map to the exact same policy.
             policy_mapping_fn=(lambda aid, *args, **kwargs: "p0"),
         )
+        .training(
+            train_batch_size=EPISODE_LENGTH * ENV_RUNNERS,
+            sgd_minibatch_size=10,
+        )
+        .evaluation(
+            evaluation_duration=1,
+            evaluation_interval=ITERATIONS,
+        )
         .framework("torch")
         .callbacks(LogCallback)
-    )
-
-    algo = config.build()
+    ).build()
 
     # Train the policy
     for idx in range(ITERATIONS):
         logger.info(f"Start Iteration {idx}...")
-        result = algo.train()
+        algo.train()
     logger.info("Finished Training")
-    result.pop("config")
-    pprint(result)
+    pprint(eval)
 
 
 if __name__ == "__main__":

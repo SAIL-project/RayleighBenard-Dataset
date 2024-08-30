@@ -1,6 +1,6 @@
 rbc_vis:
   _target_: rbcdata.utils.callbacks.RBCVisCallback
-  size: ${sim.N}
-  bcT: ${sim.bcT}
-  action_limit: ${action_limit}
+  size: ${env.size_state}
+  bcT: ${env.bcT}
+  action_limit: ${env.action_limit}
   interval: ${interval}

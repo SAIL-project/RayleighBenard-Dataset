@@ -97,7 +97,8 @@ class RayleighBenardMultiAgentEnv(MultiAgentEnv):
         )
 
     def get_global_nusselt(self):
-        return self.env.get_nusselt()
+        state = self.env.simulation.get_state()
+        return self.env.simulation.compute_nusselt(state)
 
     def __reward_dict(self, obs: Any):
         return {index: self.__reward(obs, int(index)) for index in self._agent_ids}
