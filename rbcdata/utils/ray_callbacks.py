@@ -26,7 +26,7 @@ class LogCallback(DefaultCallbacks):
         episode.user_data["nusselts"] = []
 
     def on_episode_step(self, *, worker, base_env: BaseEnv, episode, env_index, **kwargs):
-        self.log(f"Step {episode.total_env_steps} episode {episode.episode_id}")
+        # self.log(f"Step {episode.total_env_steps} episode {episode.episode_id}")
         # Nusselt Number
         env: RayleighBenardMultiAgentEnv = base_env.envs[0]
         episode.user_data["nusselts"].append(env.get_global_nusselt())
