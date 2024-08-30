@@ -13,7 +13,7 @@ from rbcdata.utils.ray_callbacks import LogCallback
 
 ITERATIONS = 50
 EPISODE_LENGTH = 50
-ENV_RUNNERS = 4
+ENV_RUNNERS = 5
 
 
 def main() -> None:
