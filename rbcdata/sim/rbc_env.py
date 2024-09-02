@@ -1,4 +1,3 @@
-import copy
 import logging
 from typing import Any, Dict, Tuple, TypeAlias
 
@@ -11,7 +10,6 @@ import glob
 from os import listdir
 from os.path import isdir, isfile, join
 
-from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
 
@@ -26,7 +24,6 @@ logger = logging.getLogger("ray")
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
-
     
     def __init__(self, config: Dict) -> None:
         """

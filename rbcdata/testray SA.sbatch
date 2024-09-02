@@ -3,7 +3,7 @@
 #SBATCH --job-name=PPOra104
 #SBATCH --partition=gpu
 #SBATCH --cpus-per-task=25
-#SBATCH --gres=gpu:1    # Request 1 GPU
+#SBATCH --gres=gpu:1
 #SBATCH --time=2-00:00:00
 #SBATCH --output=slurm_outputs/%x_%j.out
 #SBATCH --error=slurm_outputs/%x_%j.err

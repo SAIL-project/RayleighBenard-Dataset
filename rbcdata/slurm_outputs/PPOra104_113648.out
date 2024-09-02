@@ -1,3 +1,0 @@
-[2024-08-28 21:16:31,903][__main__][INFO] - Program is being run by Slurm
-[2024-08-28 21:16:31,903][__main__][WARNING] - TODO: Not implemented the moving of the checkpoints for remote nodes yet
-{'sim': {'episode_length': 30, 'N': [64, 96], 'N_obs': [8, 48], 'ra': 10000, 'pr': 0.7, 'dt': 0.025, 'bcT': [2, 1], 'save_checkpoint': False, 'save_checkpoint_path': 'shenfun/checkpoint/RB_2D', 'load_checkpoint_path': '../data/checkpoints/ra10000/train/baseline42.chk.h5'}, 'ray': {'env_runners': 20, 'nr_gpus_learner': 1, 'log_dir': '/homes/mstraat/ray_logs/'}, 'rl': {'ppo': {'gamma': 0.99, 'lr': 0.001}}, 'seed': 42, 'interval': 16, 'action_segments': 10, 'action_start': 0, 'action_end': 800, 'action_limit': 0.75, 'action_duration': 1.5}

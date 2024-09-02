@@ -14,7 +14,7 @@ import ray
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.tune.registry import register_env  # allows to register custom environments, every ray worker will have access to it
 
-import gymnasium as gym
+# import gymnasium as gym
 
 from hydra.core.hydra_config import HydraConfig
 
@@ -127,7 +127,8 @@ def run_env(cfg: DictConfig) -> None:
            "output_dir": output_dir,
         }
     )    # here I set the environment for where this policy acts in
-    algo_config = algo_config.framework("torch")  # we use PyTorch as the framework for the policy
+    # algo_config = algo_config.framework("torch")  # we use PyTorch as the framework for the policy
+    algo_config = algo_config.framework("torch")  # we use TensorFlow as the framework for the policy
 
     logger.info('Working directory for the local Ray program: ' + os.getcwd())
     # TODO FYI, using a Tuner from ray, one can optimize the hyperparameters of the policy
