@@ -88,15 +88,19 @@ class RayleighBenardMultiAgentEnv(MultiAgentEnv):
         action = self.__dict2array(action_dict)
         obs, _, terminated, truncated, info = self.env.step(action)
 
+        self.last_obs = self.__obs_dict(obs)
+        self.last_reward = self.__reward_dict(obs)
+        self.last_info = self.__2dict(info)
+
         return (
-            self.__obs_dict(obs),
-            self.__reward_dict(obs),
+            self.last_obs,
+            self.last_reward,
             self.__2dict(terminated, include_all=True),
             self.__2dict(truncated, include_all=True),
-            self.__2dict(info),
+            self.last_info,
         )
 
-    def get_global_nusselt(self):
+    def global_nusselt(self):
         state = self.env.simulation.get_state()
         return self.env.simulation.compute_nusselt(state)
 

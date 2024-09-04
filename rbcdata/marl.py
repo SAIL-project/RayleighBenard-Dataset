@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 
 import ray
 import rootutils
@@ -11,9 +10,9 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.envs.rbc_ma_env import RayleighBenardMultiAgentEnv
 from rbcdata.utils.ray_callbacks import LogCallback
 
-ITERATIONS = 50
-EPISODE_LENGTH = 50
-ENV_RUNNERS = 5
+ITERATIONS = 1
+EPISODE_LENGTH = 1
+ENV_RUNNERS = 1
 
 
 def main() -> None:
@@ -32,7 +31,7 @@ def main() -> None:
             },
         )
         .env_runners(
-            num_env_runners=ENV_RUNNERS,
+            num_env_runners=0,
             num_envs_per_env_runner=1,
             rollout_fragment_length=EPISODE_LENGTH,
             batch_mode="complete_episodes",
@@ -45,7 +44,7 @@ def main() -> None:
         )
         .training(
             train_batch_size=EPISODE_LENGTH * ENV_RUNNERS,
-            sgd_minibatch_size=10,
+            sgd_minibatch_size=1,
         )
         .evaluation(
             evaluation_duration=1,
@@ -60,7 +59,6 @@ def main() -> None:
         logger.info(f"Start Iteration {idx}...")
         algo.train()
     logger.info("Finished Training")
-    pprint(eval)
 
 
 if __name__ == "__main__":

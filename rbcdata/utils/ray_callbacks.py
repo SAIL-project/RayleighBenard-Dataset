@@ -13,12 +13,15 @@ from ray.rllib.utils.metrics import ENV_RUNNER_RESULTS
 from ray.rllib.utils.metrics.metrics_logger import MetricsLogger
 
 from rbcdata.envs.rbc_ma_env import RayleighBenardMultiAgentEnv
+from rbcdata.utils.rbc_field import RBCField
+from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
 
 
 class LogCallback(DefaultCallbacks):
     def __init__(self):
         session_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = f"logs/ray/Session{session_id}"
+        self.save_example = True
 
     def on_episode_start(self, *, worker, base_env, policies, episode, env_index, **kwargs):
         # self.log(f"Starting episode {episode.episode_id}")
@@ -29,7 +32,19 @@ class LogCallback(DefaultCallbacks):
         # self.log(f"Step {episode.total_env_steps} episode {episode.episode_id}")
         # Nusselt Number
         env: RayleighBenardMultiAgentEnv = base_env.envs[0]
-        episode.user_data["nusselts"].append(env.get_global_nusselt())
+        episode.user_data["nusselts"].append(env.global_nusselt())
+
+        # log observation examples fom first step
+        if self.save_example:
+            rbc_vis = RBCFieldVisualizer(
+                size=env.env.size_obs,
+                vmin=env.env.bcT[1],
+                vmax=env.env.bcT[0] + env.env.action_limit,
+                show=False,
+            )
+            for index, obs in env.last_obs.items():
+                self.save_observation(obs, index, rbc_vis, env.env.size_obs)
+            self.save_example = False
 
     def on_episode_end(self, *, worker, base_env, policies, episode, env_index):
         # self.log(f"Ending episode {episode.episode_id}")
@@ -93,3 +108,9 @@ class LogCallback(DefaultCallbacks):
         ax.grid()
         fig.savefig(f"{self.log_dir}/episodes/nusselt_{index}.png")
         plt.close(fig)
+
+    def save_observation(self, obs, index, vis, size):
+        Path(f"{self.log_dir}/examples").mkdir(parents=True, exist_ok=True)
+        obs = obs.reshape(-1, size[0], size[1])
+        fig = vis.draw(obs[RBCField.T], obs[RBCField.UX], obs[RBCField.UY], 0)
+        fig.savefig(f"{self.log_dir}/examples/obs_{index}.png")

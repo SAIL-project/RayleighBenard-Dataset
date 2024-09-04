@@ -32,6 +32,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     ACTION_DURATION = 1.0
     ACTION_SEGMENTS = 12
     ACTION_START = 0.0
+    TIME_AVERAGING = 4
     FRACTION_LENGTH_SMOOTHING = 0.1
 
     def __init__(
@@ -73,6 +74,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         )
 
         # Env configuration
+        self.time_avg = env_config.get("time_averaging", self.TIME_AVERAGING)
+        self.obs_list = []
         self.episode_steps = int(self.episode_length / self.dt)
         self.closed = False
 
@@ -123,6 +126,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         )
         self.simulation.assemble()
         self.simulation.step()
+        self.obs_list = []
 
         # Reset action
         self.action = np.array([0.0])
@@ -148,7 +152,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.t >= self.episode_length:
             truncated = True
 
-        return self.__get_obs(), self.__get_reward(), self.closed, truncated, self.__get_info()
+        self.last_obs = self.__get_obs()
+        self.last_reward = self.__get_reward()
+        self.last_info = self.__get_info()
+
+        return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
     def close(self) -> None:
         self.closed = True
@@ -163,7 +171,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.simulation.compute_nusselt(self.__get_obs())
 
     def __get_obs(self) -> RBCObservation:
-        return self.simulation.get_obs().astype(np.float32)
+        # Append last observation
+        self.obs_list.append(self.simulation.get_obs().astype(np.float32))
+        # Only retain last 'time_avg' observations
+        del self.obs_list[: -self.time_avg]
+
+        return np.mean(np.array(self.obs_list), axis=0)
 
     def __get_reward(self, from_obs=False) -> float:
         if from_obs:

@@ -17,7 +17,7 @@
             "name": "RayTest",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rbcdata/ray_test.py",
+            "program": "${workspaceFolder}/rbcdata/marl.py",
             "console": "integratedTerminal",
             "justMyCode": false,
         },

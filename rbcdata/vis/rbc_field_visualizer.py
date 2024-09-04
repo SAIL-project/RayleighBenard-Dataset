@@ -21,6 +21,7 @@ class RBCFieldVisualizer(ABC):
         vmax: float = 1,
         show_u: bool = True,
         show: bool = True,
+        skip: int = 4,
     ) -> None:
         # Matplotlib settings
         self.closed = False
@@ -76,9 +77,9 @@ class RBCFieldVisualizer(ABC):
         self.cbar.set_yticklabels([vmin, (vmin + vmax) / 2, vmax])
         self.fig.canvas.mpl_connect("close_event", self.close)
         # Velocity Field
+        self.skip = skip
         if show_u:
-            X, Y = np.meshgrid(np.arange(0, 96), np.arange(0, 64))
-            self.skip = 4
+            X, Y = np.meshgrid(np.arange(0, size[1]), np.arange(0, size[0]))
             self.image_u = self.ax.quiver(
                 X[:: self.skip, :: self.skip],
                 Y[:: self.skip, :: self.skip],
@@ -121,7 +122,6 @@ class RBCFieldVisualizer(ABC):
                 f"Temperature Field at t={round(t, 3)}. Max velocity: {max_velo:.3f}",
                 loc="left",
             )
-        
 
         # Update u image
         if self.show_u:
