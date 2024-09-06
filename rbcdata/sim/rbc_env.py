@@ -15,14 +15,14 @@ from rbcdata.config import RBCSimConfig
 from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
 
 x, y, tt = sympy.symbols("x,y,t", real=True)
 
-logger = logging.getLogger("ray")
+logger = logging.getLogger(__name__)
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
@@ -31,13 +31,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __init__(self, config: Dict) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
-        Note that I had to change the constructor to work with Ray and custom environments
-        Further, the config dict should have the following handy properties in addition added by Ray runtime:
-        num_env_runners, worker_index, vector_index, and remote.
         """
         super().__init__()
-        self.config = config    # This is the Ray config dictionary passed to the environment
-        logger.info(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv")
+        self.config = config
+        with open_dict(config):
+            config.worker_index = 0 # for now we only have on worker. In future this should be index of the worker.
 
         sim_cfg = config['sim']
         # handle the default values
