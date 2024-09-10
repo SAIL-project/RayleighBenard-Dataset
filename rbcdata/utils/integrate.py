@@ -8,11 +8,8 @@ def integrate(
     callbacks: list[callable] = [],
     controller: Controller = None,
     seed: int | None = None,
-    render: bool = False,
 ):
     # Set up gym environment
-    if render:
-        env.render_mode = "human"
     obs, info = env.reset(seed=seed)
     action = env.action
     # Run environment
@@ -23,8 +20,7 @@ def integrate(
         # Simulation step
         obs, reward, terminated, truncated, info = env.step(action)
         # Render
-        if render:
-            env.render()
+        env.render()
         # Termination criterion
         if terminated or truncated:
             break

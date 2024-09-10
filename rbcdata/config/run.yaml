@@ -8,7 +8,7 @@ defaults:
 
 seed: 42
 interval: 5
-render: true
+render_mode: human
 
 env:
   checkpoint: ../../../data/checkpoints/ra10000/train/baseline42

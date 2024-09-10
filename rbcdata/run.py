@@ -16,7 +16,7 @@ from rbcdata.utils.integrate import integrate
 
 
 def run_env(cfg: DictConfig) -> None:
-    env = RayleighBenardEnv(env_config=cfg.env)
+    env = RayleighBenardEnv(env_config=cfg.env, render_mode=cfg.render_mode)
 
     # Callbacks
     callbacks: List[CallbackBase] = instantiate_callbacks(cfg.get("callbacks"))
@@ -41,7 +41,6 @@ def run_env(cfg: DictConfig) -> None:
         callbacks=callbacks,
         seed=cfg.seed,
         controller=controller,
-        render=cfg.render,
     )
 
     return sweep_metric.result()["nu_mean_action"]

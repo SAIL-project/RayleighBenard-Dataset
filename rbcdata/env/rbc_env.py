@@ -231,30 +231,23 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.clock is None:
             self.clock = pygame.time.Clock()
 
-        # Canvas
-        canvas = pygame.Surface((self.screen_width, self.screen_height))
-        canvas.fill((255, 255, 255))
         # Data
         data = self.get_state()[RBCField.T]
-        # Define the size of each grid cell
-        cell_width = self.screen_width // self.size_state[1]
-        cell_height = self.screen_height // self.size_state[0]
-
-        # Draw the heatmap
-        for y in range(self.size_state[0]):
-            for x in range(self.size_state[1]):
-                value = data[y, x]
-                color = coolwarm_colormap(value, vmin=self.bcT[1], vmax=self.bcT[0])
-                pygame.draw.rect(
-                    canvas, color, (x * cell_width, y * cell_height, cell_width, cell_height)
-                )
-
-        self.screen.blit(canvas, (0, 0))
+        data = np.transpose(data)
+        data = coolwarm_colormap(data, vmin=self.bcT[1], vmax=self.bcT[0])
 
         if self.render_mode == "human":
+            canvas = pygame.Surface((self.size_state[1], self.size_state[0]))
+            pygame.surfarray.blit_array(canvas, data)
+
+            # scale canvas
+            canvas = pygame.transform.scale(canvas, (self.screen_width, self.screen_height))
+            self.screen.blit(canvas, (0, 0))
+
+            # Show screen
             pygame.event.pump()
             self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()
 
         elif self.render_mode == "rgb_array":
-            return np.transpose(np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2))
+            return data.transpose(1, 0, 2)
