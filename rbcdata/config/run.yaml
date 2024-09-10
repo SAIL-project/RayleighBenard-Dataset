@@ -1,10 +1,14 @@
 defaults:
-  - _self_
   - hydra: default
   - env: default
   - controller: zero
   - callbacks: default
   - sweep: null
+  - _self_
 
 seed: 42
 interval: 5
+render: true
+
+env:
+  checkpoint: ../../../data/checkpoints/ra10000/train/baseline42

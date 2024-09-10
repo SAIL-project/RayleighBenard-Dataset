@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from rbcdata.envs.rbc_env import RayleighBenardEnv
+from rbcdata.env.rbc_env import RayleighBenardEnv
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.rbc_action_visualizer import RBCActionVisualizer
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer

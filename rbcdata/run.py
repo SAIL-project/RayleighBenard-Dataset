@@ -6,12 +6,12 @@ import rootutils
 from omegaconf import DictConfig
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
-from rbcdata.envs.rbc_env import RayleighBenardEnv
-from rbcdata.utils.callbacks import (
+from rbcdata.callbacks.callbacks import (
     CallbackBase,
     SweepMetricCallback,
     instantiate_callbacks,
 )
+from rbcdata.env.rbc_env import RayleighBenardEnv
 from rbcdata.utils.integrate import integrate
 
 
@@ -41,6 +41,7 @@ def run_env(cfg: DictConfig) -> None:
         callbacks=callbacks,
         seed=cfg.seed,
         controller=controller,
+        render=cfg.render,
     )
 
     return sweep_metric.result()["nu_mean_action"]

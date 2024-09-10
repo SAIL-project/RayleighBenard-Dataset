@@ -1,0 +1,25 @@
+# Hydra config
+hydra:
+  job:
+    chdir: true
+  run:
+    dir: ./logs/marl/${now:%m-%d-%H-%M-%S}/
+
+# MARL config
+nr_envs: 1
+total_timesteps: 1200
+
+ppo:
+  n_steps: 10
+
+eval:
+  freq: 1
+  env:
+    ra: 10_000
+    checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
+    episode_length: 10
+
+env:
+  ra: 10_000
+  checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
+  episode_length: 10

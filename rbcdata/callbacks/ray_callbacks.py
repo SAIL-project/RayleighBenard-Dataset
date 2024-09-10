@@ -12,7 +12,7 @@ from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.metrics import ENV_RUNNER_RESULTS
 from ray.rllib.utils.metrics.metrics_logger import MetricsLogger
 
-from rbcdata.envs.rbc_ma_env import RayleighBenardMultiAgentEnv
+from rbcdata.env.rbc_ma_env import RayleighBenardMultiAgentEnv
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
 

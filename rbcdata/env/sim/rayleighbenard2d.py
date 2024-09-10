@@ -25,7 +25,6 @@ from .channelflow2d import KMM
 
 # global settings for numpy, sympy and MPI
 x, y, tt = sympy.symbols("x,y,t", real=True)
-comm = MPI.COMM_SELF
 warnings.filterwarnings("ignore")
 
 
@@ -75,7 +74,7 @@ class RayleighBenard(KMM):
         # Additional spaces and functions for Temperature equation
         self.T0 = FunctionSpace(N_state[0], family, bc=bcT, domain=domain[0])
         self.TT = TensorProductSpace(
-            comm, (self.T0, self.F1), modify_spaces_inplace=True
+            MPI.COMM_SELF, (self.T0, self.F1), modify_spaces_inplace=True
         )  # Temperature
         self.uT_ = Function(self.BD)  # Velocity vector times T
         self.T_ = Function(self.TT)  # Temperature solution

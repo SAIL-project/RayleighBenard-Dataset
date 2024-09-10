@@ -1,64 +1,99 @@
-import logging
+import glob
+import os
+import time
 
-import ray
+import hydra
 import rootutils
-from ray.rllib.algorithms.ppo import PPOConfig
-from ray.tune.registry import register_env
+from omegaconf import DictConfig
+from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import CallbackList
+from stable_baselines3.common.logger import configure
+from stable_baselines3.ppo import MlpPolicy
+from supersuit import concat_vec_envs_v1, pettingzoo_env_to_vec_env_v1
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
-from rbcdata.envs.rbc_ma_env import RayleighBenardMultiAgentEnv
-from rbcdata.utils.ray_callbacks import LogCallback
+from rbcdata.callbacks.sb3_callbacks import RBCEvaluationCallback
+from rbcdata.env.rbc_ma_env import RayleighBenardMultiAgentEnv
+from rbcdata.env.wrapper.ma_flatten import ma_flatten
 
-ITERATIONS = 1
-EPISODE_LENGTH = 1
-ENV_RUNNERS = 1
+# TODO hydra config for stuff
+# TODO eval callback
 
 
-def main() -> None:
-    ray.init()
-    logger = logging.getLogger("ray")
+def train_marl(cfg: DictConfig) -> None:
+    # logging
+    tmp_path = "logging/"
+    logger = configure(tmp_path, ["stdout", "log", "json", "tensorboard"])
 
-    register_env("rbc_ma_env", lambda config: RayleighBenardMultiAgentEnv(config))
-    algo = (
-        PPOConfig()
-        .environment(
-            env="rbc_ma_env",
-            env_config={
-                "checkpoint": "data/checkpoints/ra10000/train/baseline42",
-                "episode_length": EPISODE_LENGTH,
-                "ra": 10_000,
-            },
-        )
-        .env_runners(
-            num_env_runners=0,
-            num_envs_per_env_runner=1,
-            rollout_fragment_length=EPISODE_LENGTH,
-            batch_mode="complete_episodes",
-            sample_timeout_s=2000,
-        )
-        .multi_agent(
-            policies={"p0"},
-            # All agents map to the exact same policy.
-            policy_mapping_fn=(lambda aid, *args, **kwargs: "p0"),
-        )
-        .training(
-            train_batch_size=EPISODE_LENGTH * ENV_RUNNERS,
-            sgd_minibatch_size=1,
-        )
-        .evaluation(
-            evaluation_duration=1,
-            evaluation_interval=ITERATIONS,
-        )
-        .framework("torch")
-        .callbacks(LogCallback)
-    ).build()
+    # environment
+    env = RayleighBenardMultiAgentEnv(cfg.env)
+    env = ma_flatten(env)
+    env = pettingzoo_env_to_vec_env_v1(env)
+    env = concat_vec_envs_v1(
+        env, cfg.nr_envs, num_cpus=cfg.nr_envs, base_class="stable_baselines3"
+    )
 
-    # Train the policy
-    for idx in range(ITERATIONS):
-        logger.info(f"Start Iteration {idx}...")
-        algo.train()
-    logger.info("Finished Training")
+    eval_env = RayleighBenardMultiAgentEnv(cfg.eval.env, render_mode="rgb_array")
+
+    # callbacks
+    callback = CallbackList(
+        [
+            RBCEvaluationCallback(eval_env, freq=cfg.eval.freq),
+        ]
+    )
+
+    # Train a single model to play as each agent
+    model = PPO(
+        MlpPolicy,
+        env,
+        verbose=1,
+        n_steps=cfg.ppo.n_steps,
+    )
+    model.set_logger(logger)
+    model.learn(
+        total_timesteps=cfg.total_timesteps,
+        callback=callback,
+        progress_bar=True,
+    )
+
+    # save and close the environment
+    model.save(f"models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
+    print(f"Finished training on {str(env.unwrapped.metadata['name'])}.")
+    env.close()
+
+
+def eval_marl():
+    # Evaluation environment
+    env = ma_flatten(RayleighBenardMultiAgentEnv())
+    observations, infos = env.reset(seed=42)
+
+    # Load agent
+    latest_policy = max(glob.glob(f"models/{env.metadata['name']}*.zip"), key=os.path.getctime)
+    PPO.load(latest_policy)
+
+    # Evaluate
+    print(f"\nStarting evaluation on {str(env.metadata['name'])}")
+    while env.agents:
+        # this is where you would insert your policy
+        actions = {agent: env.action_space(agent).sample() for agent in env.agents}
+        observations, rewards, terminations, truncations, infos = env.step(actions)
+        print(f"Observations: {observations}")
+        print(f"Rewards: {rewards}")
+        print(f"Terminations: {terminations}")
+        print(f"Truncations: {truncations}")
+        print(f"Infos: {infos}")
+    env.close()
+
+    avg_reward = sum(rewards.values()) / len(rewards.values())
+    print("Rewards: ", rewards)
+    print(f"Avg reward: {avg_reward}")
+    return avg_reward
+
+
+@hydra.main(version_base=None, config_path="config", config_name="marl")
+def main(cfg: DictConfig) -> None:
+    train_marl(cfg)
 
 
 if __name__ == "__main__":

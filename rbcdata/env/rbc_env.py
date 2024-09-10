@@ -1,13 +1,16 @@
 import copy
-from typing import Any, Dict, Tuple, TypeAlias
+from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 import sympy
+from gymnasium.error import DependencyNotInstalled
 
-from rbcdata.envs.sim.rayleighbenard2d import RayleighBenard
-from rbcdata.envs.sim.tfunc import Tfunc
+from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
+from rbcdata.env.sim.tfunc import Tfunc
+from rbcdata.utils.rbc_field import RBCField
+from rbcdata.vis.utils import coolwarm_colormap
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -16,6 +19,10 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 
 
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
+    metadata = {
+        "render_modes": ["human", "rgb_array"],
+        "render_fps": 5,
+    }
 
     EPISODE_LENGTH = 300
     SIZE_STATE = [64, 96]
@@ -38,6 +45,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __init__(
         self,
         env_config: Dict,
+        render_mode: Optional[str] = None,
     ) -> None:
         super().__init__()
         # env runner config
@@ -47,9 +55,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
         base_path = env_config.get("base_path", self.BASE_PATH)
-        path = f"{base_path}/worker_{self.worker_index}_vector_{self.vector_index}/shenfun"
+        self.path = f"{base_path}/worker_{self.worker_index}_vector_{self.vector_index}/shenfun"
         if not write_checkpoint:
-            path = None
+            self.path = None
 
         # initialize from checkpoint path
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
@@ -94,6 +102,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             dtype=np.float32,
         )
 
+        # Rendering
+        self.render_mode = render_mode
+        self.screen_width = 384
+        self.screen_height = 256
+        self.screen = None
+        self.clock = None
+
+    def reset(
+        self,
+        seed: int | None = None,
+        options: Dict[str, Any] | None = None,
+    ) -> Tuple[RBCObservation, Dict[str, Any]]:
+        super().reset(seed=seed)
         # PDE configuration
         self.simulation = RayleighBenard(
             N_state=tuple(self.size_state),
@@ -102,7 +123,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             Pr=self.pr,
             dt=self.dt,
             bcT=tuple(self.bcT),
-            checkpoint=path,
+            checkpoint=self.path,
         )
         self.t_func = Tfunc(
             segments=self.action_segments,
@@ -112,13 +133,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             x=y,
             fraction_length_smoothing=self.fraction_length_smoothing,
         )
-
-    def reset(
-        self,
-        seed: int | None = None,
-        options: Dict[str, Any] | None = None,
-    ) -> Tuple[RBCObservation, Dict[str, Any]]:
-        super().reset(seed=seed)
 
         # init PDE simulation
         self.t, self.tstep = self.simulation.initialize(
@@ -167,9 +181,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def get_action(self) -> RBCAction:
         return self.action
 
-    def get_nusselt(self) -> float:
-        return self.simulation.compute_nusselt(self.__get_obs())
-
     def __get_obs(self) -> RBCObservation:
         # Append last observation
         self.obs_list.append(self.simulation.get_obs().astype(np.float32))
@@ -186,4 +197,64 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return float(-self.simulation.compute_nusselt(state))
 
     def __get_info(self) -> dict[str, Any]:
-        return {"step": self.tstep, "t": self.t}
+        return {
+            "step": self.tstep,
+            "t": self.t,
+            "state": self.get_state(),
+            "nusselt_obs": self.simulation.compute_nusselt(self.__get_obs()),
+            "nusselt": self.simulation.compute_nusselt(self.get_state()),
+        }
+
+    def render(self):
+        if self.render_mode is None:
+            gym.logger.warn(
+                "You are calling render method without specifying any render mode. "
+                "You can specify the render_mode at initialization, "
+            )
+            return
+
+        try:
+            import pygame
+        except ImportError:
+            raise DependencyNotInstalled(
+                "pygame is not installed, run `pip install gym[classic_control]`"
+            )
+
+        if self.screen is None:
+            pygame.init()
+            if self.render_mode == "human":
+                pygame.display.init()
+                self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+                pygame.display.set_caption("Rayleigh Benard Convection")
+            else:  # mode == "rgb_array"
+                self.screen = pygame.Surface((self.screen_width, self.screen_height))
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
+
+        # Canvas
+        canvas = pygame.Surface((self.screen_width, self.screen_height))
+        canvas.fill((255, 255, 255))
+        # Data
+        data = self.get_state()[RBCField.T]
+        # Define the size of each grid cell
+        cell_width = self.screen_width // self.size_state[1]
+        cell_height = self.screen_height // self.size_state[0]
+
+        # Draw the heatmap
+        for y in range(self.size_state[0]):
+            for x in range(self.size_state[1]):
+                value = data[y, x]
+                color = coolwarm_colormap(value, vmin=self.bcT[1], vmax=self.bcT[0])
+                pygame.draw.rect(
+                    canvas, color, (x * cell_width, y * cell_height, cell_width, cell_height)
+                )
+
+        self.screen.blit(canvas, (0, 0))
+
+        if self.render_mode == "human":
+            pygame.event.pump()
+            self.clock.tick(self.metadata["render_fps"])
+            pygame.display.flip()
+
+        elif self.render_mode == "rgb_array":
+            return np.transpose(np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2))
