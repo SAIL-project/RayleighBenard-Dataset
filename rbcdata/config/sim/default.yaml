@@ -1,5 +1,5 @@
 # Configuration file for the simulation when using single-agent (SA) version of the RBC controller
-episode_length: 60
+episode_length: 120
 N: [64, 96]
 N_obs: [8, 48]
 ra: 10_000

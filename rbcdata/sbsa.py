@@ -26,7 +26,7 @@ from stable_baselines3.common.callbacks import EvalCallback as eval_cb
 logger = logging.getLogger(__name__)
 
 # Configuration stable baselines. TODO move to config file
-NR_PROCESSES = 6
+NR_PROCESSES = 8
 TRAIN_STEPS = 120*1000
 EVAL_EPS = 1 * NR_PROCESSES
 EVAL_EVERY = 500    # evaluate every so my steps (not sb3 timesteps but environment steps) 
@@ -62,20 +62,21 @@ def main(cfg: DictConfig) -> None:
                 train_env,
                 learning_rate=3e-4,
                 verbose=1,
-                n_steps=40,
-                batch_size=30,
-                gamma=0.95
+                n_steps=80,
+                batch_size=40,
+                gamma=0.999,
+                ent_coef=0.02,
     )
 
     checkpoint_callback_eval = CheckpointCallback(
-        save_freq=4,
+        save_freq=1,
         save_path=dir_model_besteval,
         name_prefix="PPOmodelRBC_besteval",
     )
     checkpoint_callback_eval.init_callback(model)
     
     checkpoint_callback_training = CheckpointCallback(
-        save_freq=2,
+        save_freq=250,
         save_path=dir_model_checkpoint_train,
         name_prefix="PPOmodelRBC"
     )
