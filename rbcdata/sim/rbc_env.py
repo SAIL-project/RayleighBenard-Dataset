@@ -108,6 +108,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             fraction_length_smoothing=fraction_length_smoothing,
         )
 
+        self.nusselt_window = []
+        self.nusselt_window_len = 40
         logger.warning("Reward scaling in env currently only implemented with values for Ra=1e4, maybe suboptimal for other values.")
 
     def reset(
@@ -169,11 +171,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             truncated = True
 
         # Compute the nusselt number necessary to calculate the reward
-        nusselt_nr = self.get_reward()
+        neg_nusselt_nr = self.get_reward()
         # scale the reward to [0, 1] approximately. 0 associated with highest Nusselt number, 1 with lowest achievable
         # TODO scaling is currently only implemented with values for Ra=1e4, maybe suboptimal for other values
-        reward = (nusselt_nr + 2.67) / 2.67 # TODO find out more about what the lowest achievable Nusselt number is
+        reward = (neg_nusselt_nr + 2.67) / 2.67 # TODO find out more about what the lowest achievable Nusselt number is
         logger.debug(f"Action done: t={self.t}, reward={reward}")
+        logger.debug(self.nusselt_window)
+        # save Nusselt number in a buffer for the last window_len steps
+        self.nusselt_window.append(-neg_nusselt_nr)
+        if len(self.nusselt_window) > self.nusselt_window_len:
+            self.nusselt_window.pop(0)
         return self.get_obs(), reward, self.closed, truncated, self.__get_info()
 
     def close(self) -> None:
@@ -192,6 +199,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def get_action(self) -> RBCAction:
         return self.action
+
+    def get_nusselt(self) -> float:
+        return self.simulation.compute_nusselt()
 
     def get_reward(self) -> float:
         return float(-self.simulation.compute_nusselt())
