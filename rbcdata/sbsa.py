@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 NR_PROCESSES = 6
 TRAIN_STEPS = 120*1000
 EVAL_EPS = 1 * NR_PROCESSES
-EVAL_EVERY = 2    # Evaluate every so many training steps. Probably best if it is a multiple of NR_PROCESSES, because train_steps increases by NR_PROCESSES.
+EVAL_EVERY = 500    # evaluate every so my steps (not sb3 timesteps but environment steps) 
 ALGO = PPO
 
 #TODO Note that things like Nusselt number can also be returned in the info dict of the environment. This is not yet used here.
@@ -44,7 +44,7 @@ def main(cfg: DictConfig) -> None:
     os.makedirs(dir_model_checkpoint_train, exist_ok=True)
     
     # Construct the evaluation and training environments
-    eval_env = make_vec_env(lambda: RayleighBenardEnv(cfg),
+    eval_env = make_vec_env(lambda: RayleighBenardEnv(cfg, nusselt_logging=True),
                             NR_PROCESSES,
                             vec_env_cls=SubprocVecEnv,
                             vec_env_kwargs=dict(start_method='fork')
@@ -75,7 +75,7 @@ def main(cfg: DictConfig) -> None:
     checkpoint_callback_eval.init_callback(model)
     
     checkpoint_callback_training = CheckpointCallback(
-        save_freq=200,
+        save_freq=2,
         save_path=dir_model_checkpoint_train,
         name_prefix="PPOmodelRBC"
     )
@@ -83,10 +83,10 @@ def main(cfg: DictConfig) -> None:
     logNusselt = LogNusseltCallback(1)
     logNusselt.init_callback(model)
     
+    # using evaluation callback from the sb3 library
     eval_callback = eval_cb(
         eval_env=eval_env,
         callback_on_new_best=checkpoint_callback_eval,
-        callback_after_eval=logNusselt,
         n_eval_episodes=EVAL_EPS,
         eval_freq=EVAL_EVERY,
         deterministic=True
@@ -102,8 +102,8 @@ def main(cfg: DictConfig) -> None:
     #     render=False
     # )
 
-    # callbacks = [LogNusseltCallback(10*NR_PROCESSES), eval_callback, checkpoint_callback_training]
-    callbacks = [eval_callback]
+    callbacks = [LogNusseltCallback(41), eval_callback, checkpoint_callback_training]
+    # callbacks = [eval_callback]
 
     # start = time.time()
     model.learn(total_timesteps=TRAIN_STEPS,

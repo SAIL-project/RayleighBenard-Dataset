@@ -58,25 +58,18 @@ class LogNusseltCallback(BaseCallback):
         # self.logger.record_mean   TODO used for logging.
         
     def _on_step(self) -> bool:
-        if self.num_timesteps % self.freq == 0:
-            nusselt_windows = self.training_env.get_attr("nusselt_window")
-            self.logger.info(nusselt_windows[0])
-            self.logger.info(nusselt_windows[1])
-            mean_nusselts = np.zeros(len(nusselt_windows))
-            for i in range(len(nusselt_windows)):   # Should be number of environments in the vectorized environment
-                mean_nusselts[i] = np.mean(nusselt_windows[i])
-            mean_env_mean_nusselts = np.mean(mean_nusselts)
-            std_mean_nusselts = np.std(mean_nusselts)
-            self.logger.info(f'Timestep {self.num_timesteps}. Mean Nusselt over last {len(nusselt_windows[0])} steps in {len(nusselt_windows)} environments: {mean_env_mean_nusselts}. Std. among environments: {std_mean_nusselts}')
+        if self.n_calls % self.freq == 0:
+            # TODO MS does not really seem to be doing what it should. Check again. These locals are not always up to date it seems...
+            infos = self.locals['infos']
+            nusselt_averages = np.zeros(len(infos))
+            for i, info in enumerate(infos):
+                nusselt_averages[i] = info['nusselt_avg']
+            self.logger.info(f'Timestep {self.num_timesteps}. Mean Nusselt over last {info["nusselt_len"]} steps in {len(nusselt_averages)} environments: {np.mean(nusselt_averages)}. Std. among environments: {np.std(nusselt_averages)}')
 
         return True
 
     def _on_rollout_end(self) -> None:
         pass
-        # if self.num_timesteps % self.freq == 0:
-        #     self.logger.info(f"Mean Nusselt number: {np.mean(self.nusselts)} +/- {np.std(self.nusselts)} computed from {len(self.nusselts)} samples.")
-        #     self.nusselts = []
-
 
 
 class EvalCallback(BaseCallback):
@@ -105,7 +98,7 @@ class EvalCallback(BaseCallback):
         self.render = render
 
     def _on_step(self) -> bool:
-        if self.num_timesteps % self.eval_freq == 0:
+        if self.n_calls % self.eval_freq == 0:
             self.logger.info(f"Step {self.num_timesteps}. Evaluating model...")
             mean_reward, std_reward = evaluate_policy(self.model, self.eval_env, n_eval_episodes=self.n_eval_episodes, deterministic=self.deterministic, render=self.render)
             self.logger.info(f"Mean evaluation reward: {mean_reward:.2f} +/- {std_reward:.2f}")
@@ -120,5 +113,3 @@ class EvalCallback(BaseCallback):
 
     def _on_rollout_end(self) -> None:
         pass
-        # if self.num_timesteps % self.eval_freq == 0:
-        #     self.logger.info   

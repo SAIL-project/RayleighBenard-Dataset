@@ -28,7 +28,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
 
     
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict, nusselt_logging=False) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
@@ -48,7 +48,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Env configuration
         self.cfg = sim_cfg
         self.episode_length = sim_cfg.episode_length
-        self.episode_steps = int(sim_cfg.episode_length / sim_cfg.dt)
+        self.episode_sim_steps = int(sim_cfg.episode_length / sim_cfg.dt)
+        self.episode_action_steps = int(sim_cfg.episode_length / action_duration) 
         self.closed = False
 
         # Action configuration
@@ -108,8 +109,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             fraction_length_smoothing=fraction_length_smoothing,
         )
 
+        self.nusselt_logging = nusselt_logging
         self.nusselt_window = []
-        self.nusselt_window_len = 40
+        self.nusselt_window_len = 20    # Nusselt number as measured after this many action steps.
         logger.warning("Reward scaling in env currently only implemented with values for Ra=1e4, maybe suboptimal for other values.")
 
     def reset(
@@ -145,6 +147,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         else:
             logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
+        if len(self.nusselt_window) == 0:
+            self.nusselt_window.append(self.get_nusselt())
+
         return self.get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
@@ -177,10 +182,13 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         reward = (neg_nusselt_nr + 2.67) / 2.67 # TODO find out more about what the lowest achievable Nusselt number is
         logger.debug(f"Action done: t={self.t}, reward={reward}")
         logger.debug(self.nusselt_window)
-        # save Nusselt number in a buffer for the last window_len steps
+        # save Nusselt number in a buffer for the last window_len action steps
         self.nusselt_window.append(-neg_nusselt_nr)
         if len(self.nusselt_window) > self.nusselt_window_len:
             self.nusselt_window.pop(0)
+        if self.nusselt_logging:
+            logger.info(f"Step {self.t}: Mean Nusselt number: {np.mean(self.nusselt_window)} over last {len(self.nusselt_window)} steps")
+        
         return self.get_obs(), reward, self.closed, truncated, self.__get_info()
 
     def close(self) -> None:
@@ -207,4 +215,4 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return float(-self.simulation.compute_nusselt())
 
     def __get_info(self) -> dict[str, Any]:
-        return {"step": self.tstep, "t": round(self.t, 8)}
+        return {"step": self.tstep, "t": round(self.t, 8), "nusselt_inst": self.nusselt_window[-1], "nusselt_avg": np.mean(self.nusselt_window), "nusselt_len": len(self.nusselt_window)}
