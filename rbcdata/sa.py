@@ -73,9 +73,9 @@ def run_env(cfg: DictConfig) -> None:
     context = ray.init(
         runtime_env=runtime_env,
         logging_level="info",
-        log_to_driver=False,
+        log_to_driver=True,
         _temp_dir=cfg.ray.log_dir,
-        num_cpus=25, # should be the same as number of CPUs requested by SLURM #TODO read about SLURM and Ray in the Ray documentation.
+        num_cpus=20, # should be the same as number of CPUs requested by SLURM #TODO read about SLURM and Ray in the Ray documentation.
         num_gpus=cfg.ray.nr_gpus_learner
     ) 
     # setup logger for the driver process
@@ -137,8 +137,8 @@ def run_env(cfg: DictConfig) -> None:
     # We build the policy that was configured above into an RLlib Algorithm
     # TODO we use use_copy=False right now, because it gives problems with deepcopying the RayleighBenardEnv due to the MPI usage.
     # But we may or may not need to use it for the parallel case. However, the documentation says it is only used for recycling the policy in test cases.
-    rrlib_algo = algo_config.build(use_copy=False)
-
+    rrlib_algo = algo_config.build()
+    logger.info('Algorithm built. Proceeding to training...')
     # The algorithms work on the SampleBatch or MultiAgentBatch types. In our case we have a single agent, so we use SampleBatch.
     # They store trajectories of experiences from the environment. The policy is updated based on these experiences.
 
@@ -150,6 +150,7 @@ def run_env(cfg: DictConfig) -> None:
     # The next line is a function that will take care of the whole training loop inside
     nr_iters = 1000 # is the number of batch updates that the Learner Worker will do
     for i in range(nr_iters):   # each iteration will acquire the nr of data (see config above) and update the policy using multiple mini batches and traversals through the data
+        logger.info(f'Started iteration {i + 1} of batch gathering and policy update')
         start_time = time.time()
         train_info = rrlib_algo.train()  # TODO check if we need to pass the number of iterations or episodes to train
         # Note that train_info gets saved to the ~/ray_results directory
@@ -163,6 +164,7 @@ def run_env(cfg: DictConfig) -> None:
 #     return run_env(cfg=cfg)
 # 
 if __name__ == "__main__":
+    logger.info('bass')
     run_env()
 
 # Here we can evaluate the policy on the environment:

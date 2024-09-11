@@ -10,10 +10,7 @@ import glob
 from os import listdir
 from os.path import isdir, isfile, join
 
-from rbcdata.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.sim.tfunc import Tfunc
-
-from omegaconf import DictConfig
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -34,6 +31,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         super().__init__()
         self.config = config    # This is the Ray config dictionary passed to the environment
+        with open(config['output_dir'] + f"/worker{config.worker_index}.log", "w") as f:
+            f.write(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv\n")
         logger.info(f"Worker {config.worker_index}: Starting init of RayleighBenardEnv")
 
         sim_cfg = config['sim']
@@ -86,7 +85,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 raise ValueError(f"Invalid path to checkpoint file or directory: {sim_cfg.load_checkpoint_path}")
         # logger.debug("Checkpoint files from which episodes will be initialized: ", self.load_checkpoint_files)
 
-
+        from rbcdata.sim.rayleighbenard2d import RayleighBenard
         # PDE configuration
         self.simulation = RayleighBenard(
             N_state=(sim_cfg.N[0], sim_cfg.N[1]),

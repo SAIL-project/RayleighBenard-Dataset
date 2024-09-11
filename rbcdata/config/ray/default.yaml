@@ -1,3 +1,3 @@
 env_runners: 20  # These processes will be doing policy rollouts in parallel
-nr_gpus_learner: 1  # Number of GPUs to use for the learner
+nr_gpus_learner: 0  # Number of GPUs to use for the learner
 log_dir: /homes/mstraat/ray_logs/  # Directory where Ray logs will be stored
