@@ -4,21 +4,20 @@ import time
 
 import hydra
 import rootutils
+import wandb
 from omegaconf import DictConfig
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CallbackList
 from stable_baselines3.common.logger import configure
 from stable_baselines3.ppo import MlpPolicy
 from supersuit import concat_vec_envs_v1, pettingzoo_env_to_vec_env_v1
+from wandb.integration.sb3 import WandbCallback
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
 from rbcdata.callbacks.sb3_callbacks import RBCEvaluationCallback
 from rbcdata.env.rbc_ma_env import RayleighBenardMultiAgentEnv
 from rbcdata.env.wrapper.ma_flatten import ma_flatten
-
-# TODO hydra config for stuff
-# TODO eval callback
 
 
 def train_marl(cfg: DictConfig) -> None:
@@ -40,6 +39,9 @@ def train_marl(cfg: DictConfig) -> None:
     callback = CallbackList(
         [
             RBCEvaluationCallback(eval_env, freq=cfg.eval.freq),
+            WandbCallback(
+                verbose=1,
+            ),
         ]
     )
 
@@ -97,7 +99,15 @@ def eval_marl():
 
 @hydra.main(version_base=None, config_path="config", config_name="marl")
 def main(cfg: DictConfig) -> None:
+    run = wandb.init(
+        project="sb3-multi-agent",
+        config=dict(cfg),
+        sync_tensorboard=True,
+    )
+
     train_marl(cfg)
+
+    run.finish()
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ class RayleighBenardMultiAgentEnv(ParallelEnv):
         "render_fps": 50,
     }
 
-    BETA = 1.0
+    BETA = 0.2
     FLATTEN = True
 
     def __init__(
@@ -110,13 +110,16 @@ class RayleighBenardMultiAgentEnv(ParallelEnv):
         return np.array([obj[index] for index in self.agents]).squeeze()
 
     def __reward(self, obs, index):
+        # max nusselt number
+        nu_max = 3
         # global nusselt number
-        nu_global = self.env.simulation.compute_nusselt(obs)
+        nu_g = self.env.simulation.compute_nusselt(obs)
         # local nusselt number
         local_obs = obs[:, :, self.segment_mapping[index]]
-        nu_local = self.env.simulation.compute_nusselt(local_obs)
+        nu_l = self.env.simulation.compute_nusselt(local_obs)
 
-        return nu_global - self.beta * nu_local
+        # reward calculation
+        return nu_max - (1 - self.beta) * nu_g - self.beta * nu_l
 
     def __recenter_observation(self, obs, index):
         center_idx = (self.env.action_segments - 1) / 2
