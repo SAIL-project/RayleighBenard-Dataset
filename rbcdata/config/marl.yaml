@@ -6,20 +6,25 @@ hydra:
     dir: ./logs/marl/${now:%m-%d-%H-%M-%S}/
 
 # MARL config
-nr_envs: 1
-total_timesteps: 1200
+nr_envs: 4
+total_timesteps: 200000
+samples_per_iteration: 100
 
 ppo:
-  n_steps: 10
+  n_steps: ${samples_per_iteration}
+  learning_rate: 0.001
+  stats_window_size: 10
+  ent_coef: 0.05
+  batch_size: 20
 
 eval:
-  freq: 1
+  freq: 5
   env:
     ra: 10_000
     checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
-    episode_length: 10
+    episode_length: 200
 
 env:
   ra: 10_000
   checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
-  episode_length: 10
+  episode_length: ${samples_per_iteration}

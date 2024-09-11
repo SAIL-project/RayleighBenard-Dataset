@@ -16,7 +16,7 @@ class RayleighBenardMultiAgentEnv(ParallelEnv):
         "render_fps": 50,
     }
 
-    BETA = 0.01
+    BETA = 1.0
     FLATTEN = True
 
     def __init__(

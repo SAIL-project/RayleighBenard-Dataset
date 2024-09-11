@@ -10,7 +10,7 @@ from gymnasium.error import DependencyNotInstalled
 from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
-from rbcdata.vis.utils import coolwarm_colormap
+from rbcdata.vis.utils import colormap
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -104,8 +104,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # Rendering
         self.render_mode = render_mode
-        self.screen_width = 384
-        self.screen_height = 256
+        self.screen_width = 768
+        self.screen_height = 512
         self.screen = None
         self.clock = None
 
@@ -143,7 +143,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.obs_list = []
 
         # Reset action
-        self.action = np.array([0.0])
+        self.last_action = np.array([0.0])
         self.action_effective = None  # TODO sympy zero
 
         return self.__get_obs(), self.__get_info()
@@ -155,7 +155,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         truncated = False
         # Apply action
-        self.action = action
+        self.last_action = action
         self.action_effective = self.t_func.apply_T(copy.deepcopy(action))
         self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
 
@@ -179,7 +179,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.simulation.get_state().astype(np.float32)
 
     def get_action(self) -> RBCAction:
-        return self.action
+        return self.last_action
 
     def __get_obs(self) -> RBCObservation:
         # Append last observation
@@ -234,7 +234,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Data
         data = self.get_state()[RBCField.T]
         data = np.transpose(data)
-        data = coolwarm_colormap(data, vmin=self.bcT[1], vmax=self.bcT[0])
+        data = colormap(data, vmin=self.bcT[1], vmax=self.bcT[0] + self.action_limit)
 
         if self.render_mode == "human":
             canvas = pygame.Surface((self.size_state[1], self.size_state[0]))

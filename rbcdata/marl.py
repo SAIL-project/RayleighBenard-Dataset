@@ -49,6 +49,10 @@ def train_marl(cfg: DictConfig) -> None:
         env,
         verbose=1,
         n_steps=cfg.ppo.n_steps,
+        stats_window_size=cfg.ppo.stats_window_size,
+        learning_rate=cfg.ppo.learning_rate,
+        ent_coef=cfg.ppo.ent_coef,
+        batch_size=cfg.ppo.batch_size,
     )
     model.set_logger(logger)
     model.learn(

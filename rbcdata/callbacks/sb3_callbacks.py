@@ -1,3 +1,4 @@
+import matplotlib.animation as animation
 import numpy as np
 import torch
 from gymnasium.wrappers import FlattenObservation
@@ -34,9 +35,11 @@ class RBCEvaluationCallback(BaseCallback):
 
     def _on_rollout_start(self) -> None:
         if self.n_calls % self.freq == 0:
+            self.logger.info(f"Evaluating model at {self.num_timesteps} timesteps")
             # episode stats
             nusselts = []
             screens = []
+            actions = []
             # env loop
             obs, _ = self.env.reset()
             tnc = np.array([0])
@@ -54,19 +57,21 @@ class RBCEvaluationCallback(BaseCallback):
                 # logging
                 nusselts.append(nusselt)
                 screens.append(screen.transpose(2, 0, 1))
+                actions.append(action.squeeze())
                 self.logger.record_mean("eval/reward", reward.mean())
                 self.logger.record_mean("eval/nusselt", nusselt)
                 self.logger.record_mean("eval/nusselt_obs", nusselt_obs)
 
             # episode stats
-            self.log_episode_nusselt(nusselts)
+            self.plot_episode_nusselt(nusselts)
+            self.plot_actions(actions)
             self.logger.record(
                 "eval/video",
                 Video(torch.from_numpy(np.asarray([screens])), fps=2),
                 exclude=("stdout", "log", "json", "csv"),
             )
 
-    def log_episode_nusselt(self, nusselts):
+    def plot_episode_nusselt(self, nusselts):
         # Plot nusselt number
         fig, ax = plt.subplots()
         # Plot lift
@@ -78,6 +83,30 @@ class RBCEvaluationCallback(BaseCallback):
         ax.grid()
         self.logger.record(
             "eval/nusselt_plot",
+            Figure(fig, close=True),
+            exclude=("stdout", "log", "json", "csv"),
+        )
+
+    def plot_actions(self, actions):
+        # Plot nusselt number
+        fig, ax = plt.subplots()
+        # Plot amplitude
+        ax.set_xlabel("segements")
+        ax.set_ylabel("amplitude")
+        ax.set_ylim(-1.1, 1.1)
+        ax.tick_params(axis="y")
+        ax.grid()
+        # plot actions
+        artists = []
+        for action in actions:
+            container = ax.plot(range(len(action)), action, color="blue")
+            artists.append(container)
+
+        ani = animation.ArtistAnimation(fig=fig, artists=artists)
+        ani.save(f"actions_{self.n_calls}.mp4", fps=2)
+
+        self.logger.record(
+            "eval/action_plot",
             Figure(fig, close=True),
             exclude=("stdout", "log", "json", "csv"),
         )
