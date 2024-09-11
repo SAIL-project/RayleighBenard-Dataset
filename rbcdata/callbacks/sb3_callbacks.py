@@ -103,7 +103,8 @@ class RBCEvaluationCallback(BaseCallback):
             artists.append(container)
 
         ani = animation.ArtistAnimation(fig=fig, artists=artists)
-        ani.save(f"actions_{self.n_calls}.mp4", fps=2)
+        writer = animation.FFMpegWriter(fps=2)
+        ani.save(f"actions_{self.n_calls}.mp4", writer=writer)
 
         self.logger.record(
             "eval/action_plot",
