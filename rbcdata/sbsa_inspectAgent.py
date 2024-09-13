@@ -31,7 +31,8 @@ logger.info(f"Loaded config from {experiment_dir}.hydra/config.yaml")
 test_env = RayleighBenardEnv(config, nusselt_logging=True)
 
 # Here we just restore the policy from the checkpoint
-policy_SA = PPO.load(join(experiment_dir, 'model_checkpoint_train/PPOmodelRBC_3000_steps'), env=test_env)
+# policy_SA = PPO.load(join(experiment_dir, 'model_checkpoint_train/PPOmodelRBC_16000_steps'), env=test_env)
+policy_SA = PPO.load(join(experiment_dir, 'PPOmodelRBC_besteval_40000_steps'), env=test_env)
 
 visCallback = RBCVisCallback(size=config.sim.N, bcT=config.sim.bcT, action_limit=config.action_limit, interval=1)
 
