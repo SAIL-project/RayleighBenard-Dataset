@@ -4,6 +4,7 @@ defaults:
   - hydra: default
   - sim: default
   - rl/ppo: default
+#  - sb3: default
   - _self_  # This will override the defaults if there are any conflicts
 #  - callbacks: default
 #  - sweep: null
@@ -12,7 +13,23 @@ seed: 42
 callback_interval: 16 
 
 action_segments: 10
-action_start: 0
-action_end: 800
 action_limit: 0.75
 action_duration: 1.5
+
+sim:
+  episode_length: 300
+
+# Stable baselines 3 parameters overrides
+# sb3:
+sb3:
+  nr_processes: 20
+  eval_episodes: 20 # just on rollout per worker, collecting nr_processes rollouts per evaluation
+  train_steps: 100_000_000
+  eval_every: 4 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
+  train_checkpoint_every: 1  # same units as eval_every property.
+  ppo:
+    lr: 1e-3
+    episodes_update: 1  # episodes_update * nr_processes total episodes per update
+    batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
+    gamma: 0.99
+    ent_coef: 0.5

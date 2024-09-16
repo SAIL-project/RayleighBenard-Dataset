@@ -50,6 +50,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.episode_length = sim_cfg.episode_length
         self.episode_sim_steps = int(sim_cfg.episode_length / sim_cfg.dt)
         self.episode_action_steps = int(sim_cfg.episode_length / action_duration) 
+        self.step_count = 0 # Number of steps performed in the current episode
         self.closed = False
 
         # Action configuration
@@ -149,6 +150,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         if len(self.nusselt_window) == 0:
             self.nusselt_window.append(self.get_nusselt())
+        
+        self.step_count = 0     # Reset the step counter! which keeps track of when to exit the episode
 
         return self.get_obs(), self.__get_info()
 
@@ -171,8 +174,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         for _ in range(int(self.action_duration / self.simulation.dt)):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
 
-        # Check for truncation
-        if self.t >= self.episode_length:
+        self.step_count += 1
+        if self.step_count >= self.episode_action_steps:
+            # Check for truncation
             truncated = True
 
         # Compute the nusselt number necessary to calculate the reward
