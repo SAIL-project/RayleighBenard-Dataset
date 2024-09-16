@@ -50,6 +50,8 @@ class Tfunc:
 
     def apply_T(self, temperature_segments):
         """
+        Centres the input around the bottom wall mean temperature Tb_avg preforms scaling to
+            ensure the fluctuations don't exceed self.ampl
         apply_T: current implementation does the following:
         if fluctuations around mean are larger than 1:
             the max value of in the output with be self.ampl and the rest proportionally
@@ -60,7 +62,7 @@ class Tfunc:
         if np.array_equal(self.last_input, temperature_segments):
             return self.last_action
 
-        x = self.x
+        x = self.x  # Sympy symbolic variable that will be the variable in the piecewise function
         Tb_avg = self.bcT_avg[0]
         values = self.ampl * temperature_segments
         Mean = values.mean()
@@ -131,3 +133,13 @@ class Tfunc:
                 )
         self.last_action = sympy.Piecewise(*seq)
         return self.last_action
+
+    def get_last_action_numeric(self):
+        """
+        Returns the last action as a list of numeric values, for each heating segment one value.
+        The heating segments are evaluated in the middle part of their domain.
+        """
+        return [
+            float(self.last_action.evalf(subs={self.x: self.xmax / self.segments * (i + 0.5)}))
+            for i in range(self.segments)
+        ]

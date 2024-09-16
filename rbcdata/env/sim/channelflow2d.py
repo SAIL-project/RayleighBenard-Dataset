@@ -68,8 +68,6 @@ class KMM:
         Save results to hdf5 every modsave timestep.
     moderror : int, optional
         Print diagnostics every moderror timestep
-    checkpoint : int, optional
-        Save required data for restart to hdf5 every checkpoint timestep.
     timestepper : str, optional
         Choose timestepper
 

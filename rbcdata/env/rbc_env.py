@@ -1,4 +1,6 @@
-import copy
+import glob
+import logging
+from os.path import isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -23,6 +25,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         "render_modes": ["human", "rgb_array"],
         "render_fps": 5,
     }
+    logger = logging.getLogger(__name__)
 
     EPISODE_LENGTH = 300
     SIZE_STATE = [64, 96]
@@ -30,7 +33,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     RA = 10_000
     PR = 0.7
     DT = 0.05
-    SOLVER_STEPS = 20
     BCT = [2, 1]
     BASE_PATH = "logs/environment"
     CHECKPOINT = None
@@ -46,12 +48,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
+        nusselt_logging=False,
     ) -> None:
+        """
+        Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
+        """
         super().__init__()
-        # env runner config
-        self.worker_index = env_config.get("worker_index", 0)
-        self.vector_index = env_config.get("vector_index", 0)
-
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
         base_path = env_config.get("base_path", self.BASE_PATH)
@@ -61,6 +63,18 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # initialize from checkpoint path
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
+        self.load_checkpoint_files = []
+        if self.checkpoint is not None:
+            if isdir(self.checkpoint):
+                self.load_checkpoint_files = glob.glob(join(self.checkpoint, "*.h5"))
+                if len(self.load_checkpoint_files) == 0:
+                    raise ValueError(f"No checkpoint files found in directory: {self.checkpoint}")
+            elif isfile(self.checkpoint):
+                self.load_checkpoint_files = [self.checkpoint]
+            else:
+                raise ValueError(
+                    f"Invalid path to checkpoint file or directory: {self.checkpoint}"
+                )
 
         # simulation config
         self.episode_length = env_config.get("episode_length", self.EPISODE_LENGTH)
@@ -69,7 +83,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.ra = env_config.get("ra", self.RA)
         self.pr = env_config.get("pr", self.PR)
         self.dt = env_config.get("dt", self.DT)
-        self.solver_steps = env_config.get("solver_steps", self.SOLVER_STEPS)
         self.bcT = env_config.get("bcT", self.BCT)
 
         # action config
@@ -80,6 +93,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.fraction_length_smoothing = env_config.get(
             "fraction_length_smoothing", self.FRACTION_LENGTH_SMOOTHING
         )
+        self.solver_steps = int(self.action_duration / self.simulation.dt)
 
         # Env configuration
         self.time_avg = env_config.get("time_averaging", self.TIME_AVERAGING)
@@ -91,9 +105,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action_space = gym.spaces.Box(-1, 1, shape=(self.action_segments,), dtype=np.float32)
 
         # Observation Space
+        nr_probes = self.size_obs[0] * self.size_obs[1]
+        lows = np.concatenate(
+            [np.repeat(-np.inf, nr_probes * 2), np.repeat(self.bcT[1], nr_probes)]
+        )
+        highs = np.concatenate(
+            [
+                np.repeat(np.inf, nr_probes * 2),
+                np.repeat(self.bcT[0] + self.action_limit, nr_probes),
+            ]
+        )
         self.observation_space = gym.spaces.Box(
-            low=-np.inf,
-            high=np.inf,
+            lows,
+            highs,
             shape=(
                 3,
                 self.size_obs[0],
@@ -109,11 +133,25 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.screen = None
         self.clock = None
 
+        # Nusselt Logging TODO Remove/ move to callback
+        self.nusselt_logging = nusselt_logging
+        self.nusselt_window = []
+        self.nusselt_window_len = 20  # Nusselt number as measured after this many action steps.
+
+        # Warnings and TODOs
+        self.logger.getLogger(__name__).warning(
+            "Reward scaling in env currently only implemented with values for Ra=1e4, maybe \
+                suboptimal for other values."
+        )
+
     def reset(
         self,
         seed: int | None = None,
         options: Dict[str, Any] | None = None,
     ) -> Tuple[RBCObservation, Dict[str, Any]]:
+        """Resets the environment to an initial state. If seed is provided, it will be used
+        to seed the environment.
+        If filename is provided, it will be used to load the initial state from a checkpoint."""
         super().reset(seed=seed)
         # PDE configuration
         self.simulation = RayleighBenard(
@@ -134,9 +172,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             fraction_length_smoothing=self.fraction_length_smoothing,
         )
 
+        # load checkpoint file
+        if len(self.load_checkpoint_files) > 0:
+            # choose a random checkpoint file to load from
+            file_idx = self.np_random.choice(len(self.load_checkpoint_files))
+            filename = self.load_checkpoint_files[file_idx]
+        # initialize the simulation from a file or randomly depending on whether filename is
+        # none or not
+        if filename is not None and filename.endswith(".chk.h5"):
+            filename = filename[:-7]  # cut the extension off
+
         # init PDE simulation
         self.t, self.tstep = self.simulation.initialize(
-            checkpoint=self.checkpoint, np_random=self._np_random, rand=0.000001
+            checkpoint=filename, np_random=self._np_random, rand=0.000001
         )
         self.simulation.assemble()
         self.simulation.step()
@@ -145,6 +193,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Reset action
         self.last_action = np.array([0.0])
         self.action_effective = None  # TODO sympy zero
+
+        # Logging
+        if filename is None:
+            self.logger.info(f"Environment reset to random init: t={self.t}")
+        else:
+            self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
+
+        # TODO remove nusselt logging
+        if len(self.nusselt_window) == 0:
+            self.nusselt_window.append(self.get_nusselt())
 
         return self.__get_obs(), self.__get_info()
 
@@ -156,19 +214,28 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         truncated = False
         # Apply action
         self.last_action = action
-        self.action_effective = self.t_func.apply_T(copy.deepcopy(action))
+        self.action_effective = self.t_func.apply_T(action)
         self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
 
         for _ in range(self.solver_steps):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
 
         # Check for truncation
-        if self.t >= self.episode_length:
+        if self.tstep >= self.episode_steps:
             truncated = True
 
         self.last_obs = self.__get_obs()
         self.last_reward = self.__get_reward()
         self.last_info = self.__get_info()
+
+        # TODO remove: save Nusselt number in a buffer for the last window_len action steps
+        self.nusselt_window.append(float(-self.simulation.compute_nusselt(self.last_obs)))
+        del self.nusselt_window[: -self.nusselt_window_len]
+        if self.nusselt_logging:
+            self.logger.info(
+                f"Step {self.t}: Mean Nusselt number: {np.mean(self.nusselt_window)} over \
+                last {len(self.nusselt_window)} steps"
+            )
 
         return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
@@ -189,12 +256,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         return np.mean(np.array(self.obs_list), axis=0)
 
-    def __get_reward(self, from_obs=False) -> float:
-        if from_obs:
-            state = self.__get_obs()
-        else:
-            state = self.get_state()
-        return float(-self.simulation.compute_nusselt(state))
+    def __get_reward(self) -> float:
+        obs = self.__get_obs()
+        neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
+        # TODO scaling is currently only implemented with values for Ra=1e4, maybe
+        # suboptimal for other values
+        reward = (
+            neg_nusselt_nr + 2.67
+        ) / 2.67  # TODO find out more about what the lowest achievable Nusselt number is
+        return reward
 
     def __get_info(self) -> dict[str, Any]:
         return {

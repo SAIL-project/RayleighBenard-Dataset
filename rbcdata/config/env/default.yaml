@@ -5,12 +5,12 @@ write_checkpoint: False
 base_path: "logs/environment"
 checkpoint: null
 # simulation
-episode_length: 100
+episode_length: 120
 size_state: [64, 96]
 size_obs: [8, 48]
 ra: 10_000
 pr: 0.7
-dt: 0.05
+dt: 0.025
 solver_steps: 20
 bcT: [2, 1]
 # action config

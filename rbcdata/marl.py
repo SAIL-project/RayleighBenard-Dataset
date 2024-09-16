@@ -19,6 +19,9 @@ from rbcdata.callbacks.sb3_callbacks import RBCEvaluationCallback
 from rbcdata.env.rbc_ma_env import RayleighBenardMultiAgentEnv
 from rbcdata.env.wrapper.ma_flatten import ma_flatten
 
+# TODO: run without local
+# TODO: plot local nusselt number
+
 
 def train_marl(cfg: DictConfig) -> None:
     # logging

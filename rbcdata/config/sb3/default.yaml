@@ -1,0 +1,5 @@
+# defaults for stable baselines 3
+nr_processes: 8
+train_steps = 120_000
+eval_eps: 8 # multiple of nr_processes, because we use parallel evaluation environments
+eval_every: 5000  # in environment steps

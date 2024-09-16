@@ -4,11 +4,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "Python Debugger: Current File with Arguments",
+            "name": "sbsa",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/rbcdata/run.py",
+            "program": "${workspaceFolder}/rbcdata/sbsa.py",
+            "cwd": "${fileDirname}",
             "console": "integratedTerminal",
             "args": "env.episode_length=5 callbacks=dataset",
             "justMyCode": false,
