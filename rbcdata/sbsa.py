@@ -38,7 +38,7 @@ def main(cfg: DictConfig) -> None:
     device = get_device("auto")
     print(f"Device: {device}")
     # Construct the evaluation and training environments
-    eval_env = make_vec_env(lambda: RayleighBenardEnv(cfg, nusselt_logging=True),
+    eval_env = make_vec_env(lambda: RayleighBenardEnv(cfg, eval=True, nusselt_logging=True),
                             cfg.sb3.nr_processes,
                             vec_env_cls=SubprocVecEnv,
                             vec_env_kwargs=dict(start_method='fork')

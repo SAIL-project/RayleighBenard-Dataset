@@ -32,4 +32,4 @@ sb3:
     episodes_update: 1  # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99
-    ent_coef: 0.5
+    ent_coef: 0.2

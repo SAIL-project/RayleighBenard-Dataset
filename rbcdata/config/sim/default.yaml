@@ -10,4 +10,6 @@ save_checkpoint: False
 save_checkpoint_path: shenfun/checkpoint/RB_2D  # folder where checkpoints are stored during the simulation (null means no checkpoint writing)
 # save_checkpoint_path: null 
 # load_checkpoint_path: ../data/checkpoints/ra10000/train/ # Upon reset: null means random initialization, otherwise from checkpoint file or randomly from a directory of checkpoints.
-load_checkpoint_path: ../data/checkpoints/ra10000/train/baseline42.chk.h5 # Upon reset: null means random initialization, otherwise from checkpoint file or randomly from a directory of checkpoints.
+load_checkpoint_path: ../data/checkpoints/ra100000/train/ # Upon reset: null means random initialization, otherwise from checkpoint file or randomly from a directory of checkpoints.
+# load_checkpoint_path_val: ../data/checkpoints/ra100000/train/baseline47.chk.h5 # Upon reset: null means random initialization, otherwise from checkpoint file or randomly from a directory of checkpoints.
+load_checkpoint_path_val: ../data/checkpoints/ra10000/test/ 

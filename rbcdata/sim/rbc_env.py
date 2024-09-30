@@ -28,7 +28,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     reward_range = (-float("inf"), float("inf"))
 
     
-    def __init__(self, config: Dict, nusselt_logging=False) -> None:
+    def __init__(self, config: Dict, eval=False, nusselt_logging=False) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
@@ -37,6 +37,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         with open_dict(config):
             config.worker_index = 0 # for now we only have on worker. In future this should be index of the worker.
 
+        self.eval = eval
         sim_cfg = config['sim']
         # handle the default values
         action_segments = config.get('action_segments', 10)
@@ -87,8 +88,20 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 self.load_checkpoint_files = [sim_cfg.load_checkpoint_path]
             else:
                 raise ValueError(f"Invalid path to checkpoint file or directory: {sim_cfg.load_checkpoint_path}")
-        # logger.debug("Checkpoint files from which episodes will be initialized: ", self.load_checkpoint_files)
 
+        self.load_checkpoint_files_val = []
+        if self.eval == True:
+            if sim_cfg.load_checkpoint_path_val is not None:
+                if isdir(sim_cfg.load_checkpoint_path_val):
+                    self.load_checkpoint_files_val = glob.glob(join(sim_cfg.load_checkpoint_path_val, "*.h5")) 
+                    if len(self.load_checkpoint_files_val) == 0:
+                        raise ValueError(f"No checkpoint files found in directory: {sim_cfg.load_checkpoint_path_val}")
+                elif isfile(sim_cfg.load_checkpoint_path_val): 
+                    self.load_checkpoint_files_val = [sim_cfg.load_checkpoint_path_val]
+                else:
+                    raise ValueError(f"Invalid path to checkpoint file or directory: {sim_cfg.load_checkpoint_path_val}") 
+            else:
+                raise ValueError(f"Validation is set to true but no validation checkpoint path is provided.")
 
         # PDE configuration
         self.simulation = RayleighBenard(
@@ -125,10 +138,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # init PDE simulation
         # M: we should reset the boundary conditions here as well, before the initialize method is called, becauses it uses the boundary conditions. TODO check again initialization.
         self.simulation.update_actuation(self.simulation.bcT_avg)
-        if len(self.load_checkpoint_files) > 0:
-            # choose a random checkpoint file to load from
-            file_idx = self.np_random.choice(len(self.load_checkpoint_files))
-            filename = self.load_checkpoint_files[file_idx]
+        if not self.eval:
+            if len(self.load_checkpoint_files) > 0:
+                # choose a random checkpoint file to load from
+                file_idx = self.np_random.choice(len(self.load_checkpoint_files))
+                filename = self.load_checkpoint_files[file_idx]
+        else:
+            if len(self.load_checkpoint_files_val) > 0:
+                # choose a random checkpoint file to load from
+                file_idx = self.np_random.choice(len(self.load_checkpoint_files_val))
+                filename = self.load_checkpoint_files_val[file_idx]
         # initialize the simulation from a file or randomly depending on whether filename is none or not 
         if filename is not None and filename.endswith(".chk.h5"):
             filename = filename[:-7]    # cut the extension off
