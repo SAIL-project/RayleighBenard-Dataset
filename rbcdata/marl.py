@@ -15,12 +15,13 @@ from wandb.integration.sb3 import WandbCallback
 
 rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
-from rbcdata.callbacks.sb3_callbacks import RBCEvaluationCallback
+from rbcdata.callbacks.sb3_callbacks import EvaluationCallback
 from rbcdata.env.rbc_ma_env import RayleighBenardMultiAgentEnv
 from rbcdata.env.wrapper.ma_flatten import ma_flatten
 
 # TODO: run without local
 # TODO: plot local nusselt number
+# TODOL check checkpoint
 
 
 def train_marl(cfg: DictConfig) -> None:
@@ -41,7 +42,7 @@ def train_marl(cfg: DictConfig) -> None:
     # callbacks
     callback = CallbackList(
         [
-            RBCEvaluationCallback(eval_env, freq=cfg.eval.freq),
+            EvaluationCallback(eval_env, freq=cfg.eval.freq),
             WandbCallback(
                 verbose=1,
             ),

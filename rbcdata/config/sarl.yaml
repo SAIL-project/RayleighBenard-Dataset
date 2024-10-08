@@ -2,27 +2,32 @@
 
 defaults:
   - hydra: default
-  - env: default
-  - rl/ppo: default
-  #  - sb3: default
+  - env@train_env: default
+  - env@test_env: default
   - _self_ # This will override the defaults if there are any conflicts
 
+task: sarl
 seed: 42
-callback_interval: 16
 
-env:
+train_env:
   episode_length: 300
+  checkpoint: data/checkpoints/ra10000/train #/baseline42.chk.h5
+
+eval_env:
+  episode_length: 100
+  checkpoint: data/checkpoints/ra10000/test #/baseline42.chk.h5
+
 
 # Stable baselines 3 parameters overrides
-# sb3:
 sb3:
-  nr_processes: 20
-  eval_episodes: 20 # just on rollout per worker, collecting nr_processes rollouts per evaluation
-  train_steps: 100_000_000
-  eval_every: 4 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
-  train_checkpoint_every: 1 # same units as eval_every property.
+  nr_processes: 5
+  nr_eval_processes: 5
+  #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
+  train_steps: 5_000
+  eval_every: 5 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
+  train_checkpoint_every: 5 # same units as eval_every property.
   ppo:
-    lr: 1e-3
+    lr: 0.001
     episodes_update: 1 # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99

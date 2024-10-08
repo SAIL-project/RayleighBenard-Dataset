@@ -1,6 +1,6 @@
 import glob
 import logging
-from os.path import isdir, isfile, join
+from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
@@ -8,6 +8,7 @@ import numpy as np
 import numpy.typing as npt
 import sympy
 from gymnasium.error import DependencyNotInstalled
+from hydra.utils import to_absolute_path
 
 from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
@@ -34,21 +35,18 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     PR = 0.7
     DT = 0.05
     BCT = [2, 1]
-    BASE_PATH = "logs/environment"
     CHECKPOINT = None
     WRITE_CHECKPOINT = False
     ACTION_LIMIT = 0.75
     ACTION_DURATION = 1.0
     ACTION_SEGMENTS = 12
     ACTION_START = 0.0
-    TIME_AVERAGING = 4
     FRACTION_LENGTH_SMOOTHING = 0.1
 
     def __init__(
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        nusselt_logging=False,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
@@ -56,16 +54,18 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().__init__()
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
-        base_path = env_config.get("base_path", self.BASE_PATH)
-        self.path = f"{base_path}/worker_{self.worker_index}_vector_{self.vector_index}/shenfun"
+        self.path = "shenfun"
         if not write_checkpoint:
             self.path = None
 
         # initialize from checkpoint path
-        self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
+        self.checkpoint = to_absolute_path(env_config.get("checkpoint", self.CHECKPOINT))
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
-            if isdir(self.checkpoint):
+            self.logger.info(f"Loading checkpoint from {self.checkpoint}")
+            if not exists(self.checkpoint):
+                raise ValueError(f"Path to checkpoint does not exist: {self.checkpoint}")
+            elif isdir(self.checkpoint):
                 self.load_checkpoint_files = glob.glob(join(self.checkpoint, "*.h5"))
                 if len(self.load_checkpoint_files) == 0:
                     raise ValueError(f"No checkpoint files found in directory: {self.checkpoint}")
@@ -93,10 +93,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.fraction_length_smoothing = env_config.get(
             "fraction_length_smoothing", self.FRACTION_LENGTH_SMOOTHING
         )
-        self.solver_steps = int(self.action_duration / self.simulation.dt)
+        self.solver_steps = int(self.action_duration / self.dt)
 
         # Env configuration
-        self.time_avg = env_config.get("time_averaging", self.TIME_AVERAGING)
         self.obs_list = []
         self.episode_steps = int(self.episode_length / self.dt)
         self.closed = False
@@ -105,15 +104,21 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.action_space = gym.spaces.Box(-1, 1, shape=(self.action_segments,), dtype=np.float32)
 
         # Observation Space
-        nr_probes = self.size_obs[0] * self.size_obs[1]
-        lows = np.concatenate(
-            [np.repeat(-np.inf, nr_probes * 2), np.repeat(self.bcT[1], nr_probes)]
-        )
-        highs = np.concatenate(
+        lows = np.stack(
             [
-                np.repeat(np.inf, nr_probes * 2),
-                np.repeat(self.bcT[0] + self.action_limit, nr_probes),
-            ]
+                np.ones(self.size_obs) * (-np.inf),
+                np.ones(self.size_obs) * (-np.inf),
+                np.ones(self.size_obs) * self.bcT[1],
+            ],
+            axis=0,
+        )
+        highs = np.stack(
+            [
+                np.ones(self.size_obs) * np.inf,
+                np.ones(self.size_obs) * np.inf,
+                np.ones(self.size_obs) * self.bcT[0] + self.action_limit,
+            ],
+            axis=0,
         )
         self.observation_space = gym.spaces.Box(
             lows,
@@ -133,13 +138,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.screen = None
         self.clock = None
 
-        # Nusselt Logging TODO Remove/ move to callback
-        self.nusselt_logging = nusselt_logging
-        self.nusselt_window = []
-        self.nusselt_window_len = 20  # Nusselt number as measured after this many action steps.
-
         # Warnings and TODOs
-        self.logger.getLogger(__name__).warning(
+        self.logger.warning(
             "Reward scaling in env currently only implemented with values for Ra=1e4, maybe \
                 suboptimal for other values."
         )
@@ -173,6 +173,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         )
 
         # load checkpoint file
+        filename = None
         if len(self.load_checkpoint_files) > 0:
             # choose a random checkpoint file to load from
             file_idx = self.np_random.choice(len(self.load_checkpoint_files))
@@ -200,10 +201,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         else:
             self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
-        # TODO remove nusselt logging
-        if len(self.nusselt_window) == 0:
-            self.nusselt_window.append(self.get_nusselt())
-
         return self.__get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
@@ -228,15 +225,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.last_reward = self.__get_reward()
         self.last_info = self.__get_info()
 
-        # TODO remove: save Nusselt number in a buffer for the last window_len action steps
-        self.nusselt_window.append(float(-self.simulation.compute_nusselt(self.last_obs)))
-        del self.nusselt_window[: -self.nusselt_window_len]
-        if self.nusselt_logging:
-            self.logger.info(
-                f"Step {self.t}: Mean Nusselt number: {np.mean(self.nusselt_window)} over \
-                last {len(self.nusselt_window)} steps"
-            )
-
         return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
     def close(self) -> None:
@@ -249,12 +237,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         return self.last_action
 
     def __get_obs(self) -> RBCObservation:
-        # Append last observation
-        self.obs_list.append(self.simulation.get_obs().astype(np.float32))
-        # Only retain last 'time_avg' observations
-        del self.obs_list[: -self.time_avg]
-
-        return np.mean(np.array(self.obs_list), axis=0)
+        return self.simulation.get_obs().astype(np.float32)
 
     def __get_reward(self) -> float:
         obs = self.__get_obs()

@@ -1,30 +1,25 @@
-# Hydra config
-hydra:
-  job:
-    chdir: true
-  run:
-    dir: ./logs/marl/${now:%m-%d-%H-%M-%S}/
+# Config file for running the Multi-Agent (MA) version of the RBC controller
 
-# MARL config
-nr_envs: 4
-total_timesteps: 500000
-samples_per_iteration: 100
+defaults:
+  - hydra: default
+  - env: default
+  - _self_
 
-ppo:
-  n_steps: ${samples_per_iteration}
-  learning_rate: 0.001
-  stats_window_size: 10
-  ent_coef: 0.05
-  batch_size: 20
-
-eval:
-  freq: 5
-  env:
-    ra: 10_000
-    checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
-    episode_length: 200
-
+# Environment parameters
 env:
-  ra: 10_000
+  episode_length: 300
   checkpoint: ../../../data/checkpoints/ra10000/train/baseline42
-  episode_length: ${samples_per_iteration}
+
+# Stable baselines 3 parameters overrides
+sb3:
+  nr_processes: 2
+  eval_episodes: 20 # just on rollout per worker, collecting nr_processes rollouts per evaluation
+  train_steps: 100_000_000
+  eval_every: 4 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
+  train_checkpoint_every: 1 # same units as eval_every property.
+  ppo:
+    lr: 1e-3
+    episodes_update: 1 # episodes_update * nr_processes total episodes per update
+    batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
+    gamma: 0.99
+    ent_coef: 0.2

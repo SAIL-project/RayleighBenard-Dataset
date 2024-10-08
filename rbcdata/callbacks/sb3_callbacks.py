@@ -1,34 +1,46 @@
+import os
+from typing import Optional
+
 import matplotlib.animation as animation
 import numpy as np
 import torch
-from gymnasium.wrappers import FlattenObservation
 from matplotlib import pyplot as plt
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import Figure, Video
-from supersuit import pettingzoo_env_to_vec_env_v1
-
-from rbcdata.env.rbc_env import RayleighBenardEnv
-from rbcdata.env.rbc_ma_env import RayleighBenardMultiAgentEnv
-from rbcdata.env.wrapper.ma_flatten import ma_flatten
+from stable_baselines3.common.vec_env import VecEnv
 
 
-class RBCEvaluationCallback(BaseCallback):
+class NusseltCallback(BaseCallback):
     def __init__(
         self,
-        env: RayleighBenardMultiAgentEnv | RayleighBenardEnv,
+        freq: int = 1,
+        verbose: int = 0,
+    ):
+        super().__init__(verbose)
+
+    def _on_step(self) -> bool:
+        infos = self.locals.get("infos")
+        for info in infos:
+            self.logger.record_mean("train/nusselt_obs", info["nusselt_obs"])
+        return True
+
+
+class EvaluationCallback(BaseCallback):
+    def __init__(
+        self,
+        env: VecEnv,
+        save_model: bool = False,
+        save_path: Optional[str] = None,
         freq: int = 1,
         verbose: int = 0,
     ):
         super().__init__(verbose)
 
         self.freq = freq
-        if isinstance(env, RayleighBenardMultiAgentEnv):
-            self.env = pettingzoo_env_to_vec_env_v1(
-                ma_flatten(env),
-            )
-        else:
-            self.env = make_vec_env(FlattenObservation(env))
+        self.env = env
+        self.save_model = save_model
+        self.save_path = save_path
+        self.best_mean_reward = -np.inf
 
     def _on_step(self) -> bool:
         return True
@@ -36,31 +48,68 @@ class RBCEvaluationCallback(BaseCallback):
     def _on_rollout_start(self) -> None:
         if self.n_calls % self.freq == 0:
             self.logger.info(f"Evaluating model at {self.num_timesteps} timesteps")
-            # episode stats
-            nusselts = []
+            nr_envs = self.env.num_envs
+            rewards_list = []
+
+            # env loop
+            obs = self.env.reset()
+            done = np.zeros(nr_envs)
+            while not done.any():
+                # env step
+                actions, _ = self.model.predict(obs, deterministic=True)
+                _, rewards, done, infos = self.env.step(actions)
+                for id in range(nr_envs):
+                    rewards_list.append(rewards[id])
+                    self.logger.record_mean("eval/reward", rewards[id])
+                    self.logger.record_mean("eval/nusselt", infos[id]["nusselt"])
+                    self.logger.record_mean("eval/nusselt_obs", infos[id]["nusselt_obs"])
+
+            # check for new best model
+            mean_reward = np.mean(rewards_list)
+            if mean_reward > self.best_mean_reward:
+                self.best_mean_reward = mean_reward
+                self.logger.info(f"New best model with mean reward {mean_reward}")
+                if self.save_model:
+                    self.model.save(os.path.join(self.save_path, "best_model"))
+
+
+class EvaluationVisualizationCallback(BaseCallback):
+    def __init__(
+        self,
+        env: VecEnv,
+        freq: int = 1,
+        path: Optional[str] = ".",
+        verbose: int = 0,
+    ):
+        super().__init__(verbose)
+
+        self.freq = freq
+        self.env = env
+        self.path = path
+
+    def _on_step(self) -> bool:
+        return True
+
+    def _on_rollout_start(self) -> None:
+        if self.n_calls % self.freq == 0:
+            self.logger.info(f"Visualizing model at {self.num_timesteps} timesteps")
+            # data
             screens = []
             actions = []
+            nusselts = []
             # env loop
-            obs, _ = self.env.reset()
-            tnc = np.array([0])
-            while not tnc.any():
+            obs = self.env.reset()
+            done = np.zeros(1)
+            while not done.any():
                 # env step
-                action, _state = self.model.predict(obs, deterministic=True)
-                obs, reward, _, tnc, infs = self.env.step(action)
+                action, _ = self.model.predict(obs, deterministic=True)
+                obs, reward, done, infos = self.env.step(action)
                 screen = self.env.render()
 
-                # stats
-                info = infs[0]
-                nusselt = info["nusselt"]
-                nusselt_obs = info["nusselt_obs"]
-
-                # logging
-                nusselts.append(nusselt)
+                # save data
+                nusselts.append(infos[0]["nusselt"])
                 screens.append(screen.transpose(2, 0, 1))
                 actions.append(action.squeeze())
-                self.logger.record_mean("eval/reward", reward.mean())
-                self.logger.record_mean("eval/nusselt", nusselt)
-                self.logger.record_mean("eval/nusselt_obs", nusselt_obs)
 
             # episode stats
             self.plot_episode_nusselt(nusselts)
@@ -77,7 +126,7 @@ class RBCEvaluationCallback(BaseCallback):
         # Plot lift
         ax.set_xlabel("time")
         ax.set_ylabel("Nusselt Number")
-        ax.set_ylim(0, 5)
+        ax.set_ylim(1, 4)
         ax.plot(range(len(nusselts)), nusselts)
         ax.tick_params(axis="y")
         ax.grid()
@@ -104,7 +153,7 @@ class RBCEvaluationCallback(BaseCallback):
 
         ani = animation.ArtistAnimation(fig=fig, artists=artists)
         writer = animation.FFMpegWriter(fps=2)
-        ani.save(f"actions_{self.n_calls}.mp4", writer=writer)
+        ani.save(f"{self.path}/actions_{self.n_calls}.mp4", writer=writer)
 
         self.logger.record(
             "eval/action_plot",
