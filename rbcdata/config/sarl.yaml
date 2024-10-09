@@ -20,10 +20,10 @@ eval_env:
 
 # Stable baselines 3 parameters overrides
 sb3:
-  nr_processes: 5
-  nr_eval_processes: 5
+  nr_processes: 20
+  nr_eval_processes: 10
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
-  train_steps: 5_000
+  train_steps: 10_000_000
   eval_every: 5 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
   train_checkpoint_every: 5 # same units as eval_every property.
   ppo:
@@ -31,4 +31,4 @@ sb3:
     episodes_update: 1 # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99
-    ent_coef: 0.5
+    ent_coef: 0.2

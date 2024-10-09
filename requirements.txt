@@ -7,3 +7,6 @@ hydra-colorlog
 gymnasium
 tqdm
 rootutils
+wandb
+stable-baselines3[extra]
+sympy_plot_backends[all]

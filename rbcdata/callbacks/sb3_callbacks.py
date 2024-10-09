@@ -22,6 +22,7 @@ class NusseltCallback(BaseCallback):
         infos = self.locals.get("infos")
         for info in infos:
             self.logger.record_mean("train/nusselt_obs", info["nusselt_obs"])
+            self.logger.record_mean("train/nusselt", info["nusselt"])
         return True
 
 
