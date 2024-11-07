@@ -1,11 +1,11 @@
-import glob
-import os
 import time
+from os.path import join
 
 import hydra
 import rootutils
 import wandb
-from omegaconf import DictConfig
+from hydra.core.hydra_config import HydraConfig
+from omegaconf import DictConfig, open_dict
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CallbackList
 from stable_baselines3.common.logger import configure
@@ -24,10 +24,21 @@ from rbcdata.env.wrapper.ma_flatten import ma_flatten
 # TODOL check checkpoint
 
 
-def train_marl(cfg: DictConfig) -> None:
-    # logging
-    tmp_path = "logging/"
-    logger = configure(tmp_path, ["stdout", "log", "json", "tensorboard"])
+@hydra.main(version_base=None, config_path="config", config_name="marl")
+def main(cfg: DictConfig) -> None:
+    # Configure logging
+    with open_dict(cfg):
+        cfg.output_dir = HydraConfig.get().runtime.output_dir
+    # wandb
+    wandb.init(
+        project="sb3-multi-agent",
+        config=dict(cfg),
+        sync_tensorboard=True,
+        dir=cfg.output_dir,
+    )
+    # sb3 logging
+    logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
+    logger.info(f"Set log directory to {cfg.output_dir}")
 
     # environment
     env = RayleighBenardMultiAgentEnv(cfg.env)
@@ -71,47 +82,6 @@ def train_marl(cfg: DictConfig) -> None:
     model.save(f"models/{env.unwrapped.metadata.get('name')}_{time.strftime('%Y%m%d-%H%M%S')}")
     print(f"Finished training on {str(env.unwrapped.metadata['name'])}.")
     env.close()
-
-
-def eval_marl():
-    # Evaluation environment
-    env = ma_flatten(RayleighBenardMultiAgentEnv())
-    observations, infos = env.reset(seed=42)
-
-    # Load agent
-    latest_policy = max(glob.glob(f"models/{env.metadata['name']}*.zip"), key=os.path.getctime)
-    PPO.load(latest_policy)
-
-    # Evaluate
-    print(f"\nStarting evaluation on {str(env.metadata['name'])}")
-    while env.agents:
-        # this is where you would insert your policy
-        actions = {agent: env.action_space(agent).sample() for agent in env.agents}
-        observations, rewards, terminations, truncations, infos = env.step(actions)
-        print(f"Observations: {observations}")
-        print(f"Rewards: {rewards}")
-        print(f"Terminations: {terminations}")
-        print(f"Truncations: {truncations}")
-        print(f"Infos: {infos}")
-    env.close()
-
-    avg_reward = sum(rewards.values()) / len(rewards.values())
-    print("Rewards: ", rewards)
-    print(f"Avg reward: {avg_reward}")
-    return avg_reward
-
-
-@hydra.main(version_base=None, config_path="config", config_name="marl")
-def main(cfg: DictConfig) -> None:
-    run = wandb.init(
-        project="sb3-multi-agent",
-        config=dict(cfg),
-        sync_tensorboard=True,
-    )
-
-    train_marl(cfg)
-
-    run.finish()
 
 
 if __name__ == "__main__":

@@ -59,9 +59,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.path = None
 
         # initialize from checkpoint path
-        self.checkpoint = to_absolute_path(env_config.get("checkpoint", self.CHECKPOINT))
+        self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
+            self.checkpoint = to_absolute_path(self.checkpoint)
             self.logger.info(f"Loading checkpoint from {self.checkpoint}")
             if not exists(self.checkpoint):
                 raise ValueError(f"Path to checkpoint does not exist: {self.checkpoint}")
@@ -203,16 +204,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         return self.__get_obs(), self.__get_info()
 
-    def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
+    def step(
+        self, action: RBCAction = None
+    ) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:
         """
         Function to perform one step of the environment using action "action", i.e.
         (state(t), action(t)) -> state(t+1)
         """
         truncated = False
         # Apply action
-        self.last_action = action
-        self.action_effective = self.t_func.apply_T(action)
-        self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
+        if action is not None:
+            self.last_action = action
+            self.action_effective = self.t_func.apply_T(action)
+            self.simulation.update_actuation((self.action_effective, self.simulation.bcT[1]))
 
         for _ in range(self.solver_steps):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)

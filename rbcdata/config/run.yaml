@@ -6,9 +6,7 @@ defaults:
   - sweep: null
   - _self_
 
+task: run
 seed: 42
 interval: 5
 render_mode: human
-
-env:
-  checkpoint: ../../../data/checkpoints/ra10000/train/baseline42

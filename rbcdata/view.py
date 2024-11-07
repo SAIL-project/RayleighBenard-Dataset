@@ -10,11 +10,11 @@ from rbcdata.vis import RBCFieldVisualizer
 
 def view_dataset(path: pathlib.Path) -> None:
     file = h5py.File(path, "r")
-    states = file["states"]
+    states = file["data"]
     vis_state = RBCFieldVisualizer(
         size=file.attrs["N"],
         vmin=file.attrs["bcT"][1],
-        vmax=file.attrs["bcT"][0] + file.attrs["action_limit"],
+        vmax=file.attrs["bcT"][0],
     )
 
     # Loop
