@@ -7,6 +7,7 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 
 from rbcdata.callbacks.callbacks import TqdmCallback
 from rbcdata.callbacks.callbacks_wandb import (
+    LogActionCallback,
     LogNusseltNumberCallback,
     LogVisualizationCallback,
 )
@@ -32,6 +33,7 @@ def main(cfg: DictConfig) -> None:
         TqdmCallback(total=env.episode_length, interval=cfg.interval),
         LogVisualizationCallback(action_limit=cfg.env.action_limit, interval=cfg.interval),
         LogNusseltNumberCallback(interval=cfg.interval),
+        LogActionCallback(interval=cfg.interval),
     ]
 
     # Controller

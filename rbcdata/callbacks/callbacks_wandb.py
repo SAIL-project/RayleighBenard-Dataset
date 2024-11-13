@@ -80,7 +80,7 @@ class LogVisualizationCallback(CallbackBase):
             print(" done.")
 
     def plot_field(self, x, field: RBCField):
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(9, 6))
         ax.set_axis_off()
         if field == RBCField.T:
             vmin, vmax = 1, 2 + self.action_limit
@@ -103,7 +103,7 @@ class LogVisualizationCallback(CallbackBase):
         path = pathlib.Path(f"{tempfile.gettempdir()}/rbcdata").resolve()
         path.mkdir(parents=True, exist_ok=True)
         # config fig
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(9, 6))
         ax.set_axis_off()
 
         if colormap == "binary":
@@ -128,3 +128,62 @@ class LogVisualizationCallback(CallbackBase):
         ani.save(path, writer=writer)
         plt.close(fig)
         return str(path)
+
+
+class LogActionCallback(CallbackBase):
+    def __init__(
+        self,
+        interval: Optional[int] = 1,
+    ):
+        super().__init__(interval=interval)
+        wandb.define_metric("sim_time")
+        wandb.define_metric("run/action", step_metric="sim_time")
+
+        # plot
+        self.artists = []
+
+        # suppress matplotlib logging
+        logger = logging.getLogger("matplotlib.animation")
+        logger.setLevel(logging.ERROR)
+
+    def __call__(self, env, obs, reward, info):
+        if super().__call__(env, obs, reward, info):
+            action = env.last_action
+            # plot action
+            fig, ax = plt.subplots(figsize=(9, 6))
+            ax.set_xlabel("segements")
+            ax.set_ylabel("amplitude")
+            ax.set_ylim(-1.1, 1.1)
+            ax.tick_params(axis="y")
+            ax.grid()
+            # save container for video
+            container = ax.plot(range(len(action)), action, color="blue")
+            self.artists.append(container)
+            im = wandb.Image(fig, caption="action")
+            plt.close(fig)
+            # log to wandb
+            wandb.log(
+                {
+                    "sim_time": info["t"],
+                    "run/action": im,
+                }
+            )
+
+    def close(self):
+        # plot actions
+        fig, ax = plt.subplots(figsize=(9, 6))
+        ax.set_xlabel("segements")
+        ax.set_ylabel("amplitude")
+        ax.set_ylim(-1.1, 1.1)
+        ax.tick_params(axis="y")
+        ax.grid()
+        ani = animation.ArtistAnimation(fig=fig, artists=self.artists)
+        writer = animation.FFMpegWriter(fps=2)
+        path = pathlib.Path(f"{tempfile.gettempdir()}/rbcdata").resolve()
+        path.mkdir(parents=True, exist_ok=True)
+        path = f"{path}/actions.mp4"
+        ani.save(path, writer=writer)
+
+        # wandb
+        vid = wandb.Video(path, caption="actions")
+        wandb.log({"run/video_actions": vid})
