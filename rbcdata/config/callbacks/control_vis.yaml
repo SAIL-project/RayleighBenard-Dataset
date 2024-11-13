@@ -1,3 +1,0 @@
-control_vis:
-  _target_: rbcdata.utils.callbacks.ControlVisCallback
-  interval: ${interval}

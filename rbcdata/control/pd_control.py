@@ -1,4 +1,5 @@
-from typing import Any, List
+import logging
+from typing import List
 
 import numpy as np
 
@@ -8,6 +9,8 @@ from rbcdata.utils.rbc_field import RBCField
 
 
 class PDController(Controller):
+    logger = logging.getLogger(__name__)
+
     def __init__(
         self,
         kp: float,
@@ -16,16 +19,19 @@ class PDController(Controller):
         limit: float,
         start: float,
         end: float,
-        duration: float,
-        zero: Any,
+        action_duration: float,
+        nr_segments: int,
     ) -> None:
-        super().__init__(start, end, duration, zero)
+        super().__init__(start, end, np.zeros(nr_segments))
         self.kp = kp
         self.kd = kd
         self.bcT = bcT
         self.limit = limit
+        self.duration = action_duration
+        self.nr_segements = nr_segments
 
         self._last_error = None
+        self.logger.warning("PD controller works on the state and not on the observation")
 
     def __call__(self, env, obs, info) -> float:
         if super().__call__(env, obs, info):

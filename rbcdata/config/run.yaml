@@ -1,12 +1,16 @@
 defaults:
   - hydra: default
   - env: default
-  - controller: zero
-  - callbacks: default
-  - sweep: null
   - _self_
 
 task: run
 seed: 42
-interval: 5
-render_mode: human
+interval: 1
+render_mode: null
+
+env:
+  ra: 100_000
+  checkpoint: "data/checkpoints/ra1000000/train"
+  episode_length: 120
+  action_suration: 1.0
+  dt: 0.05

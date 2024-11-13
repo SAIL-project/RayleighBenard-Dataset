@@ -20,7 +20,7 @@ class CallbackBase:
     def __init__(self, interval: int = 1):
         self.interval = interval
 
-    def __call__(self, env, obs, reward, info) -> bool:
+    def __call__(self, env, obs, reward, info, render=None) -> bool:
         return info["step"] % self.interval == 0
 
     def close(self):
@@ -186,7 +186,7 @@ class LogDatasetCallback(CallbackBase):
         self.file = h5py.File(file_name, "w")
 
         # Create datasets for Temperature and velocity field
-        steps = env.episode_steps // self.interval
+        steps = env.steps // self.interval
         self.states = self.file.create_dataset(
             "states",
             (steps, 3, env.cfg.N[0], env.cfg.N[1]),

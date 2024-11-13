@@ -11,7 +11,7 @@ def integrate(
 ):
     # Set up gym environment
     obs, info = env.reset(seed=seed)
-    action = env.last_action
+    action = None
     # Run environment
     while True:
         # Controller

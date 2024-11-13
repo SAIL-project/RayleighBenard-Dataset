@@ -1,0 +1,27 @@
+defaults:
+  - hydra: default
+  - paths: default
+  - env: default
+  - _self_
+
+task: pdcontrol
+seed: 42
+interval: 1
+render_mode: null
+
+env:
+  ra: 10_000
+  checkpoint: "data/checkpoints/ra1000000/train"
+  episode_length: 10
+  action_suration: 1.0
+  dt: 0.05
+
+controller:
+  kp: 970
+  kd: 2000
+  bcT: [2, 1]
+  limit: 0.75
+  start: 0.0
+  end: ${env.episode_length}
+  action_duration: ${env.action_duration}
+  nr_segments: ${env.action_segments}

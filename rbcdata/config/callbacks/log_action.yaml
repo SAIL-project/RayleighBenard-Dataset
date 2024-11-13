@@ -1,3 +1,0 @@
-log_action:
-  _target_: rbcdata.utils.callbacks.LogActionCallback
-  interval: 1

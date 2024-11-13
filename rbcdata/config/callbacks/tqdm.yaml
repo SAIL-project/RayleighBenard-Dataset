@@ -1,3 +1,0 @@
-tqdm:
-  _target_: rbcdata.callbacks.callbacks.TqdmCallback
-  total: ${env.episode_length}

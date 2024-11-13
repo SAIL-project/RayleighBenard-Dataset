@@ -24,7 +24,7 @@ x, y, tt = sympy.symbols("x,y,t", real=True)
 class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     metadata = {
         "render_modes": ["human", "rgb_array"],
-        "render_fps": 5,
+        "render_fps": 10,
     }
     logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # Env configuration
         self.obs_list = []
-        self.episode_steps = int(self.episode_length / self.dt)
+        self.steps = int(self.episode_length / self.dt)
         self.closed = False
 
         # The agent takes actions between [-1, 1] on the bottom segments
@@ -198,7 +198,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # Logging
         if filename is None:
-            self.logger.info(f"Environment reset to random init: t={self.t}")
+            self.logger.info("Environment reset to random initialization")
         else:
             self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
@@ -222,7 +222,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
 
         # Check for truncation
-        if self.tstep >= self.episode_steps:
+        if self.tstep >= self.steps:
             truncated = True
 
         self.last_obs = self.__get_obs()
@@ -305,6 +305,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             pygame.event.pump()
             self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()
+            return None
 
         elif self.render_mode == "rgb_array":
             return data.transpose(1, 0, 2)
+
+        else:
+            raise ValueError(f"Unknown render mode: {self.render_mode}")

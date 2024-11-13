@@ -23,5 +23,13 @@
             "console": "integratedTerminal",
             "justMyCode": false,
         },
+        {
+            "name": "PD Control",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/run_pd.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
     ]
 }
