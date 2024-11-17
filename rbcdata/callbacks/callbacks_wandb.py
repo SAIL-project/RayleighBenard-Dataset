@@ -83,7 +83,7 @@ class LogVisualizationCallback(CallbackBase):
         fig, ax = plt.subplots(figsize=(9, 6))
         ax.set_axis_off()
         if field == RBCField.T:
-            vmin, vmax = 1, 2 + self.action_limit
+            vmin, vmax = 1, 2
         else:
             vmin, vmax = None, None
 
@@ -109,7 +109,7 @@ class LogVisualizationCallback(CallbackBase):
         if colormap == "binary":
             vmin, vmax = None, None
         elif field == RBCField.T:
-            vmin, vmax = 1, 2 + self.action_limit
+            vmin, vmax = 1, 2
         else:
             vmin, vmax = None, None
 
@@ -140,7 +140,7 @@ class LogActionCallback(CallbackBase):
         wandb.define_metric("run/action", step_metric="sim_time")
 
         # plot
-        self.artists = []
+        self.actions = []
 
         # suppress matplotlib logging
         logger = logging.getLogger("matplotlib.animation")
@@ -149,6 +149,7 @@ class LogActionCallback(CallbackBase):
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
             action = env.last_action
+            self.actions.append(action)
             # plot action
             fig, ax = plt.subplots(figsize=(9, 6))
             ax.set_xlabel("segements")
@@ -157,8 +158,7 @@ class LogActionCallback(CallbackBase):
             ax.tick_params(axis="y")
             ax.grid()
             # save container for video
-            container = ax.plot(range(len(action)), action, color="blue")
-            self.artists.append(container)
+            ax.plot(range(len(action)), action, color="blue")
             im = wandb.Image(fig, caption="action")
             plt.close(fig)
             # log to wandb
@@ -177,7 +177,10 @@ class LogActionCallback(CallbackBase):
         ax.set_ylim(-1.1, 1.1)
         ax.tick_params(axis="y")
         ax.grid()
-        ani = animation.ArtistAnimation(fig=fig, artists=self.artists)
+        artists = []
+        for action in self.actions:
+            artists.append(ax.plot(range(len(action)), action, color="blue"))
+        ani = animation.ArtistAnimation(fig=fig, artists=artists)
         writer = animation.FFMpegWriter(fps=2)
         path = pathlib.Path(f"{tempfile.gettempdir()}/rbcdata").resolve()
         path.mkdir(parents=True, exist_ok=True)

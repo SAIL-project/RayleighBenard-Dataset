@@ -5,16 +5,17 @@ defaults:
   - _self_
 
 task: pdcontrol
-seed: 42
+seed: 44
 interval: 1
 render_mode: null
+baseline: False
 
 env:
-  ra: 10_000
-  checkpoint: "data/checkpoints/ra1000000/train"
-  episode_length: 10
+  ra: 1_000_000
+  checkpoint: "data/checkpoints/ra${env.ra}/train"
+  episode_length: 30
   action_suration: 1.0
-  dt: 0.05
+  dt: 0.025
 
 controller:
   kp: 970

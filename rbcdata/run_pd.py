@@ -19,10 +19,17 @@ from rbcdata.utils.integrate import integrate
 @hydra.main(version_base=None, config_path="config", config_name="pdcontrol")
 def main(cfg: DictConfig) -> None:
     # Logging
+    if cfg.baseline:
+        tags = ["baseline"]
+    else:
+        tags = ["pd"]
+    tags.append(f"ra{cfg.env.ra}")
+
     run = wandb.init(
         project="RayleighBenard-PDControl",
         dir=cfg.paths.output_dir,
         config=dict(cfg),
+        tags=tags,
     )
 
     # Environment
@@ -37,7 +44,10 @@ def main(cfg: DictConfig) -> None:
     ]
 
     # Controller
-    controller = PDController(**cfg.controller)
+    if not cfg.baseline:
+        controller = PDController(**cfg.controller)
+    else:
+        controller = None
 
     # Rollout
     integrate(
