@@ -2,6 +2,7 @@ import os
 import time
 
 import hydra
+import psutil
 import rootutils
 from omegaconf import DictConfig
 
@@ -9,8 +10,16 @@ rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
 from rbcdata.env.rbc_env import RayleighBenardEnv
 
 
+def process_memory():
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    return mem_info.rss / 1024**2
+
+
 def run_env(cfg: DictConfig) -> None:
     print(os.cpu_count())
+    mem_start = process_memory()
+    print(f"Memory start: {mem_start:.2f} MB")
 
     env = RayleighBenardEnv(env_config=cfg.env, render_mode=cfg.render_mode)
     obs, info = env.reset()
@@ -18,12 +27,14 @@ def run_env(cfg: DictConfig) -> None:
     start = time.time()
     # Run environment
     for i in range(30):
+        print(f"Memory: {(process_memory()-mem_start):.2f} MB")
         # Simulation step
         obs, reward, terminated, truncated, info = env.step()
         print(f"step={i}")
         if terminated or truncated:
             break
     end = time.time()
+    print(f"Memory: {(process_memory()-mem_start):.2f} MB")
     print(f"Time taken: {end - start:.4f} seconds")
     # Close
     env.close()

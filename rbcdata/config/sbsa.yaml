@@ -6,24 +6,24 @@ defaults:
   - env@test_env: default
   - _self_ # This will override the defaults if there are any conflicts
 
-task: sarl
+task: sbsa
 seed: 42
 
 train_env:
-  episode_length: 300
+  episode_length: 50
   checkpoint: data/checkpoints/ra10000/train #/baseline42.chk.h5
 
 eval_env:
-  episode_length: 100
+  episode_length: 200
   checkpoint: data/checkpoints/ra10000/test #/baseline42.chk.h5
 
 
 # Stable baselines 3 parameters overrides
 sb3:
   nr_processes: 20
-  nr_eval_processes: 10
+  nr_eval_processes: 5
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
-  train_steps: 10_000_000
+  train_steps: 100_000
   eval_every: 5 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
   train_checkpoint_every: 5 # same units as eval_every property.
   ppo:

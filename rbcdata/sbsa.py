@@ -4,7 +4,7 @@ from os.path import join
 
 import hydra
 import wandb
-from gymnasium.wrappers.flatten_observation import FlattenObservation
+from gymnasium.wrappers import FlattenObservation
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 from stable_baselines3 import PPO
@@ -26,7 +26,7 @@ from rbcdata.env.rbc_env import RayleighBenardEnv
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="config", config_name="sarl")
+@hydra.main(version_base=None, config_path="config", config_name="sbsa")
 def main(cfg: DictConfig) -> None:
     # Configure logging
     with open_dict(cfg):

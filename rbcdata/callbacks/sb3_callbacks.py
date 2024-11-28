@@ -117,7 +117,7 @@ class EvaluationVisualizationCallback(BaseCallback):
             self.plot_actions(actions)
             self.logger.record(
                 "eval/video",
-                Video(torch.from_numpy(np.asarray([screens])), fps=2),
+                Video(torch.from_numpy(np.asarray([screens])), fps=1),
                 exclude=("stdout", "log", "json", "csv"),
             )
 
