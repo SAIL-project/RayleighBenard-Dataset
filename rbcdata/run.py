@@ -11,15 +11,14 @@ from rbcdata.utils.callbacks import (
     CallbackBase,
     SweepMetricCallback,
     instantiate_callbacks,
+    RBCVisCallback,
 )
 from rbcdata.utils.integrate import integrate
 
 
 def run_env(cfg: DictConfig) -> None:
     env = RayleighBenardEnv(
-        sim_cfg=cfg.sim,
-        action_segments=cfg.action_segments,
-        action_limit=cfg.action_limit,
+        cfg
     )
 
     # Callbacks
@@ -28,6 +27,14 @@ def run_env(cfg: DictConfig) -> None:
         action_start=cfg.action_start,
         action_end=cfg.action_end,
     )
+
+    visualise_cb = RBCVisCallback(
+        size=cfg.sim.N,
+        bcT=cfg.sim.bcT,
+        action_limit=cfg.action_limit,
+        interval=1,
+    )
+    callbacks.append(visualise_cb)
     callbacks.append(sweep_metric)
 
     # Controller
@@ -45,7 +52,7 @@ def run_env(cfg: DictConfig) -> None:
         callbacks=callbacks,
         seed=cfg.seed,
         controller=controller,
-        checkpoint=cfg.checkpoint,
+        checkpoint=cfg.sim.load_checkpoint_path,
     )
 
     return sweep_metric.result()["nu_mean_action"]

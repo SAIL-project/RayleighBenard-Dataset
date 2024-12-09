@@ -172,6 +172,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         
         self.step_count = 0     # Reset the step counter! which keeps track of when to exit the episode
 
+        # Temporary code to save the states for later
+        
         return self.get_obs(), self.__get_info()
 
     def step(self, action: RBCAction) -> Tuple[RBCObservation, float, bool, bool, Dict[str, Any]]:

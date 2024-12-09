@@ -77,7 +77,7 @@ class RBCFieldVisualizer(ABC):
         self.fig.canvas.mpl_connect("close_event", self.close)
         # Velocity Field
         if show_u:
-            X, Y = np.meshgrid(np.arange(0, 96), np.arange(0, 64))
+            X, Y = np.meshgrid(np.arange(0, size[1]), np.arange(0, size[0]))
             self.skip = 4
             self.image_u = self.ax.quiver(
                 X[:: self.skip, :: self.skip],

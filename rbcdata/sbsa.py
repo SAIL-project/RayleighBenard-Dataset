@@ -17,6 +17,7 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.utils import get_device
 
 # Callbacks
 from stable_baselines3.common.callbacks import CheckpointCallback

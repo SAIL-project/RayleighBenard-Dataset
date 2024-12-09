@@ -4,7 +4,16 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "name": "sbsa_inspectAgent",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/sbsa_inspectAgent.py",
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal",
+            "args": "--experiment_dir=logs/runs/09-11-11-38-26 --apply_policy=True",
+            "justMyCode": false,
+        },
         {
             "name": "sbsa",
             "type": "debugpy",
