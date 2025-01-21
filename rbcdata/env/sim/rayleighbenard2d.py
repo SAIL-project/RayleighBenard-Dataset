@@ -128,11 +128,6 @@ class RayleighBenard(KMM):
         s2 = np.flipud(s2)
         self.obs_points = np.vstack([s2.ravel(), s1.ravel()])
 
-        import matplotlib.pyplot as plt
-
-        plt.plot(s1, s2, marker="o", color="k", linestyle="none")
-        plt.show()
-
     def update_bc(self, t):
         # Update time-dependent bcs.
         self.T0.bc.update(t)
@@ -211,15 +206,15 @@ class RayleighBenard(KMM):
         self.state = state
         self.obs = obs
 
-    def compute_nusselt(self, state):
+    def compute_nusselt(self, input):
         div = (
             self.kappa
             * (self.bcT_avg[0] - self.bcT_avg[1])
             / (self.domain[0][1] - self.domain[0][0])
         )  # H = 2, Tb = 2.
 
-        uyT_ = np.mean(np.mean(np.multiply(state[0], state[2]), axis=1), axis=0)
-        T_ = np.mean(np.gradient(np.mean(state[2], axis=1), axis=0))
+        uyT_ = np.mean(np.mean(np.multiply(input[0], input[2]), axis=1), axis=0)
+        T_ = np.mean(np.gradient(np.mean(input[2], axis=1), axis=0))
 
         return (uyT_ - self.kappa * T_) / div
 

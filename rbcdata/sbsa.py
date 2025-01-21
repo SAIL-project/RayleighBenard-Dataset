@@ -4,12 +4,10 @@ from os.path import join
 
 import hydra
 import wandb
-from gymnasium.wrappers import FlattenObservation
+from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 from stable_baselines3 import PPO
-
-# Callbacks
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
@@ -43,22 +41,26 @@ def main(cfg: DictConfig) -> None:
     logger.info(f"Set log directory to {cfg.output_dir}")
 
     # Construct the evaluation and training environments
+    def create_env(env_cfg, render_mode=None):
+        env = RayleighBenardEnv(env_cfg, render_mode=render_mode)
+        env = FlattenObservation(env)
+        env = FrameStackObservation(env, cfg.sb3.frame_stack)
+        return env
+
     train_env = make_vec_env(
-        lambda: FlattenObservation(RayleighBenardEnv(cfg.train_env)),
+        lambda: create_env(cfg.train_env),
         cfg.sb3.nr_processes,
         vec_env_cls=SubprocVecEnv,
-        vec_env_kwargs=dict(start_method="fork"),
     )
 
     eval_env = make_vec_env(
-        lambda: FlattenObservation(RayleighBenardEnv(cfg.eval_env)),
+        lambda: create_env(cfg.eval_env),
         cfg.sb3.nr_eval_processes,
         vec_env_cls=SubprocVecEnv,
-        vec_env_kwargs=dict(start_method="fork"),
     )
 
     viz_env = make_vec_env(
-        lambda: FlattenObservation(RayleighBenardEnv(cfg.eval_env, render_mode="rgb_array")),
+        lambda: create_env(cfg.eval_env, render_mode="rgb_array"),
         1,
         vec_env_cls=DummyVecEnv,
     )
@@ -72,12 +74,12 @@ def main(cfg: DictConfig) -> None:
     model = PPO(
         "MlpPolicy",
         train_env,
-        learning_rate=cfg.sb3.ppo.lr,
-        verbose=1,
         n_steps=steps_per_iteration,
+        learning_rate=cfg.sb3.ppo.lr,
         batch_size=cfg.sb3.ppo.batch_size,
         gamma=cfg.sb3.ppo.gamma,
         ent_coef=cfg.sb3.ppo.ent_coef,
+        verbose=1,
     )
 
     # Callbacks

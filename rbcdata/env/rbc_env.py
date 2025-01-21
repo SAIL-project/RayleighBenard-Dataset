@@ -97,7 +97,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.solver_steps = int(self.action_duration / self.dt)
 
         # Env configuration
-        self.obs_list = []
         self.steps = int(self.episode_length / self.dt)
         self.closed = False
 
@@ -190,7 +189,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         )
         self.simulation.assemble()
         self.simulation.step()
-        self.obs_list = []
 
         # Reset action
         self.last_action = np.array([0.0])
@@ -249,8 +247,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # TODO scaling is currently only implemented with values for Ra=1e4, maybe
         # suboptimal for other values
         reward = (
-            neg_nusselt_nr + 2.67
-        ) / 2.67  # TODO find out more about what the lowest achievable Nusselt number is
+            neg_nusselt_nr + 3.8
+        ) / 3.8  # TODO find out more about what the lowest achievable Nusselt number is
         return reward
 
     def __get_info(self) -> dict[str, Any]:

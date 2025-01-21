@@ -22,12 +22,13 @@ class LogNusseltNumberCallback(CallbackBase):
 
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
-            state = env.simulation.state
-            nusselt = env.simulation.compute_nusselt(state)
+            # state = env.simulation.state
+            # nusselt = env.simulation.compute_nusselt(state)
             wandb.log(
                 {
                     "sim_time": info["t"],
-                    "run/nusselt": nusselt,
+                    "run/nusselt": info["nusselt"],
+                    "run/nusselt_obs": info["nusselt_obs"],
                 }
             )
 

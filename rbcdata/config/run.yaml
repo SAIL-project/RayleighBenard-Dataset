@@ -6,7 +6,7 @@ defaults:
 task: run
 seed: 42
 interval: 1
-render_mode: "human" # null, "human" or "rgb_array"
+render_mode: null # null, "human" or "rgb_array"
 
 env:
   ra: 10_000
