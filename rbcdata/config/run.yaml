@@ -6,10 +6,10 @@ defaults:
 task: run
 seed: 42
 interval: 1
-render_mode: null
+render_mode: "human" # null, "human" or "rgb_array"
 
 env:
-  ra: 100_000
+  ra: 10_000
   checkpoint: "data/checkpoints/ra1000000/train"
   episode_length: 120
   action_suration: 1.0

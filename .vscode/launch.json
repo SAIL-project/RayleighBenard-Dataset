@@ -31,5 +31,13 @@
             "console": "integratedTerminal",
             "justMyCode": false,
         },
+        {
+            "name": "Run",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/run.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
     ]
 }

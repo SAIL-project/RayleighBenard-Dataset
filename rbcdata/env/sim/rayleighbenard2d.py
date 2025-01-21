@@ -125,8 +125,13 @@ class RayleighBenard(KMM):
             step = (d[1] - d[0]) / N
             spaces.append(np.linspace(d[0] + (step / 2), d[1] - (step / 2), N))
         s1, s2 = np.meshgrid(spaces[1], spaces[0])
-        s2 = np.flipud(s2)  # TODO TM: Why is it flipped?
+        s2 = np.flipud(s2)
         self.obs_points = np.vstack([s2.ravel(), s1.ravel()])
+
+        import matplotlib.pyplot as plt
+
+        plt.plot(s1, s2, marker="o", color="k", linestyle="none")
+        plt.show()
 
     def update_bc(self, t):
         # Update time-dependent bcs.
@@ -168,8 +173,6 @@ class RayleighBenard(KMM):
 
         if self.bcT_avg[0] == 1:
             funT = 1
-        elif int(self.bcT_avg[0]) == 0.6:  # TODO TM: how can this be ever true?
-            funT = 3
         elif int(self.bcT_avg[0]) == 2:
             funT = 4
         else:
@@ -192,14 +195,12 @@ class RayleighBenard(KMM):
         return self.obs
 
     def compute_outputs(self):
-        # evaluate functions at collocation points
-        ub = self.u_.backward(self.ub)
-        Tb = self.T_.backward(self.Tb)
-
         # construct state
+        ub = self.u_.backward(self.ub, mesh="uniform")
+        Tb = self.T_.backward(self.Tb, mesh="uniform")
         state = np.zeros((3, self.N[0], self.N[1]))
-        state[0:2] = ub
-        state[2] = Tb
+        state[0:2] = np.flip(ub, 0)
+        state[2] = np.flip(Tb, 0)
 
         # construct observation
         h, w = self.N_obs
