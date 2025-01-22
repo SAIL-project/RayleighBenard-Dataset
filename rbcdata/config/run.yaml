@@ -12,5 +12,5 @@ env:
   ra: 10_000
   checkpoint: "data/checkpoints/ra1000000/train"
   episode_length: 120
-  action_suration: 1.0
+  action_duration: 1
   dt: 0.05

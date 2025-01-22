@@ -251,8 +251,7 @@ class RayleighBenard(KMM):
         if self.checkpoint is not None:
             self.checkpoint.update(t, tstep)
 
-        # update outputs and time
-        self.compute_outputs()
+        # update time
         return round(t + self.dt, 8), int(tstep + 1)
 
     def clean(self):

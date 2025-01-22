@@ -12,7 +12,7 @@ def main(cfg: DictConfig) -> None:
 
     # Callbacks
     callbacks = [
-        TqdmCallback(total=env.steps, interval=cfg.interval),
+        TqdmCallback(total=env.episode_length, interval=cfg.interval),
     ]
 
     # Rollout

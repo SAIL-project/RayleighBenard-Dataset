@@ -8,17 +8,13 @@ from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from wandb.integration.sb3 import WandbCallback
 
-from rbcdata.callbacks.sb3_callbacks import (
-    EvaluationCallback,
-    EvaluationVisualizationCallback,
-    NusseltCallback,
-)
+from rbcdata.callbacks.sb3_callbacks import NusseltCallback
 from rbcdata.env.rbc_env import RayleighBenardEnv
 
 logger = logging.getLogger(__name__)
@@ -59,12 +55,6 @@ def main(cfg: DictConfig) -> None:
         vec_env_cls=SubprocVecEnv,
     )
 
-    viz_env = make_vec_env(
-        lambda: create_env(cfg.eval_env, render_mode="rgb_array"),
-        1,
-        vec_env_cls=DummyVecEnv,
-    )
-
     # Parameters
     steps_per_iteration = cfg.sb3.ppo.episodes_update * int(
         cfg.train_env.episode_length / cfg.train_env.action_duration
@@ -83,10 +73,12 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Callbacks
-    # train checkpoint
     dir_model = join(cfg.output_dir, "model")
+    dir_log = join(cfg.output_dir, "log")
+    # train checkpoint
+
     os.makedirs(dir_model, exist_ok=True)
-    checkpoint_callback_training = CheckpointCallback(
+    checkpoint_cb_training = CheckpointCallback(
         save_freq=cfg.sb3.train_checkpoint_every
         * int(cfg.train_env.episode_length / cfg.train_env.action_duration),
         save_path=dir_model,
@@ -94,26 +86,35 @@ def main(cfg: DictConfig) -> None:
     )
 
     # evaluation callback
-    eval_callback = EvaluationCallback(
-        env=eval_env,
-        save_model=True,
-        save_path=dir_model,
-        freq=cfg.sb3.eval_every * steps_per_iteration,
+    eval_cb = EvalCallback(
+        eval_env,
+        best_model_save_path=dir_model,
+        log_path=dir_log,
+        eval_freq=cfg.sb3.eval_every * steps_per_iteration,
+        deterministic=True,
+        render=False,
     )
 
-    video_dir = join(cfg.output_dir, "video")
-    os.makedirs(video_dir, exist_ok=True)
-    vis_callback = EvaluationVisualizationCallback(
-        env=viz_env,
-        freq=cfg.sb3.eval_every * steps_per_iteration,
-        path=video_dir,
-    )
+    # eval_callback = EvaluationCallback(
+    #    env=eval_env,
+    #    save_model=True,
+    #    save_path=dir_model,
+    #    freq=cfg.sb3.eval_every * steps_per_iteration,
+    # )
+
+    # video_dir = join(cfg.output_dir, "video")
+    # os.makedirs(video_dir, exist_ok=True)
+    # vis_callback = EvaluationVisualizationCallback(
+    #     env=viz_env,
+    #     freq=cfg.sb3.eval_every * steps_per_iteration,
+    #     path=video_dir,
+    # )
 
     callbacks = [
         NusseltCallback(),
-        vis_callback,
-        eval_callback,
-        checkpoint_callback_training,
+        #  vis_callback,
+        eval_cb,
+        checkpoint_cb_training,
         WandbCallback(
             verbose=1,
         ),
@@ -123,13 +124,8 @@ def main(cfg: DictConfig) -> None:
     model.set_logger(logger)
     model.learn(total_timesteps=cfg.sb3.train_steps, progress_bar=True, callback=callbacks)
 
-    # Right now the best model is saved upon best evaluation score.
-    # We don't need to save the model again.
-    # mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=EVAL_EPS)
-    # logger.info(f"Training completed after {time.time() - start} seconds.
-    # Mean evaluation reward {mean_reward:.2f} +/- {std_reward:.2f}")
-    # model.save(final_model_dir, "PPOmodelRBC")
     train_env.close()
+    eval_env.close()
     run.finish()
 
 

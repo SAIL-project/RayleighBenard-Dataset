@@ -21,8 +21,8 @@ class NusseltCallback(BaseCallback):
     def _on_step(self) -> bool:
         infos = self.locals.get("infos")
         for info in infos:
-            self.logger.record_mean("train/nusselt_obs", info["nusselt_obs"])
-            self.logger.record_mean("train/nusselt", info["nusselt"])
+            self.logger.record_mean("rollout/nusselt_obs_mean", info["nusselt_obs"])
+            self.logger.record_mean("rollout/nusselt_mean", info["nusselt"])
         return True
 
 

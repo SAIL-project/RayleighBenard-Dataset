@@ -8,19 +8,25 @@ defaults:
 
 task: sbsa
 seed: 42
+ra: 10_000
+dt: 0.05
 
 train_env:
+  ra: ${ra}
+  dt: ${dt}
   episode_length: 50
-  checkpoint: data/checkpoints/ra10000/train #/baseline42.chk.h5
+  checkpoint: data/checkpoints/ra${ra}/train #/baseline42.chk.h5
 
 eval_env:
-  episode_length: 200
-  checkpoint: data/checkpoints/ra10000/test #/baseline42.chk.h5
+  ra: ${ra}
+  dt: ${dt}
+  episode_length: 100
+  checkpoint: data/checkpoints/ra${ra}/test #/baseline42.chk.h5
 
 
 # Stable baselines 3 parameters overrides
 sb3:
-  nr_processes: 1
+  nr_processes: 5
   nr_eval_processes: 1
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
   train_steps: 100_000
@@ -29,8 +35,8 @@ sb3:
   frame_stack: 4 # number of observations to stack
   ppo:
     lr: 0.0003
-    episodes_update: 1 # episodes_update * nr_processes total episodes per update
+    episodes_update: 2 # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99
-    ent_coef: 0.2
+    ent_coef: 0.0
     vf_coef: 0.5

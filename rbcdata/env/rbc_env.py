@@ -37,6 +37,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     BCT = [2, 1]
     CHECKPOINT = None
     WRITE_CHECKPOINT = False
+    REWARD_SCALE = 3.8
     ACTION_LIMIT = 0.75
     ACTION_DURATION = 1.0
     ACTION_SEGMENTS = 12
@@ -85,6 +86,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.pr = env_config.get("pr", self.PR)
         self.dt = env_config.get("dt", self.DT)
         self.bcT = env_config.get("bcT", self.BCT)
+
+        # reward config
+        self.reward_scale = env_config.get("reward_scale", self.REWARD_SCALE)
 
         # action config
         self.action_limit = env_config.get("action_limit", self.ACTION_LIMIT)
@@ -189,6 +193,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         )
         self.simulation.assemble()
         self.simulation.step()
+        self.simulation.compute_outputs()
 
         # Reset action
         self.last_action = np.array([0.0])
@@ -218,6 +223,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         for _ in range(self.solver_steps):
             self.t, self.tstep = self.simulation.step(tstep=self.tstep, t=self.t)
+        self.simulation.compute_outputs()
 
         # Check for truncation
         if self.tstep >= self.steps:
@@ -244,11 +250,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __get_reward(self) -> float:
         obs = self.__get_obs()
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
-        # TODO scaling is currently only implemented with values for Ra=1e4, maybe
-        # suboptimal for other values
-        reward = (
-            neg_nusselt_nr + 3.8
-        ) / 3.8  # TODO find out more about what the lowest achievable Nusselt number is
+        reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale
         return reward
 
     def __get_info(self) -> dict[str, Any]:
