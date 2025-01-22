@@ -48,11 +48,13 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
+        reward_shaping = False,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
         super().__init__()
+        self.reward_shaping = reward_shaping
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
         self.path = "shenfun"
@@ -61,6 +63,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # initialize from checkpoint path
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
+        print(self.checkpoint)
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
             self.checkpoint = to_absolute_path(self.checkpoint)
@@ -252,6 +255,17 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
         reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale
         return reward
+
+    def compute_distance_cells(self) -> float:
+        """
+        Computes the distance between the Bénard cells of the state, given the mid-line temperature"""
+        state = self.get_state()
+        distance = 0
+        T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
+        # Find the locations of the cells
+
+
+        return distance
 
     def __get_info(self) -> dict[str, Any]:
         return {
