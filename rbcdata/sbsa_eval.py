@@ -60,10 +60,10 @@ def main(cfg: DictConfig) -> None:
         screens = []
         actions = []
         # logging
-        wandb.define_metric(f"ep{idx}_time")
-        wandb.define_metric(f"ep{idx}_nusselt_state", step_metric=f"ep{idx}_time")
-        wandb.define_metric(f"ep{idx}_nusselt_obs", step_metric=f"ep{idx}_time")
-        wandb.define_metric(f"ep{idx}_reward", step_metric=f"ep{idx}_time")
+        wandb.define_metric(f"ep{idx}/time")
+        wandb.define_metric(f"ep{idx}/nusselt_state", step_metric=f"ep{idx}/time")
+        wandb.define_metric(f"ep{idx}/nusselt_obs", step_metric=f"ep{idx}/time")
+        wandb.define_metric(f"ep{idx}/reward", step_metric=f"ep{idx}/time")
         # reset env
         obs = env.reset()
         dones = np.zeros(1)
@@ -76,17 +76,17 @@ def main(cfg: DictConfig) -> None:
             # log data
             wandb.log(
                 {
-                    f"ep{idx}_time": info[0]["t"],
-                    f"ep{idx}_nusselt_state": info[0]["nusselt"],
-                    f"ep{idx}_nusselt_obs": info[0]["nusselt_obs"],
-                    f"ep{idx}_reward": rewards[0],
+                    f"ep{idx}/time": info[0]["t"],
+                    f"ep{idx}/nusselt_state": info[0]["nusselt"],
+                    f"ep{idx}/nusselt_obs": info[0]["nusselt_obs"],
+                    f"ep{idx}/reward": rewards[0],
                 }
             )
         # plot data
         plot_actions(actions, output_dir, idx)
         wandb.log(
             {
-                f"ep{idx}_video": Video(np.asarray(screens), fps=1, format="mp4"),
+                f"ep{idx}/video": Video(np.asarray(screens), fps=1, format="mp4"),
             }
         )
 
@@ -112,7 +112,7 @@ def plot_actions(actions, out_dir, episode_idx):
     ani.save(path, writer=writer)
     wandb.log(
         {
-            f"ep{episode_idx}_actions": Video(path, format="mp4"),
+            f"ep{episode_idx}/actions": Video(path, format="mp4"),
         }
     )
 

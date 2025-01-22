@@ -34,9 +34,9 @@ sb3:
   train_checkpoint_every: 5 # same units as eval_every property.
   frame_stack: 4 # number of observations to stack
   ppo:
-    lr: 0.0003
+    lr: 0.001
     episodes_update: 2 # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99
-    ent_coef: 0.0
+    ent_coef: 0.5
     vf_coef: 0.5
