@@ -1,0 +1,9 @@
+# Config file for running the Single-Agent (SA) version of the RBC controller
+
+defaults:
+  - hydra: default
+  - _self_ # This will override the defaults if there are any conflicts
+
+task: sbsa_eval
+experiment_dir: logs/experiments/test
+nr_episodes: 1

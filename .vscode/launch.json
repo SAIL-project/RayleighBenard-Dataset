@@ -16,6 +16,14 @@
             "justMyCode": false,
         },
         {
+            "name": "sbsa-eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/rbcdata/sbsa_eval.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "MARL Test",
             "type": "debugpy",
             "request": "launch",
