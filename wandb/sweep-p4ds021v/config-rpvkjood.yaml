@@ -1,0 +1,18 @@
+wandb_version: 1
+
+ra:
+  value: 10000
+sb3.frame_stack:
+  value: 4
+sb3.nr_eval_processes:
+  value: 5
+sb3.nr_processes:
+  value: 30
+sb3.ppo.ent_coef:
+  value: 0.01
+sb3.ppo.gamma:
+  value: 0.9
+sb3.ppo.lr:
+  value: 0.001
+sb3.train_steps:
+  value: 150000

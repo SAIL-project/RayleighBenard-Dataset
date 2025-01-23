@@ -3,7 +3,6 @@ import os
 from os.path import join
 
 import hydra
-import wandb
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
@@ -14,6 +13,7 @@ from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from wandb.integration.sb3 import WandbCallback
 
+import wandb
 from rbcdata.callbacks.sb3_callbacks import NusseltCallback
 from rbcdata.env.rbc_env import RayleighBenardEnv
 
@@ -31,6 +31,7 @@ def main(cfg: DictConfig) -> None:
         config=dict(cfg),
         sync_tensorboard=True,
         dir=cfg.output_dir,
+        mode='disabled',
     )
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
@@ -60,7 +61,6 @@ def main(cfg: DictConfig) -> None:
         cfg.train_env.episode_length / cfg.train_env.action_duration
     )
 
-    # Construct the agent
     model = PPO(
         "MlpPolicy",
         train_env,
@@ -95,24 +95,8 @@ def main(cfg: DictConfig) -> None:
         render=False,
     )
 
-    # eval_callback = EvaluationCallback(
-    #    env=eval_env,
-    #    save_model=True,
-    #    save_path=dir_model,
-    #    freq=cfg.sb3.eval_every * steps_per_iteration,
-    # )
-
-    # video_dir = join(cfg.output_dir, "video")
-    # os.makedirs(video_dir, exist_ok=True)
-    # vis_callback = EvaluationVisualizationCallback(
-    #     env=viz_env,
-    #     freq=cfg.sb3.eval_every * steps_per_iteration,
-    #     path=video_dir,
-    # )
-
     callbacks = [
         NusseltCallback(),
-        #  vis_callback,
         eval_cb,
         checkpoint_cb_training,
         WandbCallback(
