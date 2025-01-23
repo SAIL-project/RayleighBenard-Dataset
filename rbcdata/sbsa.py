@@ -26,12 +26,12 @@ def main(cfg: DictConfig) -> None:
     with open_dict(cfg):
         cfg.output_dir = HydraConfig.get().runtime.output_dir
     # wandb
-    run = wandb.init(
-        project="sb3-single-agent",
-        config=dict(cfg),
-        sync_tensorboard=True,
-        dir=cfg.output_dir,
-    )
+    # run = wandb.init(
+    #     project="sb3-single-agent",
+    #     config=dict(cfg),
+    #     sync_tensorboard=True,
+    #     dir=cfg.output_dir,
+    # )
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {cfg.output_dir}")

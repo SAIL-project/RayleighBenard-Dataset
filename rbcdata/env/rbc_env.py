@@ -2,6 +2,7 @@ import glob
 import logging
 from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
+import os
 
 import gymnasium as gym
 import numpy as np
@@ -63,15 +64,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # initialize from checkpoint path
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
-        print(self.checkpoint)
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
+            os.chdir(os.path.dirname(os.path.dirname(os.getcwd())))
             self.checkpoint = to_absolute_path(self.checkpoint)
+            os.chdir(os.getcwd() + "/rbcdata")
             self.logger.info(f"Loading checkpoint from {self.checkpoint}")
             if not exists(self.checkpoint):
                 raise ValueError(f"Path to checkpoint does not exist: {self.checkpoint}")
             elif isdir(self.checkpoint):
-                self.load_checkpoint_files = glob.glob(join(self.checkpoint, "*.h5"))
+                self.load_checkpoint_files = glob.glob(join("./", self.checkpoint, "*.h5"))
                 if len(self.load_checkpoint_files) == 0:
                     raise ValueError(f"No checkpoint files found in directory: {self.checkpoint}")
             elif isfile(self.checkpoint):
@@ -263,7 +265,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
-
+        
 
         return distance
 
