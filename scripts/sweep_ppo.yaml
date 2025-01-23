@@ -7,6 +7,8 @@ metric:
 parameters:
   ra:
     values: [10_000]
+  sb3.model:
+    value: "ppo"
   sb3.nr_processes:
     value: 30
   sb3.nr_eval_processes:
