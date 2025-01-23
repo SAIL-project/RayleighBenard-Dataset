@@ -1,0 +1,65 @@
+2025-01-24 00:20:52 INFO Running runs: []
+2025-01-24 00:20:52 INFO Agent received command: run
+2025-01-24 00:20:52 INFO Agent starting run with config:
+	ra: 10000
+	sb3.frame_stack: 4
+	sb3.nr_eval_processes: 5
+	sb3.nr_processes: 30
+	sb3.ppo.ent_coef: 0.01
+	sb3.ppo.gamma: 0.9
+	sb3.ppo.lr: 0.001
+	sb3.train_steps: 150000
+2025-01-24 00:20:52 INFO About to run command: /usr/bin/env python rbcdata/sbsa.py ra=10000 sb3.frame_stack=4 sb3.nr_eval_processes=5 sb3.nr_processes=30 sb3.ppo.ent_coef=0.01 sb3.ppo.gamma=0.9 sb3.ppo.lr=0.001 sb3.train_steps=150000
+2025-01-24 00:20:57 INFO Running runs: ['rpvkjood']
+2025-01-24 00:21:03 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:04 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:05 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:06 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:07 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:08 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:09 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:10 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:11 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:12 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:13 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:14 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:15 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:16 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:17 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:18 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:19 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:20 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:21 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:22 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:23 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:24 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:25 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:26 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:27 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:28 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:29 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:30 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:31 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:32 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:33 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:34 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:35 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:36 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:37 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:38 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:39 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:40 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:41 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:42 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:43 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:44 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:45 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:46 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:47 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:48 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:49 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:50 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:51 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:52 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:53 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0
+2025-01-24 00:21:54 INFO No path found after /Users/tmarkmann/sail/RayleighBenard-Dataset/logs/sbsa/01-24-00-20-55/log/events.out.tfevents.1737674463.tmarkmann-mac.fritz.box.48673.0

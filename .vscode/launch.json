@@ -10,9 +10,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/rbcdata/sbsa.py",
-            "cwd": "${fileDirname}",
             "console": "integratedTerminal",
-            "args": "env.episode_length=5 callbacks=dataset",
             "justMyCode": false,
         },
         {

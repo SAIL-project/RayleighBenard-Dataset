@@ -6,4 +6,4 @@ defaults:
 
 task: sbsa_eval
 experiment_dir: logs/experiments/test
-nr_episodes: 1
+nr_episodes: 5
