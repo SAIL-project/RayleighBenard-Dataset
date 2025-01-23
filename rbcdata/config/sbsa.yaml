@@ -26,13 +26,16 @@ eval_env:
 
 # Stable baselines 3 parameters overrides
 sb3:
-  nr_processes: 1
-  nr_eval_processes: 1
+  nr_processes: 20
+  nr_eval_processes: 5
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
   train_steps: 150_000
   eval_every: 5 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
   train_checkpoint_every: 5 # same units as eval_every property.
   frame_stack: 4 # number of observations to stack
+  model: "sac"  #"ppo"
+  sac:
+    ent_coef: "auto"
   ppo:
     lr: 0.001
     episodes_update: 2 # episodes_update * nr_processes total episodes per update

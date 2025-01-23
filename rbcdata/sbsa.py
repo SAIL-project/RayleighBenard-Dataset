@@ -6,7 +6,7 @@ import hydra
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
@@ -31,7 +31,7 @@ def main(cfg: DictConfig) -> None:
         config=dict(cfg),
         sync_tensorboard=True,
         dir=cfg.output_dir,
-        mode='disabled',
+        mode="disabled",
     )
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
@@ -61,16 +61,24 @@ def main(cfg: DictConfig) -> None:
         cfg.train_env.episode_length / cfg.train_env.action_duration
     )
 
-    model = PPO(
-        "MlpPolicy",
-        train_env,
-        n_steps=steps_per_iteration,
-        learning_rate=cfg.sb3.ppo.lr,
-        batch_size=cfg.sb3.ppo.batch_size,
-        gamma=cfg.sb3.ppo.gamma,
-        ent_coef=cfg.sb3.ppo.ent_coef,
-        verbose=1,
-    )
+    if cfg.sb3.model == "ppo":
+        model = PPO(
+            "MlpPolicy",
+            train_env,
+            n_steps=steps_per_iteration,
+            learning_rate=cfg.sb3.ppo.lr,
+            batch_size=cfg.sb3.ppo.batch_size,
+            gamma=cfg.sb3.ppo.gamma,
+            ent_coef=cfg.sb3.ppo.ent_coef,
+            verbose=1,
+        )
+    elif cfg.sb3.model == "sac":
+        model = SAC(
+            "MlpPolicy",
+            train_env,
+            ent_coef=cfg.sb3.sac.ent_coef,
+            verbose=1,
+        )
 
     # Callbacks
     dir_model = join(cfg.output_dir, "model")

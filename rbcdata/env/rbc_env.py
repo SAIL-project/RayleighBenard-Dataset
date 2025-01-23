@@ -2,9 +2,9 @@ import glob
 import logging
 from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
-import os
 
 import gymnasium as gym
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import sympy
@@ -15,7 +15,6 @@ from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.utils import colormap
-import matplotlib.pyplot as plt
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -50,7 +49,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        reward_shaping = False,
+        reward_shaping=False,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
@@ -67,9 +66,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
-            os.chdir(os.path.dirname(os.getcwd()))
             self.checkpoint = to_absolute_path(self.checkpoint)
-            os.chdir(os.getcwd() + "/rbcdata")
             self.logger.info(f"Loading checkpoint from {self.checkpoint}")
             if not exists(self.checkpoint):
                 raise ValueError(f"Path to checkpoint does not exist: {self.checkpoint}")
@@ -261,7 +258,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def compute_distance_cells(self) -> float:
         """
-        Computes the distance between the Bénard cells of the state, given the mid-line temperature"""
+        Computes the distance between the Bénard cells of the state, given the mid-line temperature
+        """
         state = self.get_state()
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
