@@ -2,6 +2,7 @@ import glob
 import logging
 from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
+import os
 
 import gymnasium as gym
 import numpy as np
@@ -14,6 +15,7 @@ from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.utils import colormap
+import matplotlib.pyplot as plt
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -63,15 +65,16 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # initialize from checkpoint path
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
-        print(self.checkpoint)
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
+            os.chdir(os.path.dirname(os.getcwd()))
             self.checkpoint = to_absolute_path(self.checkpoint)
+            os.chdir(os.getcwd() + "/rbcdata")
             self.logger.info(f"Loading checkpoint from {self.checkpoint}")
             if not exists(self.checkpoint):
                 raise ValueError(f"Path to checkpoint does not exist: {self.checkpoint}")
             elif isdir(self.checkpoint):
-                self.load_checkpoint_files = glob.glob(join(self.checkpoint, "*.h5"))
+                self.load_checkpoint_files = glob.glob(join("./", self.checkpoint, "*.h5"))
                 if len(self.load_checkpoint_files) == 0:
                     raise ValueError(f"No checkpoint files found in directory: {self.checkpoint}")
             elif isfile(self.checkpoint):
@@ -263,7 +266,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
-
+        fig, ax = plt.subplots()
+        ax.plot(T_mid_line)
+        plt.show()
 
         return distance
 
