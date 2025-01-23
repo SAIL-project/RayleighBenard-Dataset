@@ -15,6 +15,7 @@ from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.utils import colormap
+import matplotlib.pyplot as plt
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -66,7 +67,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.checkpoint = env_config.get("checkpoint", self.CHECKPOINT)
         self.load_checkpoint_files = []
         if self.checkpoint is not None:
-            os.chdir(os.path.dirname(os.path.dirname(os.getcwd())))
+            os.chdir(os.path.dirname(os.getcwd()))
             self.checkpoint = to_absolute_path(self.checkpoint)
             os.chdir(os.getcwd() + "/rbcdata")
             self.logger.info(f"Loading checkpoint from {self.checkpoint}")
@@ -265,7 +266,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
-        
+        fig, ax = plt.subplots()
+        ax.plot(T_mid_line)
+        plt.show()
 
         return distance
 
