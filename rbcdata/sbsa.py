@@ -31,7 +31,6 @@ def main(cfg: DictConfig) -> None:
         config=dict(cfg),
         sync_tensorboard=True,
         dir=cfg.output_dir,
-        mode="disabled",
     )
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
