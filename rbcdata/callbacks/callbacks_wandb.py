@@ -3,10 +3,10 @@ import pathlib
 import tempfile
 from typing import Optional
 
-import wandb
 from matplotlib import animation
 from matplotlib import pyplot as plt
 
+import wandb
 from rbcdata.callbacks.callbacks import CallbackBase
 from rbcdata.utils.rbc_field import RBCField
 
@@ -54,12 +54,13 @@ class LogVisualizationCallback(CallbackBase):
     def __call__(self, env, obs, reward, info):
         if super().__call__(env, obs, reward, info):
             state = env.simulation.state
-            self.sequence.append(state)
+
             images = []
             for field in [RBCField.T, RBCField.UY, RBCField.UX]:
                 fig, _, _ = self.plot_field(state, field)
                 images.append(wandb.Image(fig, caption=field.name))
                 plt.close(fig)
+            self.sequence.append(state)
             wandb.log({"run/visualization": images, "sim_time": info["t"]})
 
     def close(self):

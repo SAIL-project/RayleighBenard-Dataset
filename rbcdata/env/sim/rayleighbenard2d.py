@@ -194,7 +194,7 @@ class RayleighBenard(KMM):
         ub = self.u_.backward(self.ub, mesh="uniform")
         Tb = self.T_.backward(self.Tb, mesh="uniform")
         state = np.zeros((3, self.N[0], self.N[1]))
-        state[0:2] = np.flip(ub, 0)
+        state[0:2] = np.flip(ub, 1)
         state[2] = np.flip(Tb, 0)
 
         # construct observation
@@ -207,16 +207,13 @@ class RayleighBenard(KMM):
         self.obs = obs
 
     def compute_nusselt(self, input):
-        div = (
+        conductivity = (
             self.kappa
             * (self.bcT_avg[0] - self.bcT_avg[1])
             / (self.domain[0][1] - self.domain[0][0])
         )  # H = 2, Tb = 2.
-
-        uyT_ = np.mean(np.mean(np.multiply(input[0], input[2]), axis=1), axis=0)
-        T_ = np.mean(np.gradient(np.mean(input[2], axis=1), axis=0))
-
-        return (uyT_ - self.kappa * T_) / div
+        conv = np.mean(input[0] * (input[2] - np.mean(input[2])))
+        return conv / conductivity
 
     def compute_kinematic_energy(self):
         u2_xy = self.obs[1] * self.obs[1] + self.obs[0] * self.obs[0]
