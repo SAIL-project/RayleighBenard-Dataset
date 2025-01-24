@@ -285,10 +285,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             # TODO this could happen in future situations with more than 2 Bénard cells, 
             # but for now I would like to know when it happens, so I raise an error.
             raise ValueError(f"More than 2 Bénard cells found with the current algorithm: {len(peaks)}")
-        # fig, ax = plt.subplots()
-        # ax.plot(T_mid_line)
-        # plt.plot(peaks, T_mid_line[peaks], "x")
-        # plt.show()
+        fig, ax = plt.subplots()
+        ax.plot(T_mid_line)
+        plt.plot(peaks, T_mid_line[peaks], "x")
+        plt.show()
         self.logger.info(f"Distance between cells: {distance}")
         print(f"Distance between cells: {distance}")
         return distance
