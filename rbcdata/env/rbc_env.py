@@ -253,7 +253,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __get_reward(self) -> float:
         obs = self.__get_obs()
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
-        reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale
+        reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale   # scale to [0, 1]
+        if self.reward_shaping:
+            cell_distance = self.compute_distance_cells()
+            # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
+            cell_distance = (-self.compute_distance_cells() + np.pi) / np.pi
+            reward = 0.5 * reward + 0.5 * cell_distance     # equal coefficients for now
         return reward
 
     def compute_distance_cells(self) -> float:
@@ -267,7 +272,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         fig, ax = plt.subplots()
         ax.plot(T_mid_line)
         plt.show()
-
+        self.logger.info(f"Distance between cells: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:

@@ -19,7 +19,6 @@ from rbcdata.env.rbc_env import RayleighBenardEnv
 
 logger = logging.getLogger(__name__)
 
-
 @hydra.main(version_base=None, config_path="config", config_name="sbsa")
 def main(cfg: DictConfig) -> None:
     # Configure logging
@@ -38,7 +37,7 @@ def main(cfg: DictConfig) -> None:
 
     # Construct the evaluation and training environments
     def create_env(env_cfg, render_mode=None):
-        env = RayleighBenardEnv(env_cfg, render_mode=render_mode)
+        env = RayleighBenardEnv(env_cfg, render_mode=render_mode, reward_shaping=False)
         env = FlattenObservation(env)
         env = FrameStackObservation(env, cfg.sb3.frame_stack)
         return env
