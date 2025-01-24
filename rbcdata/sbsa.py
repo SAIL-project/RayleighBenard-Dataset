@@ -38,7 +38,7 @@ def main(cfg: DictConfig) -> None:
 
     # Construct the evaluation and training environments
     def create_env(env_cfg, render_mode=None):
-        env = RayleighBenardEnv(env_cfg, render_mode=render_mode, reward_shaping=True)
+        env = RayleighBenardEnv(env_cfg, render_mode=render_mode, reward_shaping=False)
         env = FlattenObservation(env)
         env = FrameStackObservation(env, cfg.sb3.frame_stack)
         return env
