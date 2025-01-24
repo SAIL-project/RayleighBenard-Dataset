@@ -10,6 +10,7 @@ import numpy.typing as npt
 import sympy
 from gymnasium.error import DependencyNotInstalled
 from hydra.utils import to_absolute_path
+from scipy.signal import find_peaks
 
 from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
@@ -255,6 +256,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
         reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale   # scale to [0, 1]
         if self.reward_shaping:
+            # NOTE: works for our specific horizontal domain, needs simple modification to generalize
             cell_distance = self.compute_distance_cells()
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
             cell_distance = (-self.compute_distance_cells() + np.pi) / np.pi
@@ -264,15 +266,31 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def compute_distance_cells(self) -> float:
         """
         Computes the distance between the Bénard cells of the state, given the mid-line temperature
+        NOTE: works for our specific horizontal domain, needs simple modification to generalize
         """
         state = self.get_state()
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
-        fig, ax = plt.subplots()
-        ax.plot(T_mid_line)
-        plt.show()
+        peaks, _ = find_peaks(T_mid_line, height=1.55)
+        domain_x = np.linspace(0, 2*np.pi, self.size_state[1], endpoint=False)   # periodic domain
+        if len(peaks) == 1:
+            distance = 0    # only one peak, no distance, it's the optimal situation.
+        elif len(peaks) == 2:
+            assert(domain_x[peaks[1]] > domain_x[peaks[0]])
+            dist1 = domain_x[peaks[1]] - domain_x[peaks[0]]
+            dist2 = 2*np.pi - dist1 # complement distance
+            distance = min(dist1, dist2)
+        elif len(peaks) > 2:
+            # TODO this could happen in future situations with more than 2 Bénard cells, 
+            # but for now I would like to know when it happens, so I raise an error.
+            raise ValueError(f"More than 2 Bénard cells found with the current algorithm: {len(peaks)}")
+        # fig, ax = plt.subplots()
+        # ax.plot(T_mid_line)
+        # plt.plot(peaks, T_mid_line[peaks], "x")
+        # plt.show()
         self.logger.info(f"Distance between cells: {distance}")
+        print(f"Distance between cells: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:
