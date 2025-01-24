@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=PPO
+#SBATCH --job-name=sbsa
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=32
