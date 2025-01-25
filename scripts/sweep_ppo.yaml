@@ -6,7 +6,7 @@ metric:
   name: eval/mean_reward
 parameters:
   ra:
-    values: [10_000, 50_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000]
+    values: [10_000, 100_000, 1_000_000]
   sb3.model:
     value: "ppo"
   sb3.nr_processes:
@@ -14,7 +14,7 @@ parameters:
   sb3.nr_eval_processes:
     value: 5
   sb3.train_steps:
-    value: 200_000
+    value: 300_000
   sb3.frame_stack:
     value: 1
   sb3.ppo.lr:
