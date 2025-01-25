@@ -22,7 +22,7 @@ parameters:
   sb3.ppo.gamma:
     value: 0.95
   sb3.ppo.ent_coef:
-    values: 0.1
+    value: 0.1
 
 command:
   - ${env}
