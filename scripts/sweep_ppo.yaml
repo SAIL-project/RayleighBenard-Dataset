@@ -1,12 +1,12 @@
 program: rbcdata/sbsa.py
-name: PPO
-method: bayes
+name: Result Training
+method: grid
 metric:
   goal: maximize
   name: eval/mean_reward
 parameters:
   ra:
-    values: [10_000]
+    values: [10_000, 50_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000]
   sb3.model:
     value: "ppo"
   sb3.nr_processes:
@@ -14,15 +14,15 @@ parameters:
   sb3.nr_eval_processes:
     value: 5
   sb3.train_steps:
-    value: 150_000
+    value: 200_000
   sb3.frame_stack:
-    values: [1, 4]
+    value: 1
   sb3.ppo.lr:
-    values: [0.0001, 0.001]
+    value: 0.001
   sb3.ppo.gamma:
-    values: [0.9, 0.95, 0.99]
+    value: 0.95
   sb3.ppo.ent_coef:
-    values: [0.0, 0.001, 0.01, 0.1]
+    values: 0.1
 
 command:
   - ${env}
