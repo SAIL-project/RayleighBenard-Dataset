@@ -4,3 +4,4 @@ logs/
 rbcdata/tmp/
 sweeps
 slurmout/
+wandb
