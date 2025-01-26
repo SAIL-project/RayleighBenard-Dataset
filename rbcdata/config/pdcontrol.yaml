@@ -5,16 +5,21 @@ defaults:
   - _self_
 
 task: pdcontrol
-seed: 44
+seed: null
 interval: 1
 render_mode: null
-baseline: False
+baseline: True
+nr_episodes: 2
+
+hydra:
+  job:
+    chdir: true
 
 env:
   ra: 10_000
-  checkpoint: "data/checkpoints/ra${env.ra}/train/baseline51.chk.h5"
-  episode_length: 30
-  action_suration: 1.0
+  checkpoint: data/checkpoints/ra${env.ra}/test
+  episode_length: 100
+  action_duration: 1.0
   dt: 0.05
 
 controller:

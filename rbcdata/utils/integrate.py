@@ -8,6 +8,7 @@ def integrate(
     callbacks: list[callable] = [],
     controller: Controller = None,
     seed: int | None = None,
+    episode_idx: int = 0,
 ):
     # Set up gym environment
     obs, info = env.reset(seed=seed)
@@ -26,9 +27,4 @@ def integrate(
             break
         # Callbacks
         for callback in callbacks:
-            callback(env, obs, reward, info)
-
-    # Close
-    env.close()
-    for callback in callbacks:
-        callback.close()
+            callback(env, obs, reward, info, episode_idx=episode_idx)

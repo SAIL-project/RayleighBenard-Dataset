@@ -1,0 +1,22 @@
+program: rbcdata/run_pd.py
+name: pdcontrol_baseline
+method: grid
+metric:
+  goal: maximize
+parameters:
+  env.ra:
+    values: [10_000, 100_000, 1_000_000]
+  env.dt:
+    value: 0.025
+  env.episode_length:
+    value: 100
+  baseline:
+    values: [True, False]
+  nr_episodes:
+    value: 20
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}

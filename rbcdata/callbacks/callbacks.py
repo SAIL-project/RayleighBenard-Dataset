@@ -10,17 +10,19 @@ from matplotlib import pyplot as plt
 from omegaconf import DictConfig
 from tqdm import tqdm
 
+import wandb
 from rbcdata.env.rbc_env import RayleighBenardEnv
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.rbc_action_visualizer import RBCActionVisualizer
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
+from wandb import Table
 
 
 class CallbackBase:
     def __init__(self, interval: int = 1):
         self.interval = interval
 
-    def __call__(self, env, obs, reward, info, render=None) -> bool:
+    def __call__(self, env, obs, reward, info, render=None, episode_idx=0) -> bool:
         return info["step"] % self.interval == 0
 
     def close(self):
@@ -64,7 +66,7 @@ class RBCVisCallback(CallbackBase):
             vmax=bcT[0] + action_limit,
         )
 
-    def __call__(self, env, obs, reward, info):
+    def __call__(self, env, obs, reward, info, episode_idx=0):
         if super().__call__(env, obs, reward, info):
             state = env.get_state()
             self.window.draw(
@@ -92,7 +94,7 @@ class TqdmCallback(CallbackBase):
             position=position,
         )
 
-    def __call__(self, env, obs, reward, info):
+    def __call__(self, env, obs, reward, info, episode_idx=0):
         if super().__call__(env, obs, reward, info):
             t = info["t"]
             self.pbar.update(t - self.pbar.n)
@@ -101,38 +103,72 @@ class TqdmCallback(CallbackBase):
         self.pbar.close()
 
 
-class LogNusseltNumberCallback(CallbackBase):
+class SaveNusseltNumberCallback(CallbackBase):
     def __init__(
         self,
         interval: Optional[int] = 1,
+        log_wandb: Optional[bool] = False,
     ):
         super().__init__(interval=interval)
         self.nusselts = []
-        self.time = []
+        self.times = []
+        self.episode = []
+        self.log_wandb = log_wandb
 
-    def __call__(self, env, obs, reward, info):
+    def __call__(self, env, obs, reward, info, episode_idx=0):
         if super().__call__(env, obs, reward, info):
-            state = env.simulation.state
-            self.nusselts.append(env.simulation.compute_nusselt(state))
-            self.time.append(info["t"])
+            nusselt_obs = info["nusselt_obs"]
+            time = info["t"]
+
+            self.times.append(time)
+            self.nusselts.append(nusselt_obs)
+            self.episode.append(episode_idx)
 
     def close(self):
-        df = pd.DataFrame({"nusselt": np.array(self.nusselts), "time": np.array(self.time)})
+        df = pd.DataFrame(
+            {
+                "nusselt": np.array(self.nusselts),
+                "time": np.array(self.times),
+                "episode": np.array(self.episode),
+            }
+        )
         # Save nusselt numbers to file
         df.to_hdf("nusselt.h5", key="df", mode="w")
-        # Plot nusselt number
-        fig, ax = plt.subplots()
 
-        # Plot lift
-        ax.set_xlabel("time")
-        ax.set_ylabel("Nusselt Number")
-        ax.set_ylim(0, 5)
-        ax.plot(self.time, self.nusselts)
-        ax.tick_params(axis="y")
+        if self.log_wandb:
+            # log table
+            wandb.log({"nusselt_table": Table(dataframe=df)})
 
-        ax.grid()
-        fig.savefig("nusselt.png")
-        plt.close(fig)
+            # log overall mean
+            wandb.log({"nusselt_mean": np.mean(self.nusselts)})
+
+            # log mean per episode
+            wandb.define_metric("episode")
+            wandb.define_metric("episode_nusselt", step_metric="episode")
+            for episode in df["episode"].unique():
+                episode_df = df[df["episode"] == episode]
+                wandb.log(
+                    {
+                        "episode_nusselt": np.mean(episode_df["nusselt"]),
+                        "episode": episode,
+                    }
+                )
+
+        # Plot nusselt numbers
+        for episode in df["episode"].unique():
+            episode_df = df[df["episode"] == episode]
+            fig, ax = plt.subplots()
+
+            # Plot lift
+            ax.set_xlabel("time")
+            ax.set_ylabel("Nusselt Number")
+            ax.set_ylim(0, 5)
+            ax.plot(episode_df["time"], episode_df["nusselt"])
+            ax.tick_params(axis="y")
+
+            ax.grid()
+            fig.savefig(f"nusselt_{episode}.png")
+            plt.close(fig)
 
 
 class ControlVisCallback(CallbackBase):

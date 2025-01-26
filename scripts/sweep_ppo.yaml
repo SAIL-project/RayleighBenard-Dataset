@@ -1,5 +1,5 @@
 program: rbcdata/sbsa.py
-name: Result Training
+name: result
 method: grid
 metric:
   goal: maximize
@@ -7,6 +7,8 @@ metric:
 parameters:
   ra:
     values: [10_000, 100_000, 1_000_000]
+  dt:
+    value: 0.025
   sb3.model:
     value: "ppo"
   sb3.nr_processes:

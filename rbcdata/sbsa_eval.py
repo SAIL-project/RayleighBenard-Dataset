@@ -3,7 +3,6 @@ from os.path import join
 import hydra
 import matplotlib.animation as animation
 import numpy as np
-import wandb
 import yaml
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
@@ -13,9 +12,10 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import DummyVecEnv
-from wandb import Video
 
+import wandb
 from rbcdata.env.rbc_env import RayleighBenardEnv
+from wandb import Video
 
 
 @hydra.main(version_base=None, config_path="config", config_name="sbsa_eval")
@@ -61,9 +61,9 @@ def main(cfg: DictConfig) -> None:
         actions = []
         # logging
         wandb.define_metric(f"ep{idx}/time")
-        wandb.define_metric(f"ep{idx}/nusselt_state", step_metric=f"ep{idx}/time")
-        wandb.define_metric(f"ep{idx}/nusselt_obs", step_metric=f"ep{idx}/time")
-        wandb.define_metric(f"ep{idx}/reward", step_metric=f"ep{idx}/time")
+        wandb.define_metric(f"ep{idx}/nusselt_state", step_metric=f"ep{idx}/time", summary="mean")
+        wandb.define_metric(f"ep{idx}/nusselt_obs", step_metric=f"ep{idx}/time", summary="mean")
+        wandb.define_metric(f"ep{idx}/reward", step_metric=f"ep{idx}/time", summary="mean")
         # reset env
         obs = env.reset()
         dones = np.zeros(1)
