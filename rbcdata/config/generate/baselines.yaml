@@ -1,0 +1,22 @@
+# @package _global_
+# python rbcdata/run.py -m generate=baselines
+
+defaults:
+  - override /hydra/launcher: joblib
+
+hydra:
+  mode: "MULTIRUN"
+  launcher:
+    n_jobs: 30
+  sweeper:
+    params:
+      seed: range(42, 79, 1)
+      env.ra: choice(5_000, 50_000, 500_000, 5_000_000)
+
+render_mode: null
+env:
+  dt: 0.025
+  episode_length: 400
+  action_duration: 1
+  checkpoint: null
+  write_checkpoint: true

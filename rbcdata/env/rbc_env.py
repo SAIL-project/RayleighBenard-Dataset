@@ -59,7 +59,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.reward_shaping = reward_shaping
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
-        self.path = "shenfun"
+        self.path = "shenfun/checkpoint"
         if not write_checkpoint:
             self.path = None
 
@@ -254,13 +254,14 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __get_reward(self) -> float:
         obs = self.__get_obs()
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
-        reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale   # scale to [0, 1]
+        reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale  # scale to [0, 1]
         if self.reward_shaping:
-            # NOTE: works for our specific horizontal domain, needs simple modification to generalize
+            # NOTE: works for our specific horizontal domain, needs
+            # simple modification to generalize
             cell_distance = self.compute_distance_cells()
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
             cell_distance = (-self.compute_distance_cells() + np.pi) / np.pi
-            reward = 0.5 * reward + 0.5 * cell_distance     # equal coefficients for now
+            reward = 0.5 * reward + 0.5 * cell_distance  # equal coefficients for now
         return reward
 
     def compute_distance_cells(self) -> float:
@@ -273,18 +274,20 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
         peaks, _ = find_peaks(T_mid_line, height=1.55)
-        domain_x = np.linspace(0, 2*np.pi, self.size_state[1], endpoint=False)   # periodic domain
+        domain_x = np.linspace(0, 2 * np.pi, self.size_state[1], endpoint=False)  # periodic domain
         if len(peaks) == 1:
-            distance = 0    # only one peak, no distance, it's the optimal situation.
+            distance = 0  # only one peak, no distance, it's the optimal situation.
         elif len(peaks) == 2:
-            assert(domain_x[peaks[1]] > domain_x[peaks[0]])
+            assert domain_x[peaks[1]] > domain_x[peaks[0]]
             dist1 = domain_x[peaks[1]] - domain_x[peaks[0]]
-            dist2 = 2*np.pi - dist1 # complement distance
+            dist2 = 2 * np.pi - dist1  # complement distance
             distance = min(dist1, dist2)
         elif len(peaks) > 2:
-            # TODO this could happen in future situations with more than 2 Bénard cells, 
+            # TODO this could happen in future situations with more than 2 Bénard cells,
             # but for now I would like to know when it happens, so I raise an error.
-            raise ValueError(f"More than 2 Bénard cells found with the current algorithm: {len(peaks)}")
+            raise ValueError(
+                f"More than 2 Bénard cells found with the current algorithm: {len(peaks)}"
+            )
         fig, ax = plt.subplots()
         ax.plot(T_mid_line)
         plt.plot(peaks, T_mid_line[peaks], "x")
