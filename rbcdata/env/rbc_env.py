@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import numpy as np
 import numpy.typing as npt
 import sympy
@@ -50,13 +51,20 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        reward_shaping=False,
+        reward_shaping=0,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
         super().__init__()
         self.reward_shaping = reward_shaping
+        # NOTE Just for debugging the cell distance computation
+        # self.fig_anim, self.ax_anim = plt.subplots()
+        # self.ax_anim.set_xlim(0, 2 * np.pi)
+        # self.ax_anim.set_ylim(-2, 2)
+        # self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
+        # self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
+    
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
         self.path = "shenfun/checkpoint"
@@ -152,6 +160,21 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                 suboptimal for other values."
         )
 
+    def update(self):
+        """NOTE Michiel: I wrote this function for debugging the cell distance computation. It plots the mid-line temperature and velocity."""
+        state = self.get_state()
+        T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
+        uy = state[RBCField.UY][int(self.size_state[0] / 2) - 1]
+        ux = state[RBCField.UX][int(self.size_state[0] / 2) - 1]
+        xdata = np.linspace(0, 2 * np.pi, self.size_state[1], endpoint=False)
+        ydata = T_mid_line
+
+        self.line.set_data(xdata, ydata)
+        self.line_uy.set_data(xdata, uy)
+
+        self.fig_anim.canvas.draw()
+        self.fig_anim.canvas.flush_events()
+
     def reset(
         self,
         seed: int | None = None,
@@ -209,6 +232,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         else:
             self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
+        # NOTE: for debugging the cell distance computation
+        # self.update()
+        # plt.show(block=False)
+
         return self.__get_obs(), self.__get_info()
 
     def step(
@@ -236,6 +263,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.last_obs = self.__get_obs()
         self.last_reward = self.__get_reward()
         self.last_info = self.__get_info()
+
+        # NOTE For debugging, plot mid-line temperature and velocity.
+        # self.update()
 
         return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
@@ -273,14 +303,17 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __get_reward(self) -> float:
         obs = self.__get_obs()
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
-        reward = (neg_nusselt_nr + self.__reward_scale()) / self.__reward_scale()  # scale to [0, 1]
+        nusselt_normalized = (neg_nusselt_nr + self.__reward_scale()) / self.__reward_scale()  # scale to [0, 1]
         if self.reward_shaping:
             # NOTE: works for our specific horizontal domain, needs
             # simple modification to generalize
             cell_distance = self.compute_distance_cells()
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
-            cell_distance = (-self.compute_distance_cells() + np.pi) / np.pi
-            reward = 0.5 * reward + 0.5 * cell_distance  # equal coefficients for now
+            cell_distance_normalized = (-cell_distance + np.pi) / np.pi
+            reward = (1 - self.reward_shaping) * nusselt_normalized + self.reward_shaping * cell_distance_normalized  # equal coefficients for now
+        # print(f"Nusselt: {nusselt_normalized}") 
+        # print(f"Distance: {cell_distance_normalized}")
+        # print(f"Reward: {reward}")
         return reward
 
     def compute_distance_cells(self) -> float:
@@ -291,28 +324,27 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         state = self.get_state()
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
+        ux = state[RBCField.UX][int(self.size_state[0] / 2) - 1]
+        uy = state[RBCField.UY][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
-        peaks, _ = find_peaks(T_mid_line, height=1.55)
+        peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
+        # pick out the two largest peaks
+        # in addition: one can add a check of finding peaks in the y-velocity field, the cell locations are always at the maxima of the y-velocity
+
         domain_x = np.linspace(0, 2 * np.pi, self.size_state[1], endpoint=False)  # periodic domain
-        if len(peaks) == 1:
+        if len(peaks_candidates) == 1:
             distance = 0  # only one peak, no distance, it's the optimal situation.
-        elif len(peaks) == 2:
-            assert domain_x[peaks[1]] > domain_x[peaks[0]]
-            dist1 = domain_x[peaks[1]] - domain_x[peaks[0]]
+        elif len(peaks_candidates) >= 2:
+            peaks = peaks_candidates[np.argsort(T_mid_line[peaks_candidates])[-2:]] # this returns two largest peaks in temperature
+            dist1 = np.abs(domain_x[peaks[1]] - domain_x[peaks[0]])
             dist2 = 2 * np.pi - dist1  # complement distance
             distance = min(dist1, dist2)
-        elif len(peaks) > 2:
-            # TODO this could happen in future situations with more than 2 Bénard cells,
-            # but for now I would like to know when it happens, so I raise an error.
-            raise ValueError(
-                f"More than 2 Bénard cells found with the current algorithm: {len(peaks)}"
-            )
-        fig, ax = plt.subplots()
-        ax.plot(T_mid_line)
-        plt.plot(peaks, T_mid_line[peaks], "x")
-        plt.show()
-        self.logger.info(f"Distance between cells: {distance}")
-        print(f"Distance between cells: {distance}")
+        # fig, ax = plt.subplots()
+        # ax.plot(T_mid_line)
+        # plt.plot(peaks, T_mid_line[peaks], "x")
+        # plt.show()
+        # self.logger.info(f"Distance between cells: {distance}")
+        # print(f"Distance between cells: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:
@@ -322,6 +354,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             "state": self.get_state(),
             "nusselt_obs": self.simulation.compute_nusselt(self.__get_obs()),
             "nusselt": self.simulation.compute_nusselt(self.get_state()),
+            "cell_dist": self.compute_distance_cells(),
         }
 
     def render(self):

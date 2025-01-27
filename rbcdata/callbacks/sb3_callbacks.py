@@ -23,6 +23,7 @@ class NusseltCallback(BaseCallback):
         for info in infos:
             self.logger.record_mean("rollout/nusselt_obs_mean", info["nusselt_obs"])
             self.logger.record_mean("rollout/nusselt_mean", info["nusselt"])
+            self.logger.record_mean("rollout/cell_dist_mean", info["cell_dist"])
         return True
 
 
