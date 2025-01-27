@@ -93,6 +93,8 @@ def main(cfg: DictConfig) -> None:
         )
 
     # log overall mean nusselt
+    logger.info(f"Mean nusselt number: {np.mean(nusselts)}")
+    wandb.log({"mean_nusselt": np.mean(nusselts)})
     wandb.run.summary["mean_nusselt"] = np.mean(nusselts)
 
 

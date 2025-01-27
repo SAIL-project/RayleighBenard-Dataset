@@ -12,12 +12,10 @@ ra: 10_000
 pr: 0.7
 dt: 0.05
 bcT: [2, 1]
-# reward
-reward_scale: 3.8
 # action config
 action_limit: 0.75
 action_segments: 12
 action_start: 0.0
-action_end: 200
+action_end: 400
 action_duration: 1.0
 fraction_length_smoothing: 0.1

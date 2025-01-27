@@ -251,10 +251,29 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __get_obs(self) -> RBCObservation:
         return self.simulation.get_obs().astype(np.float32)
 
+    def __reward_scale(self) -> float:
+        # Determined by baseline runs -> highest usual Ra
+        if self.ra == 5_000:
+            return 3.0
+        elif self.ra == 10_000:
+            return 4.0
+        elif self.ra == 50_000:
+            return 6.0
+        elif self.ra == 100_000:
+            return 7.0
+        elif self.ra == 500_000:
+            return 10.6
+        elif self.ra == 1_000_000:
+            return 13.0
+        elif self.ra == 5_000_000:
+            return 20.0
+        else:
+            raise ValueError(f"Reward scaling not implemented for Ra={self.ra}")
+
     def __get_reward(self) -> float:
         obs = self.__get_obs()
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
-        reward = (neg_nusselt_nr + self.reward_scale) / self.reward_scale  # scale to [0, 1]
+        reward = (neg_nusselt_nr + self.__reward_scale()) / self.__reward_scale()  # scale to [0, 1]
         if self.reward_shaping:
             # NOTE: works for our specific horizontal domain, needs
             # simple modification to generalize

@@ -14,4 +14,4 @@ source ~/miniforge3/etc/profile.d/conda.sh
 conda activate rbcdata
 cd ~/RayleighBenard-Dataset
 
-srun python rbcdata/sbsa.py
+srun python rbcdata/sbsa.py -m sb3.ppo.ent_coef=0.01,0.1,0.5

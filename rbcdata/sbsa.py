@@ -64,9 +64,10 @@ def main(cfg: DictConfig) -> None:
     )
 
     if cfg.sb3.model == "ppo":
+        nr_neurons = sb3.ppo.nr_neurons
         policy_kwargs = dict(
             activation_fn=torch.nn.ReLU,
-            net_arch=dict(pi=[512, 512], vf=[512, 512]),
+            net_arch=dict(pi=[nr_neurons, nr_neurons], vf=[nr_neurons, nr_neurons]),
         )
         model = PPO(
             "MlpPolicy",
