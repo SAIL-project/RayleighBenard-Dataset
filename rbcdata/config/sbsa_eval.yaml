@@ -5,5 +5,5 @@ defaults:
   - _self_ # This will override the defaults if there are any conflicts
 
 task: sbsa_eval
-experiment_dir: logs/experiments/test
+experiment_dir: logs/experiments/ra10000
 nr_episodes: 5

@@ -3,7 +3,7 @@ import shutil
 
 import yaml
 
-PATH = "logs/run_multirun/01-27-02-03-43"
+PATH = "logs/run_multirun/01-27-02-14-18"
 OUTPUT = "data"
 dirs = [f.path for f in os.scandir(PATH) if f.is_dir()]
 print(dirs)
