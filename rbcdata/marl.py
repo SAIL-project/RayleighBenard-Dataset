@@ -48,12 +48,12 @@ def main(cfg: DictConfig) -> None:
         env, cfg.nr_envs, num_cpus=cfg.nr_envs, base_class="stable_baselines3"
     )
 
-    eval_env = RayleighBenardMultiAgentEnv(cfg.eval.env, render_mode="rgb_array")
+    test_env = RayleighBenardMultiAgentEnv(cfg.eval.env, render_mode="rgb_array")
 
     # callbacks
     callback = CallbackList(
         [
-            EvaluationCallback(eval_env, freq=cfg.eval.freq),
+            EvaluationCallback(test_env, freq=cfg.eval.freq),
             WandbCallback(
                 verbose=1,
             ),

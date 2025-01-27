@@ -54,8 +54,8 @@ def main(cfg: DictConfig) -> None:
         vec_env_cls=SubprocVecEnv,
     )
 
-    eval_env = make_vec_env(
-        lambda: create_env(cfg.eval_env),
+    test_env = make_vec_env(
+        lambda: create_env(cfg.test_env),
         cfg.sb3.nr_eval_processes,
         vec_env_cls=SubprocVecEnv,
     )
@@ -105,7 +105,7 @@ def main(cfg: DictConfig) -> None:
 
     # evaluation callback
     eval_cb = EvalCallback(
-        eval_env,
+        test_env,
         best_model_save_path=dir_model,
         log_path=dir_log,
         eval_freq=cfg.sb3.eval_every * steps_per_iteration,
@@ -127,7 +127,7 @@ def main(cfg: DictConfig) -> None:
     model.learn(total_timesteps=cfg.sb3.train_steps, progress_bar=True, callback=callbacks)
 
     train_env.close()
-    eval_env.close()
+    test_env.close()
     run.finish()
 
 

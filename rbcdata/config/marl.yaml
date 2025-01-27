@@ -13,7 +13,7 @@ seed: 42
 train_env:
   episode_length: 300
   checkpoint: data/checkpoints/ra10000/train #/baseline42.chk.h5
-eval_env:
+test_env:
   episode_length: 100
   checkpoint: data/checkpoints/ra10000/test #/baseline42.chk.h5
 

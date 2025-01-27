@@ -21,7 +21,7 @@ train_env:
   checkpoint: data/checkpoints/ra${ra}/train #/baseline42.chk.h5
   action_duration: ${action_duration}
 
-eval_env:
+test_env:
   ra: ${ra}
   dt: ${dt}
   episode_length: 300

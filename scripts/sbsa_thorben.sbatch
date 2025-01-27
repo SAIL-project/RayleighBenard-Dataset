@@ -15,7 +15,10 @@ conda activate rbcdata
 cd ~/RayleighBenard-Dataset
 
 # run ppo with sweep params for different RA
-srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=5000,10000,50000,100000,500000,1000000,5000000
+#srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=5000,10000,50000,100000,500000,1000000,5000000
 
 # run ppo on single episode for multiple times
-#srun python rbcdata/sbsa.py -m tags="['single_ep']" notes="run ppo on single episode for multiple times" ra=10000 seed=42,43,44,45 train_env.checkpoint="data/checkpoints/ra10000/train/baseline42.chk.h5
+srun python rbcdata/sbsa.py -m tags="['single_ep']" notes="run ppo on single episode for multiple times" ra=10000 seed=42,43,44,45 train_env.checkpoint="data/checkpoints/ra10000/train/baseline42.chk.h5"
+
+# evaluate on different RA using checkpoints
+#srun python rbcdata/sbsa_eval.py -m ra=5000,10000,50000,100000,500000,1000000,5000000

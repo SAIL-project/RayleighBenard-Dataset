@@ -82,7 +82,7 @@ class EvalCallback(BaseCallback):
     """
     Callback for evaluating an agent. It will evaluate the agent at the end of each episode.
 
-    :param eval_env: The environment to evaluate the agent on.
+    :param test_env: The environment to evaluate the agent on.
     :param callback_on_new_best: A callback to call when a new best model is found.
     :param callback_after_eval: A callback to call after the evaluation.
     :param n_eval_episodes: The number of episodes to evaluate the agent on.
@@ -95,7 +95,7 @@ class EvalCallback(BaseCallback):
 
     def __init__(
         self,
-        eval_env,
+        test_env,
         callback_on_new_best,
         callback_after_eval,
         n_eval_episodes,
@@ -105,7 +105,7 @@ class EvalCallback(BaseCallback):
         verbose=0,
     ):
         super().__init__(verbose)
-        self.eval_env = eval_env
+        self.test_env = test_env
         self.callback_on_new_best = callback_on_new_best
         self.callback_after_eval = callback_after_eval
         self.n_eval_episodes = n_eval_episodes
@@ -119,7 +119,7 @@ class EvalCallback(BaseCallback):
             self.logger.info(f"Step {self.num_timesteps}. Evaluating model...")
             mean_reward, std_reward = evaluate_policy(
                 self.model,
-                self.eval_env,
+                self.test_env,
                 n_eval_episodes=self.n_eval_episodes,
                 deterministic=self.deterministic,
                 render=self.render,
