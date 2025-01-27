@@ -51,7 +51,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        reward_shaping=False,
+        reward_shaping=0,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
@@ -291,7 +291,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             cell_distance = self.compute_distance_cells()
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
             cell_distance_normalized = (-cell_distance + np.pi) / np.pi
-            reward = 0.5 * nusselt_normalized + 0.5 * cell_distance_normalized  # equal coefficients for now
+            reward = (1 - self.reward_shaping) * nusselt_normalized + self.reward_shaping * cell_distance_normalized  # equal coefficients for now
         # print(f"Nusselt: {nusselt_normalized}") 
         # print(f"Distance: {cell_distance_normalized}")
         # print(f"Reward: {reward}")
@@ -324,8 +324,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # ax.plot(T_mid_line)
         # plt.plot(peaks, T_mid_line[peaks], "x")
         # plt.show()
-        self.logger.info(f"Distance between cells: {distance}")
-        print(f"Distance between cells: {distance}")
+        # self.logger.info(f"Distance between cells: {distance}")
+        # print(f"Distance between cells: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:
@@ -335,6 +335,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             "state": self.get_state(),
             "nusselt_obs": self.simulation.compute_nusselt(self.__get_obs()),
             "nusselt": self.simulation.compute_nusselt(self.get_state()),
+            "cell_dist": self.compute_distance_cells(),
         }
 
     def render(self):

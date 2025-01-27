@@ -34,7 +34,7 @@ sb3:
   train_checkpoint_every: 5 # same units as eval_every property.
   frame_stack: 4 # number of observations to stack
   model: "sac"  #"ppo"
-  reward_shaping: False
+  reward_shaping: 0 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
   sac:
     ent_coef: "auto"
   ppo:
