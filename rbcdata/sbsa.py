@@ -32,6 +32,8 @@ def main(cfg: DictConfig) -> None:
         config=dict(cfg),
         sync_tensorboard=True,
         dir=cfg.output_dir,
+        tags=cfg.tags,
+        notes=cfg.notes,
     )
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
@@ -64,7 +66,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     if cfg.sb3.model == "ppo":
-        nr_neurons = sb3.ppo.nr_neurons
+        nr_neurons = cfg.sb3.ppo.nr_neurons
         policy_kwargs = dict(
             activation_fn=torch.nn.ReLU,
             net_arch=dict(pi=[nr_neurons, nr_neurons], vf=[nr_neurons, nr_neurons]),

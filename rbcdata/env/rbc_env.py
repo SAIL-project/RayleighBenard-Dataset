@@ -5,12 +5,12 @@ from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import numpy as np
 import numpy.typing as npt
 import sympy
 from gymnasium.error import DependencyNotInstalled
 from hydra.utils import to_absolute_path
+from matplotlib.animation import FuncAnimation
 from scipy.signal import find_peaks
 
 from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
@@ -64,7 +64,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # self.ax_anim.set_ylim(-2, 2)
         # self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
         # self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
-    
+
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
         self.path = "shenfun/checkpoint"
@@ -303,15 +303,20 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     def __get_reward(self) -> float:
         obs = self.__get_obs()
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
-        nusselt_normalized = (neg_nusselt_nr + self.__reward_scale()) / self.__reward_scale()  # scale to [0, 1]
+        nusselt_normalized = (
+            neg_nusselt_nr + self.__reward_scale()
+        ) / self.__reward_scale()  # scale to [0, 1]
+        reward = nusselt_normalized
         if self.reward_shaping:
             # NOTE: works for our specific horizontal domain, needs
             # simple modification to generalize
             cell_distance = self.compute_distance_cells()
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
             cell_distance_normalized = (-cell_distance + np.pi) / np.pi
-            reward = (1 - self.reward_shaping) * nusselt_normalized + self.reward_shaping * cell_distance_normalized  # equal coefficients for now
-        # print(f"Nusselt: {nusselt_normalized}") 
+            reward = (
+                1 - self.reward_shaping
+            ) * nusselt_normalized + self.reward_shaping * cell_distance_normalized  # equal coefficients for now
+        # print(f"Nusselt: {nusselt_normalized}")
         # print(f"Distance: {cell_distance_normalized}")
         # print(f"Reward: {reward}")
         return reward
@@ -335,7 +340,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if len(peaks_candidates) == 1:
             distance = 0  # only one peak, no distance, it's the optimal situation.
         elif len(peaks_candidates) >= 2:
-            peaks = peaks_candidates[np.argsort(T_mid_line[peaks_candidates])[-2:]] # this returns two largest peaks in temperature
+            peaks = peaks_candidates[
+                np.argsort(T_mid_line[peaks_candidates])[-2:]
+            ]  # this returns two largest peaks in temperature
             dist1 = np.abs(domain_x[peaks[1]] - domain_x[peaks[0]])
             dist2 = 2 * np.pi - dist1  # complement distance
             distance = min(dist1, dist2)
