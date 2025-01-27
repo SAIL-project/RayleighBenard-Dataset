@@ -3,6 +3,7 @@ import os
 from os.path import join
 
 import hydra
+import torch
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
@@ -63,9 +64,14 @@ def main(cfg: DictConfig) -> None:
     )
 
     if cfg.sb3.model == "ppo":
+        policy_kwargs = dict(
+            activation_fn=torch.nn.ReLU,
+            net_arch=dict(pi=[512, 512], vf=[512, 512]),
+        )
         model = PPO(
             "MlpPolicy",
             train_env,
+            policy_kwargs=policy_kwargs,
             n_steps=steps_per_iteration,
             learning_rate=cfg.sb3.ppo.lr,
             batch_size=cfg.sb3.ppo.batch_size,
