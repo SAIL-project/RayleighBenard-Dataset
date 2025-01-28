@@ -6,5 +6,5 @@ defaults:
 
 task: sbsa_eval
 ra: 10_000
-experiment_dir: logs/experiments/ra${ra}
+experiment_dir: logs/sbsa/01-28-10-16-30
 nr_episodes: 20
