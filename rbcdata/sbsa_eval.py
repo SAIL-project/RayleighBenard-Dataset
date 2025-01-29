@@ -3,6 +3,7 @@ from os.path import join
 import hydra
 import matplotlib.animation as animation
 import numpy as np
+import pandas as pd
 import yaml
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
@@ -15,7 +16,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 import wandb
 from rbcdata.env.rbc_env import RayleighBenardEnv
-from wandb import Video
+from wandb import Table, Video
 
 
 @hydra.main(version_base=None, config_path="config", config_name="sbsa_eval")
@@ -55,6 +56,8 @@ def main(cfg: DictConfig) -> None:
 
     # Enjoy trained agent
     nusselts = []
+    times = []
+    episode = []
     for idx in range(cfg.nr_episodes):
         logger.info(f"Evaluating model on episode {idx}")
         # data holders
@@ -87,18 +90,29 @@ def main(cfg: DictConfig) -> None:
                 }
             )
             nusselts.append(info[0]["nusselt_obs"])
+            times.append(info[0]["t"])
+            episode.append(idx)
         # plot data
         plot_actions(actions, output_dir, idx)
         wandb.log(
             {
-                f"ep{idx}/video": Video(np.asarray(screens), fps=1, format="mp4"),
+                f"ep{idx}/video": Video(np.asarray(screens), fps=2, format="mp4"),
             }
         )
 
     # log overall mean nusselt
-    logger.info(f"Mean nusselt number: {np.mean(nusselts)}")
-    wandb.log({"mean_nusselt": np.mean(nusselts)})
-    wandb.run.summary["mean_nusselt"] = np.mean(nusselts)
+    nusselt_mean = np.mean(nusselts)
+    logger.info(f"Mean nusselt number: {nusselt_mean}")
+    df = pd.DataFrame(
+        {
+            "nusselt": np.array(nusselts),
+            "time": np.array(times),
+            "episode": np.array(episode),
+        }
+    )
+    wandb.log({"nusselt_table": Table(dataframe=df)})
+    wandb.log({"mean_nusselt": nusselt_mean})
+    wandb.run.summary["mean_nusselt"] = nusselt_mean
 
 
 def plot_actions(actions, out_dir, episode_idx):
@@ -117,7 +131,7 @@ def plot_actions(actions, out_dir, episode_idx):
         artists.append(container)
 
     ani = animation.ArtistAnimation(fig=fig, artists=artists)
-    writer = animation.FFMpegWriter(fps=1)
+    writer = animation.FFMpegWriter(fps=2)
     path = f"{out_dir}/actions_ep{episode_idx}.mp4"
     ani.save(path, writer=writer)
     wandb.log(
