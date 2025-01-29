@@ -17,7 +17,7 @@ action_duration: 1.0
 train_env:
   ra: ${ra}
   dt: ${dt}
-  episode_length: 200
+  episode_length: 50
   checkpoint: data/checkpoints/ra${ra}/train #/baseline42.chk.h5
   action_duration: ${action_duration}
 
@@ -47,6 +47,6 @@ sb3:
     episodes_update: 1 # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99
-    ent_coef: 0.1
+    ent_coef: 0.01
     vf_coef: 0.5
-    nr_neurons: 64
+    nr_neurons: 512
