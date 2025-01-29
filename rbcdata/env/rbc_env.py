@@ -51,7 +51,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        reward_shaping=0,
+        reward_shaping = 0.0,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
@@ -319,6 +319,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # print(f"Nusselt: {nusselt_normalized}")
         # print(f"Distance: {cell_distance_normalized}")
         # print(f"Reward: {reward}")
+        if np.isnan(reward):
+            raise ValueError("Reward is NaN")
         return reward
 
     def compute_distance_cells(self) -> float:
