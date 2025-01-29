@@ -3,7 +3,6 @@ from os.path import join
 import hydra
 import matplotlib.animation as animation
 import numpy as np
-import wandb
 import yaml
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
@@ -13,9 +12,10 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import DummyVecEnv
-from wandb import Video
 
+import wandb
 from rbcdata.env.rbc_env import RayleighBenardEnv
+from wandb import Video
 
 
 @hydra.main(version_base=None, config_path="config", config_name="sbsa_eval")
@@ -69,11 +69,14 @@ def main(cfg: DictConfig) -> None:
         obs = env.reset()
         dones = np.zeros(1)
         while not dones.any():
+            # get next action
             action, _ = policy.predict(obs, deterministic=True)
-            obs, rewards, dones, info = env.step(action)
             # save data
             screens.append(env.render().transpose(2, 0, 1))
             actions.append(action.squeeze())
+            # perform step in env
+            obs, rewards, dones, info = env.step(action)
+
             # log data
             wandb.log(
                 {
@@ -114,7 +117,7 @@ def plot_actions(actions, out_dir, episode_idx):
         artists.append(container)
 
     ani = animation.ArtistAnimation(fig=fig, artists=artists)
-    writer = animation.FFMpegWriter(fps=2)
+    writer = animation.FFMpegWriter(fps=1)
     path = f"{out_dir}/actions_ep{episode_idx}.mp4"
     ani.save(path, writer=writer)
     wandb.log(
