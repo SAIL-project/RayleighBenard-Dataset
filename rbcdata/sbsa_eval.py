@@ -114,7 +114,7 @@ def plot_actions(actions, out_dir, episode_idx):
         artists.append(container)
 
     ani = animation.ArtistAnimation(fig=fig, artists=artists)
-    writer = animation.FFMpegWriter(fps=2)
+    writer = animation.FFMpegWriter(fps=1)
     path = f"{out_dir}/actions_ep{episode_idx}.mp4"
     ani.save(path, writer=writer)
     wandb.log(
