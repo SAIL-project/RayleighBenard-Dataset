@@ -368,7 +368,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
         print(f"Distance between cells: {distance}")
-        return distance, peaks
+        return distance
 
     def __get_info(self) -> dict[str, Any]:
         return {
