@@ -59,11 +59,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().__init__()
         self.reward_shaping = reward_shaping
         # NOTE Just for debugging the cell distance computation
-        # self.fig_anim, self.ax_anim = plt.subplots()
-        # self.ax_anim.set_xlim(0, 2 * np.pi)
-        # self.ax_anim.set_ylim(-2, 2)
-        # self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
-        # self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
+        self.fig_anim, self.ax_anim = plt.subplots()
+        self.ax_anim.set_xlim(0, 2 * np.pi)
+        self.ax_anim.set_ylim(-2, 2)
+        self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
+        self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
+        self.line_TuY, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "g-")
 
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
@@ -171,6 +172,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         self.line.set_data(xdata, ydata)
         self.line_uy.set_data(xdata, uy)
+        self.line_TuY.set_data(xdata, (T_mid_line - 1.5) * uy)
 
         self.fig_anim.canvas.draw()
         self.fig_anim.canvas.flush_events()
@@ -233,8 +235,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
         # NOTE: for debugging the cell distance computation
-        # self.update()
-        # plt.show(block=False)
+        self.update()
+        plt.show(block=False)
 
         return self.__get_obs(), self.__get_info()
 
@@ -265,7 +267,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.last_info = self.__get_info()
 
         # NOTE For debugging, plot mid-line temperature and velocity.
-        # self.update()
+        self.update()
 
         return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
