@@ -336,16 +336,20 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         ux = state[RBCField.UX][int(self.size_state[0] / 2) - 1]
         uy = state[RBCField.UY][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
-        peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
+        # peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
+        peaks_candidates, _ = find_peaks(uy, height=0)
         # pick out the two largest peaks
         # in addition: one can add a check of finding peaks in the y-velocity field, the cell locations are always at the maxima of the y-velocity
+        # for example, only consider peaks where the y-velocity is positive
+        # peaks_candidates = peaks_candidates[uy[peaks_candidates] > 0]
 
         domain_x = np.linspace(0, 2 * np.pi, self.size_state[1], endpoint=False)  # periodic domain
         if len(peaks_candidates) == 1:
             distance = 0  # only one peak, no distance, it's the optimal situation.
+            peaks = peaks_candidates
         elif len(peaks_candidates) >= 2:
             peaks = peaks_candidates[
-                np.argsort(T_mid_line[peaks_candidates])[-2:]
+                np.argsort(uy[peaks_candidates])[-2:]
             ]  # this returns two largest peaks in temperature
             dist1 = np.abs(domain_x[peaks[1]] - domain_x[peaks[0]])
             dist2 = 2 * np.pi - dist1  # complement distance
@@ -355,8 +359,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # plt.plot(peaks, T_mid_line[peaks], "x")
         # plt.show()
         # self.logger.info(f"Distance between cells: {distance}")
-        # print(f"Distance between cells: {distance}")
-        return distance
+        self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
+        print(f"Distance between cells: {distance}")
+        return distance, peaks
 
     def __get_info(self) -> dict[str, Any]:
         return {
