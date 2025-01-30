@@ -366,7 +366,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                     total_distance += min(dist1, dist2)
             distance = total_distance / (len(peaks) * (len(peaks) - 1) / 2)
 
-        self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
+        # self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
         print(f"Distance between cells: {distance}")
         return distance, peaks
 
