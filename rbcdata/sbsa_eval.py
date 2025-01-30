@@ -45,7 +45,7 @@ def main(cfg: DictConfig) -> None:
     env = make_vec_env(
         lambda: FrameStackObservation(
             FlattenObservation(
-                RayleighBenardEnv(config.test_env, render_mode="rgb_array"),
+                RayleighBenardEnv(config.test_env, render_mode=cfg.render_mode),
             ),
             stack_size=config.sb3.frame_stack,
         ),
@@ -68,6 +68,7 @@ def main(cfg: DictConfig) -> None:
         wandb.define_metric(f"ep{idx}/nusselt_state", step_metric=f"ep{idx}/time", summary="mean")
         wandb.define_metric(f"ep{idx}/nusselt_obs", step_metric=f"ep{idx}/time", summary="mean")
         wandb.define_metric(f"ep{idx}/reward", step_metric=f"ep{idx}/time", summary="mean")
+        wandb.define_metric(f"ep{idx}/cell_dist", step_metric=f"ep{idx}/time", summary="mean")
         # reset env
         obs = env.reset()
         dones = np.zeros(1)
@@ -75,7 +76,10 @@ def main(cfg: DictConfig) -> None:
             # get next action
             action, _ = policy.predict(obs, deterministic=True)
             # save data
-            screens.append(env.render().transpose(2, 0, 1))
+            if cfg.render_mode == "human":
+                env.render()
+            elif cfg.render_mode == "rgb_array":
+                screens.append(env.render().transpose(2, 0, 1))
             actions.append(action.squeeze())
             # perform step in env
             obs, rewards, dones, info = env.step(action)
@@ -87,6 +91,7 @@ def main(cfg: DictConfig) -> None:
                     f"ep{idx}/nusselt_state": info[0]["nusselt"],
                     f"ep{idx}/nusselt_obs": info[0]["nusselt_obs"],
                     f"ep{idx}/reward": rewards[0],
+                    f"ep{idx}/cell_dist": info[0]["cell_dist"],
                 }
             )
             nusselts.append(info[0]["nusselt_obs"])
