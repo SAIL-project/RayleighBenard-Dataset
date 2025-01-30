@@ -59,12 +59,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         super().__init__()
         self.reward_shaping = reward_shaping
         # NOTE Just for debugging the cell distance computation
-        self.fig_anim, self.ax_anim = plt.subplots()
-        self.ax_anim.set_xlim(0, 2 * np.pi)
-        self.ax_anim.set_ylim(-2, 2)
-        self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
-        self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
-        self.line_TuY, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "g-")
+        # self.fig_anim, self.ax_anim = plt.subplots()
+        # self.ax_anim.set_xlim(0, 2 * np.pi)
+        # self.ax_anim.set_ylim(-2, 2)
+        # self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
+        # self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
+        # self.line_TuY, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "g-")
 
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
@@ -235,8 +235,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
         # NOTE: for debugging the cell distance computation
-        self.update()
-        plt.show(block=False)
+        # self.update()
+        # plt.show(block=False)
 
         return self.__get_obs(), self.__get_info()
 
@@ -267,7 +267,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.last_info = self.__get_info()
 
         # NOTE For debugging, plot mid-line temperature and velocity.
-        self.update()
+        # self.update()
 
         return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
@@ -337,28 +337,35 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         uy = state[RBCField.UY][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
         # peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
-        peaks_candidates, _ = find_peaks(uy, height=0)
+        peaks_candidates, _ = find_peaks(uy, height=0.001)
         # pick out the two largest peaks
         # in addition: one can add a check of finding peaks in the y-velocity field, the cell locations are always at the maxima of the y-velocity
         # for example, only consider peaks where the y-velocity is positive
         # peaks_candidates = peaks_candidates[uy[peaks_candidates] > 0]
 
         domain_x = np.linspace(0, 2 * np.pi, self.size_state[1], endpoint=False)  # periodic domain
-        if len(peaks_candidates) == 1:
+        if len(peaks_candidates) <= 1:
             distance = 0  # only one peak, no distance, it's the optimal situation.
             peaks = peaks_candidates
-        elif len(peaks_candidates) >= 2:
-            peaks = peaks_candidates[
-                np.argsort(uy[peaks_candidates])[-2:]
-            ]  # this returns two largest peaks in temperature
+        elif len(peaks_candidates) == 2:
+            # peaks = peaks_candidates[
+            #     np.argsort(uy[peaks_candidates])[-2:]
+            # ]  # this returns two largest peaks in vertical velocity
+            peaks = peaks_candidates
             dist1 = np.abs(domain_x[peaks[1]] - domain_x[peaks[0]])
             dist2 = 2 * np.pi - dist1  # complement distance
             distance = min(dist1, dist2)
-        # fig, ax = plt.subplots()
-        # ax.plot(T_mid_line)
-        # plt.plot(peaks, T_mid_line[peaks], "x")
-        # plt.show()
-        # self.logger.info(f"Distance between cells: {distance}")
+        elif len(peaks_candidates) > 2:
+            peaks = peaks_candidates
+            # Compute distance between all combinations of peaks
+            total_distance = 0
+            for i in range(len(peaks)):
+                for j in range(i + 1, len(peaks)):
+                    dist1 = np.abs(domain_x[peaks[j]] - domain_x[peaks[i]])
+                    dist2 = 2 * np.pi - dist1
+                    total_distance += min(dist1, dist2)
+            distance = total_distance / (len(peaks) * (len(peaks) - 1) / 2)
+
         self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
         print(f"Distance between cells: {distance}")
         return distance, peaks
