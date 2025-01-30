@@ -8,3 +8,4 @@ task: sbsa_eval
 ra: 10_000
 experiment_dir: logs/experiments/ra${ra}
 nr_episodes: 20
+fps: 4

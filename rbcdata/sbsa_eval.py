@@ -93,10 +93,10 @@ def main(cfg: DictConfig) -> None:
             times.append(info[0]["t"])
             episode.append(idx)
         # plot data
-        plot_actions(actions, output_dir, idx)
+        plot_actions(actions, output_dir, idx, fps=cfg.fps)
         wandb.log(
             {
-                f"ep{idx}/video": Video(np.asarray(screens), fps=2, format="mp4"),
+                f"ep{idx}/video": Video(np.asarray(screens), fps=cfg.fps, format="mp4"),
             }
         )
 
@@ -115,7 +115,7 @@ def main(cfg: DictConfig) -> None:
     wandb.run.summary["mean_nusselt"] = nusselt_mean
 
 
-def plot_actions(actions, out_dir, episode_idx):
+def plot_actions(actions, out_dir, episode_idx, fps=2):
     # Plot nusselt number
     fig, ax = plt.subplots()
     # Plot amplitude
@@ -131,7 +131,7 @@ def plot_actions(actions, out_dir, episode_idx):
         artists.append(container)
 
     ani = animation.ArtistAnimation(fig=fig, artists=artists)
-    writer = animation.FFMpegWriter(fps=2)
+    writer = animation.FFMpegWriter(fps=fps)
     path = f"{out_dir}/actions_ep{episode_idx}.mp4"
     ani.save(path, writer=writer)
     wandb.log(
