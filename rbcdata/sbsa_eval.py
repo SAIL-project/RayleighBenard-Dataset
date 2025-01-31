@@ -38,7 +38,7 @@ def main(cfg: DictConfig) -> None:
     # TODO: new config for evaluation. rn: use train config
     with open(join(cfg.experiment_dir, ".hydra/config.yaml")) as file:
         config = DictConfig(yaml.safe_load(file))
-        model_path = join(cfg.experiment_dir, "model/best_model.zip")
+        model_path = join(cfg.experiment_dir, "model/best_model")
     logger.info(f"Loaded config from {cfg.experiment_dir}/.hydra/config.yaml")
 
     # Get env, wrappers and policy

@@ -34,14 +34,14 @@ test_env:
 # Stable baselines 3 parameters overrides
 sb3:
   nr_processes: 30
-  nr_eval_processes: 5
+  nr_eval_processes: 30
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
   train_steps: 600_000
   eval_every: 10 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
   train_checkpoint_every: 10 # same units as eval_every property.
   frame_stack: 1 # number of observations to stack
   model: "ppo"  #"ppo"
-  reward_shaping: 0.5 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
+  reward_shaping: 0.75 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
   sac:
     ent_coef: "auto"
   ppo:
