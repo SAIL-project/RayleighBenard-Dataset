@@ -1,5 +1,6 @@
 import glob
 import logging
+import os
 from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
 
@@ -30,8 +31,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         "render_fps": 10,
     }
 
-    logger = logging.getLogger("sb3")
-
     EPISODE_LENGTH = 300
     SIZE_STATE = [64, 96]
     SIZE_OBS = [8, 48]
@@ -52,11 +51,22 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
+        env_id: int = 0,
+        log_dir: str = None,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
         super().__init__()
+        if log_dir is not None:
+            os.makedirs(join(log_dir, "env_logs"), exist_ok=True)
+            log_file = join(log_dir, "env_logs", f"worker_{env_id}.log")
+            logging.basicConfig(filename=log_file, level=logging.INFO, format="%(asctime)s - %(message)s") 
+        else:
+            logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+        self.logger = logging.getLogger(__name__)
+        self.env_id = env_id
+
         # NOTE Just for debugging the cell distance computation
         # self.fig_anim, self.ax_anim = plt.subplots()
         # self.ax_anim.set_xlim(0, 2 * np.pi)
@@ -101,6 +111,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         # reward config
         self.reward_shaping = env_config.get("reward_shaping", self.REWARD_SHAPING)
+        self.logger.info(f"Reward shaping: {self.reward_shaping}")
 
         # action config
         self.action_limit = env_config.get("action_limit", self.ACTION_LIMIT)

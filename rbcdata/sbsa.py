@@ -39,25 +39,28 @@ def main(cfg: DictConfig) -> None:
     logger.info(f"Set log directory to {cfg.output_dir}")
 
     # Construct the evaluation and training environments
-    def create_env(env_cfg, render_mode=None):
+    def create_env(env_cfg, env_id=0, render_mode=None):
         env = RayleighBenardEnv(
-            env_cfg, render_mode=render_mode
+            env_cfg, render_mode=render_mode, env_id=env_id, log_dir=cfg.output_dir
         )
         env = FlattenObservation(env)
         env = FrameStackObservation(env, cfg.sb3.frame_stack)
         return env
 
-    train_env = make_vec_env(
-        lambda: create_env(cfg.train_env),
-        cfg.sb3.nr_processes,
-        vec_env_cls=SubprocVecEnv,
-    )
+    train_env = SubprocVecEnv([lambda i=i: create_env(cfg.train_env, i) for i in range(1, cfg.sb3.nr_processes + 1)])
+    test_env = SubprocVecEnv([lambda i=i: create_env(cfg.test_env, -i) for i in range(1, cfg.sb3.nr_eval_processes + 1)])
 
-    test_env = make_vec_env(
-        lambda: create_env(cfg.test_env),
-        cfg.sb3.nr_eval_processes,
-        vec_env_cls=SubprocVecEnv,
-    )
+    # train_env = make_vec_env(
+    #     lambda i=i: create_env(cfg.train_env, i),
+    #     cfg.sb3.nr_processes,
+    #     vec_env_cls=SubprocVecEnv,
+    # )
+
+    # test_env = make_vec_env(
+    #     lambda: create_env(cfg.test_env),
+    #     cfg.sb3.nr_eval_processes,
+    #     vec_env_cls=SubprocVecEnv,
+    # )
 
     # Parameters
     steps_per_iteration = cfg.sb3.ppo.episodes_update * int(
