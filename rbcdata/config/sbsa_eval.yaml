@@ -9,7 +9,8 @@ ra: 10_000
 # experiment_dir: logs/sbsa/01-28-10-16-30
 # experiment_dir: logs/sbsa/01-28-10-36-14
 # experiment_dir: logs/sbsa/01-28-11-10-13
-experiment_dir: logs/sbsa/01-30-13-34-19
+# experiment_dir: logs/sbsa/01-30-13-34-19
+experiment_dir: logs/sbsa/01-30-13-36-51
 nr_episodes: 10
 render_mode: "rgb_array" # "human" or "rgb_array"
 fps: 4

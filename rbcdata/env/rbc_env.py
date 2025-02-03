@@ -29,7 +29,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         "render_modes": ["human", "rgb_array"],
         "render_fps": 10,
     }
-    logger = logging.getLogger(__name__)
+
+    logger = logging.getLogger("sb3")
 
     EPISODE_LENGTH = 300
     SIZE_STATE = [64, 96]
@@ -40,7 +41,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
     BCT = [2, 1]
     CHECKPOINT = None
     WRITE_CHECKPOINT = False
-    REWARD_SCALE = 3.8
+    REWARD_SHAPING = 0.0
     ACTION_LIMIT = 0.75
     ACTION_DURATION = 1.0
     ACTION_SEGMENTS = 12
@@ -51,13 +52,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        reward_shaping = 0.0,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
         super().__init__()
-        self.reward_shaping = reward_shaping
         # NOTE Just for debugging the cell distance computation
         # self.fig_anim, self.ax_anim = plt.subplots()
         # self.ax_anim.set_xlim(0, 2 * np.pi)
@@ -101,7 +100,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.bcT = env_config.get("bcT", self.BCT)
 
         # reward config
-        self.reward_scale = env_config.get("reward_scale", self.REWARD_SCALE)
+        self.reward_shaping = env_config.get("reward_shaping", self.REWARD_SHAPING)
 
         # action config
         self.action_limit = env_config.get("action_limit", self.ACTION_LIMIT)
@@ -155,11 +154,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.screen = None
         self.clock = None
 
-        # Warnings and TODOs
-        self.logger.warning(
-            "Reward scaling in env currently only implemented with values for Ra=1e4, maybe \
-                suboptimal for other values."
-        )
 
     def update(self):
         """NOTE Michiel: I wrote this function for debugging the cell distance computation. It plots the mid-line temperature and velocity."""

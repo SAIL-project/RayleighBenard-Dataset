@@ -13,6 +13,7 @@ seed: null
 ra: 10_000
 dt: 0.025
 action_duration: 1.0
+reward_shaping: 1 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
 
 train_env:
   ra: ${ra}
@@ -21,6 +22,7 @@ train_env:
   # checkpoint: data/checkpoints/ra${ra}/train/baseline42.chk.h5
   checkpoint: data/checkpoints/ra${ra}/train/
   action_duration: ${action_duration}
+  reward_shaping: ${reward_shaping}
 
 test_env:
   ra: ${ra}
@@ -29,6 +31,7 @@ test_env:
   # checkpoint: data/checkpoints/ra${ra}/train/baseline42.chk.h5
   checkpoint: data/checkpoints/ra${ra}/test/
   action_duration: ${action_duration}
+  reward_shaping: ${reward_shaping}
 
 
 # Stable baselines 3 parameters overrides
@@ -41,7 +44,6 @@ sb3:
   train_checkpoint_every: 10 # same units as eval_every property.
   frame_stack: 1 # number of observations to stack
   model: "ppo"  #"ppo"
-  reward_shaping: 0.5 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
   sac:
     ent_coef: "auto"
   ppo:
@@ -49,6 +51,6 @@ sb3:
     episodes_update: 1 # episodes_update * nr_processes total episodes per update
     batch_size: 500 # 1 * 20 * 200 = 4000 timesteps in dataset for update. For 8 batches it means 4000 / 8 = 500 timesteps per minibatch
     gamma: 0.99
-    ent_coef: 0.2
+    ent_coef: 0.01
     vf_coef: 0.5
     nr_neurons: 64
