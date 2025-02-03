@@ -51,7 +51,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self,
         env_config: Dict,
         render_mode: Optional[str] = None,
-        env_id: int = 0,
+        env_id: str = "0",
         log_dir: str = None,
     ) -> None:
         """

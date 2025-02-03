@@ -39,7 +39,7 @@ def main(cfg: DictConfig) -> None:
     logger.info(f"Set log directory to {cfg.output_dir}")
 
     # Construct the evaluation and training environments
-    def create_env(env_cfg, env_id=0, render_mode=None):
+    def create_env(env_cfg, env_id="0", render_mode=None):
         env = RayleighBenardEnv(
             env_cfg, render_mode=render_mode, env_id=env_id, log_dir=cfg.output_dir
         )
@@ -47,8 +47,8 @@ def main(cfg: DictConfig) -> None:
         env = FrameStackObservation(env, cfg.sb3.frame_stack)
         return env
 
-    train_env = SubprocVecEnv([lambda i=i: create_env(cfg.train_env, i) for i in range(1, cfg.sb3.nr_processes + 1)])
-    test_env = SubprocVecEnv([lambda i=i: create_env(cfg.test_env, -i) for i in range(1, cfg.sb3.nr_eval_processes + 1)])
+    train_env = SubprocVecEnv([lambda i=i: create_env(cfg.train_env, f"train_{i}") for i in range(1, cfg.sb3.nr_processes + 1)])
+    test_env = SubprocVecEnv([lambda i=i: create_env(cfg.test_env, f"test_{i}") for i in range(1, cfg.sb3.nr_eval_processes + 1)])
 
     # train_env = make_vec_env(
     #     lambda i=i: create_env(cfg.train_env, i),
