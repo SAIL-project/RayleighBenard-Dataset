@@ -10,8 +10,8 @@ task: sbsa
 tags: null
 notes: null
 seed: null
-ra: 10_000
-dt: 0.05
+ra: 100_000
+dt: 0.025
 action_duration: 1.5
 reward_shaping: 0.15 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
 
@@ -32,7 +32,6 @@ test_env:
   checkpoint: data/checkpoints/ra${ra}/test/
   action_duration: ${action_duration}
   reward_shaping: ${reward_shaping}
-
 
 # Stable baselines 3 parameters overrides
 sb3:
