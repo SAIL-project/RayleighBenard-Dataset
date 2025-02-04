@@ -9,7 +9,6 @@ from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
-from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from wandb.integration.sb3 import WandbCallback
@@ -34,6 +33,10 @@ def main(cfg: DictConfig) -> None:
         tags=cfg.tags,
         notes=cfg.notes,
     )
+    # If we are running from slurm, append the job id to the wandb run name
+    if "SLURM_JOB_ID" in os.environ:
+        run.name += f"-{os.environ['SLURM_JOB_ID']}"
+        
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {cfg.output_dir}")
