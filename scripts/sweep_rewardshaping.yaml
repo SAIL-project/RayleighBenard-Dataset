@@ -1,0 +1,17 @@
+program: rbcdata/sbsa.py
+name: rewardshaping
+method: bayes
+metric:
+  goal: maximize
+  name: eval/mean_reward
+parameters:
+  reward_shaping:
+    distribution: uniform
+    max: 1
+    min: 0
+  
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}

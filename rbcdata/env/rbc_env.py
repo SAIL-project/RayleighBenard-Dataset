@@ -364,13 +364,19 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             peaks = peaks_candidates
             # Compute distance between all combinations of peaks
             # TODO implement the maximum of the pairs here, which is probably better.
-            total_distance = 0
+            nr_pairs = int(len(peaks) * (len(peaks) - 1) / 2)
+            distances = np.zeros(nr_pairs)
+            k = 0
             for i in range(len(peaks)):
                 for j in range(i + 1, len(peaks)):
                     dist1 = np.abs(domain_x[peaks[j]] - domain_x[peaks[i]])
                     dist2 = 2 * np.pi - dist1
-                    total_distance += min(dist1, dist2)
-            distance = total_distance / (len(peaks) * (len(peaks) - 1) / 2)
+                    distances[k] = min(dist1, dist2) 
+                    k += 1
+            # NOTE for mean distance, use the line below
+            distance = np.sum(distances) / nr_pairs 
+            # NOTE for maximum distance, use the line below
+            # distance = np.max(distances)
 
         # self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
         # print(f"Distance between cells: {distance}")
