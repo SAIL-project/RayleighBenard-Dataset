@@ -6,7 +6,7 @@ defaults:
 
 task: sbsa_eval
 ra: 10_000
-experiment_dir: logs/sbsa/02-04-13-27-54
-nr_episodes: 10
+experiment_dir: logs/sbsa/01-28-10-16-30
+nr_episodes: 2
 render_mode: "rgb_array" # "human" or "rgb_array"
 fps: 4
