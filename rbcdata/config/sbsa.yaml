@@ -10,7 +10,7 @@ task: sbsa
 tags: null
 notes: null
 seed: null
-ra: 100_000
+ra: 10_000
 dt: 0.025
 action_duration: 1.5
 reward_shaping: 0.15 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
@@ -35,7 +35,7 @@ test_env:
 
 # Stable baselines 3 parameters overrides
 sb3:
-  nr_processes: 30
+  nr_processes: 20
   nr_eval_processes: 10
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
   train_steps: 400_000

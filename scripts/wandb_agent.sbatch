@@ -3,7 +3,7 @@
 #SBATCH --job-name=PPO
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:0
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=22
 #SBATCH --mem=64G
 #SBATCH --time=1-00:00:00
 #SBATCH --output=/homes/mstraat/Projects/RayleighBenard-Dataset/slurmout/%x_%j.out

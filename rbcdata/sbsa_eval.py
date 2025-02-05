@@ -1,3 +1,4 @@
+import os
 from os.path import join
 
 import hydra
@@ -24,13 +25,18 @@ def main(cfg: DictConfig) -> None:
     # Configure logging
     output_dir = HydraConfig.get().runtime.output_dir
     # wandb
-    wandb.init(
+    run = wandb.init(
         project="sb3-single-agent",
         config=dict(cfg),
         sync_tensorboard=True,
         dir=output_dir,
         tags=["eval"],
     )
+    
+    # If we are running from slurm, append the job id to the wandb run name
+    if "SLURM_JOB_ID" in os.environ:
+        run.name += f"-{os.environ['SLURM_JOB_ID']}"
+
     # sb3 logging
     logger = configure(join(output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {output_dir}")
