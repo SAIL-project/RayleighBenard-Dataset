@@ -51,11 +51,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         render_mode: Optional[str] = None,
         env_id: str = "0",
         log_dir: str = None,
+        debug_cell_dist=False,
     ) -> None:
         """
         Initialize the Rayleigh-Benard environment with the given configuration Dictionary.
         """
         super().__init__()
+
+        self.debug_cell_dist = debug_cell_dist
+
         if log_dir is not None:
             os.makedirs(join(log_dir, "env_logs"), exist_ok=True)
             log_file = join(log_dir, "env_logs", f"worker_{env_id}.log")
@@ -67,13 +71,21 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.logger = logging.getLogger(__name__)
         self.env_id = env_id
 
-        # NOTE Just for debugging the cell distance computation
-        # self.fig_anim, self.ax_anim = plt.subplots()
-        # self.ax_anim.set_xlim(0, 2 * np.pi)
-        # self.ax_anim.set_ylim(-2, 2)
-        # self.line, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-")  # just some initial values for plotting
-        # self.line_uy, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-")
-        # self.line_TuY, = self.ax_anim.plot(np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "g-")
+        if debug_cell_dist:
+            # NOTE Just for debugging the cell distance computation
+            self.fig_anim, self.ax_anim = plt.subplots()
+            self.ax_anim.set_xlim(0, 2 * np.pi)
+            self.ax_anim.set_ylim(-2, 2)
+            (self.line,) = self.ax_anim.plot(
+                np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "b-"
+            )  # just some initial values for plotting
+            (self.line_uy,) = self.ax_anim.plot(
+                np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "r-"
+            )
+            (self.line_TuY,) = self.ax_anim.plot(
+                np.linspace(0, 2 * np.pi, 96), np.linspace(1, 2, 96), "g-"
+            )
+            (self.line_cells,) = self.ax_anim.plot([], [], "x")
 
         # write checkpoint path
         write_checkpoint = env_config.get("write_checkpoint", self.WRITE_CHECKPOINT)
@@ -158,6 +170,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             dtype=np.float32,
         )
 
+        self.__last_cell_distance = 0
+
         # Rendering
         self.render_mode = render_mode
         self.screen_width = 768
@@ -239,8 +253,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             self.logger.info(f"Environment reset from checkpoint file {filename}: t={self.t}")
 
         # NOTE: for debugging the cell distance computation
-        # self.update()
-        # plt.show(block=False)
+        if self.debug_cell_dist:
+            self.update()
+            plt.show(block=False)
 
         return self.__get_obs(), self.__get_info()
 
@@ -266,12 +281,13 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.tstep >= self.steps:
             truncated = True
 
+        # NOTE For debugging, plot mid-line temperature and velocity.
+        if self.debug_cell_dist:
+            self.update()
+
         self.last_obs = self.__get_obs()
         self.last_reward = self.__get_reward()
         self.last_info = self.__get_info()
-
-        # NOTE For debugging, plot mid-line temperature and velocity.
-        # self.update()
 
         return self.last_obs, self.last_reward, self.closed, truncated, self.last_info
 
@@ -317,6 +333,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             # NOTE: works for our specific horizontal domain, needs
             # simple modification to generalize
             cell_distance = self.compute_distance_cells()
+            self.__last_cell_distance = cell_distance
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
             cell_distance_normalized = (-cell_distance + np.pi) / np.pi
             reward = (
@@ -363,15 +380,23 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             peaks = peaks_candidates
             # Compute distance between all combinations of peaks
             # TODO implement the maximum of the pairs here, which is probably better.
-            total_distance = 0
+            nr_pairs = int(len(peaks) * (len(peaks) - 1) / 2)
+            distances = np.zeros(nr_pairs)
+            k = 0
             for i in range(len(peaks)):
                 for j in range(i + 1, len(peaks)):
                     dist1 = np.abs(domain_x[peaks[j]] - domain_x[peaks[i]])
                     dist2 = 2 * np.pi - dist1
-                    total_distance += min(dist1, dist2)
-            distance = total_distance / (len(peaks) * (len(peaks) - 1) / 2)
+                    distances[k] = min(dist1, dist2)
+                    k += 1
+            # NOTE for mean distance, use the line below
+            # distance = np.sum(distances) / nr_pairs
+            # NOTE for maximum distance, use the line below
+            distance = np.max(distances)
 
-        # self.ax_anim.plot(domain_x[peaks], uy[peaks], "x")
+        if self.debug_cell_dist:
+            self.line_cells.set_data(domain_x[peaks], uy[peaks])
+
         # print(f"Distance between cells: {distance}")
         return distance
 
@@ -382,7 +407,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             "state": self.get_state(),
             "nusselt_obs": self.simulation.compute_nusselt(self.__get_obs()),
             "nusselt": self.simulation.compute_nusselt(self.get_state()),
-            "cell_dist": self.compute_distance_cells(),
+            "cell_dist": self.__last_cell_distance,
         }
 
     def render(self):

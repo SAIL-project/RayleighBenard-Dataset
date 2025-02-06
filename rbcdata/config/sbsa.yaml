@@ -13,8 +13,8 @@ notes: null
 seed: null
 ra: 10_000
 dt: 0.025
-action_duration: 1.0
-reward_shaping: 1 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
+action_duration: 1.5
+reward_shaping: 0.15 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
 nr_neurons: 512
 
 train_env:
@@ -29,19 +29,18 @@ train_env:
 test_env:
   ra: ${ra}
   dt: ${dt}
-  episode_length: 200
+  episode_length: 300
   # checkpoint: data/checkpoints/ra${ra}/train/baseline42.chk.h5
   checkpoint: data/checkpoints/ra${ra}/test/
   action_duration: ${action_duration}
   reward_shaping: ${reward_shaping}
 
-
 # Stable baselines 3 parameters overrides
 sb3:
-  nr_processes: 30
-  nr_eval_processes: 5
+  nr_processes: 20
+  nr_eval_processes: 10
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
-  train_steps: 600_000
+  train_steps: 400_000
   eval_every: 10 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)
   train_checkpoint_every: 10 # same units as eval_every property.
   frame_stack: 1 # number of observations to stack

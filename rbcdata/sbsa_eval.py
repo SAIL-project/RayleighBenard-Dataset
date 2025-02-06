@@ -1,3 +1,4 @@
+import os
 from os.path import join
 
 import hydra
@@ -24,13 +25,18 @@ def main(cfg: DictConfig) -> None:
     # Configure logging
     output_dir = HydraConfig.get().runtime.output_dir
     # wandb
-    wandb.init(
+    run = wandb.init(
         project="sb3-single-agent",
         config=dict(cfg),
         sync_tensorboard=True,
         dir=output_dir,
         tags=["eval"],
     )
+    
+    # If we are running from slurm, append the job id to the wandb run name
+    if "SLURM_JOB_ID" in os.environ:
+        run.name += f"-{os.environ['SLURM_JOB_ID']}"
+
     # sb3 logging
     logger = configure(join(output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {output_dir}")
@@ -56,6 +62,7 @@ def main(cfg: DictConfig) -> None:
 
     # Enjoy trained agent
     nusselts = []
+    cell_dists = []
     times = []
     episode = []
     for idx in range(cfg.nr_episodes):
@@ -95,6 +102,7 @@ def main(cfg: DictConfig) -> None:
                 }
             )
             nusselts.append(info[0]["nusselt_obs"])
+            cell_dists.append(info[0]["cell_dist"])
             times.append(info[0]["t"])
             episode.append(idx)
         # plot data
@@ -118,6 +126,20 @@ def main(cfg: DictConfig) -> None:
     wandb.log({"nusselt_table": Table(dataframe=df)})
     wandb.log({"mean_nusselt": nusselt_mean})
     wandb.run.summary["mean_nusselt"] = nusselt_mean
+
+    # log overall mean cell_dists
+    cell_dist_mean = np.mean(cell_dists)
+    logger.info(f"Mean cell dist : {cell_dist_mean}")
+    df = pd.DataFrame(
+        {
+            "cell_dist": np.array(cell_dists),
+            "time": np.array(times),
+            "episode": np.array(episode),
+        }
+    )
+    wandb.log({"cell_dist_table": Table(dataframe=df)})
+    wandb.log({"mean_nusselt": cell_dist_mean})
+    wandb.run.summary["mean_cell_dist"] = cell_dist_mean
 
 
 def plot_actions(actions, out_dir, episode_idx, fps=2):

@@ -38,6 +38,10 @@ def main(cfg: DictConfig) -> None:
         tags=cfg.tags,
         notes=cfg.notes,
     )
+    # If we are running from slurm, append the job id to the wandb run name
+    if "SLURM_JOB_ID" in os.environ:
+        run.name += f"-{os.environ['SLURM_JOB_ID']}"
+
     # sb3 logging
     logger = configure(join(cfg.output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {cfg.output_dir}")
