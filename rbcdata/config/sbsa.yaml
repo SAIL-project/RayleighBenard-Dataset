@@ -5,6 +5,7 @@ defaults:
   - env@train_env: default
   - env@test_env: default
   - _self_ # This will override the defaults if there are any conflicts
+  - experiment: null
 
 task: sbsa
 tags: null
@@ -14,6 +15,7 @@ ra: 10_000
 dt: 0.025
 action_duration: 1.0
 reward_shaping: 1 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
+nr_neurons: 512
 
 train_env:
   ra: ${ra}
@@ -53,4 +55,4 @@ sb3:
     gamma: 0.99
     ent_coef: 0.01
     vf_coef: 0.5
-    nr_neurons: 64
+    nr_neurons: ${nr_neurons}

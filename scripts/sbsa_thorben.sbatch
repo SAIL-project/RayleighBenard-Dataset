@@ -15,12 +15,12 @@ conda activate rbcdata
 cd ~/RayleighBenard-Dataset
 
 # run with config
-#srun python rbcdata/sbsa.py -m tags="['sbsa']"
+srun python rbcdata/sbsa.py experiment=thorben tags="['train_neurons']"
 
 # run ppo with sweep params for different RA
 #srun python rbcdata/sbsa.py -m tags="['train','ep_len_50']" notes="train on different ra for eval later" dt=0.05 ra=5000,10000
 #srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=50000,500000,5000000
-srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=100000,1000000
+#srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=100000,1000000
 
 # run ppo on single episode for multiple times
 #srun python rbcdata/sbsa.py -m tags="['single_ep']" notes="run ppo on single episode for multiple times" ra=10000 seed=42,43,44,45 train_env.checkpoint="data/checkpoints/ra10000/train/baseline42.chk.h5"

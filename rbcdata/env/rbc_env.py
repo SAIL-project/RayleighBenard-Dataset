@@ -5,13 +5,11 @@ from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import sympy
 from gymnasium.error import DependencyNotInstalled
 from hydra.utils import to_absolute_path
-from matplotlib.animation import FuncAnimation
 from scipy.signal import find_peaks
 
 from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
@@ -61,7 +59,9 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if log_dir is not None:
             os.makedirs(join(log_dir, "env_logs"), exist_ok=True)
             log_file = join(log_dir, "env_logs", f"worker_{env_id}.log")
-            logging.basicConfig(filename=log_file, level=logging.INFO, format="%(asctime)s - %(message)s") 
+            logging.basicConfig(
+                filename=log_file, level=logging.INFO, format="%(asctime)s - %(message)s"
+            )
         else:
             logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
         self.logger = logging.getLogger(__name__)
@@ -164,7 +164,6 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         self.screen_height = 512
         self.screen = None
         self.clock = None
-
 
     def update(self):
         """NOTE Michiel: I wrote this function for debugging the cell distance computation. It plots the mid-line temperature and velocity."""

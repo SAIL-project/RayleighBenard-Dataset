@@ -1,0 +1,22 @@
+# @package _global_
+# python rbcdata/sbsa.py experiment=thorben
+
+tags: null
+seed: null
+ra: 10_000
+dt: 0.05
+action_duration: 1.0
+nr_neurons: 512
+
+train_env:
+  episode_length: 150
+
+test_env:
+  episode_length: 300
+
+sb3:
+  train_steps: 600_000
+  model: "ppo"
+  ppo:
+    ent_coef: 0.01
+    nr_neurons: ${nr_neurons}

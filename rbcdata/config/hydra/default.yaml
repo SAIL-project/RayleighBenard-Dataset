@@ -1,7 +1,7 @@
 job:
   chdir: false
 run:
-  dir: ./logs/${task}/${now:%m-%d-%H-%M-%S}/
+  dir: ./logs/${task}/${now:%m-%d-%H-%M-%S-%f}/
 sweep:
-  dir: ./logs/${task}_multirun/${now:%m-%d-%H-%M-%S}/
+  dir: ./logs/${task}_multirun/${now:%m-%d-%H-%M-%S-%f}/
   subdir: ${hydra.job.num}
