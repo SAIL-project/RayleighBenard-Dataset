@@ -2,13 +2,22 @@
 
 defaults:
   - hydra: default
+  - env: default
   - _self_ # This will override the defaults if there are any conflicts
 
 task: sbsa_eval
 tags:
   - eval
-ra: 100_000
 experiment_dir: logs/experiments/ra100000
 nr_episodes: 20
 render_mode: "rgb_array" # "human" or "rgb_array"
 fps: 4
+ra: 50_000
+action_duration: 1.5
+
+env:
+  ra: ${ra}
+  dt: 0.025
+  episode_length: 300
+  checkpoint: data/checkpoints/ra${ra}/test/
+  action_duration: ${action_duration}

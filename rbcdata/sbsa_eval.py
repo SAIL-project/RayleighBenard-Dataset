@@ -47,15 +47,11 @@ def main(cfg: DictConfig) -> None:
         model_path = join(cfg.experiment_dir, "model/best_model")
     logger.info(f"Loaded config from {cfg.experiment_dir}/.hydra/config.yaml")
 
-    # overwrite Ra for env
-    env = config.test_env
-    env.ra = cfg.ra
-
     # Get env, wrappers and policy
     env = make_vec_env(
         lambda: FrameStackObservation(
             FlattenObservation(
-                RayleighBenardEnv(config.test_env, render_mode=cfg.render_mode),
+                RayleighBenardEnv(cfg.env, render_mode=cfg.render_mode),
             ),
             stack_size=config.sb3.frame_stack,
         ),
