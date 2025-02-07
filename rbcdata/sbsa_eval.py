@@ -9,7 +9,7 @@ import yaml
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
 from matplotlib import pyplot as plt
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf, open_dict
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
@@ -24,6 +24,23 @@ from wandb import Table, Video
 def main(cfg: DictConfig) -> None:
     # Configure logging
     output_dir = HydraConfig.get().runtime.output_dir
+
+    # sb3 logging
+    logger = configure(join(output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
+    logger.info(f"Set log directory to {output_dir}")
+
+    model_name = cfg.model_name
+    # get train config
+    with open(join(cfg.experiment_dir, ".hydra/config.yaml")) as file:
+        config = DictConfig(yaml.safe_load(file))
+        model_path = join(cfg.experiment_dir, "model", model_name)
+    # resolve config and put in dict
+    with open_dict(cfg):
+        OmegaConf.resolve(config)
+        cfg.train_cfg = config
+    OmegaConf.resolve(cfg)
+    logger.info(f"Loaded config from {cfg.experiment_dir}/.hydra/config.yaml")
+
     # wandb
     run = wandb.init(
         project="sb3-single-agent",
@@ -36,17 +53,6 @@ def main(cfg: DictConfig) -> None:
     # If we are running from slurm, append the job id to the wandb run name
     if "SLURM_JOB_ID" in os.environ:
         run.name += f"-{os.environ['SLURM_JOB_ID']}"
-
-    # sb3 logging
-    logger = configure(join(output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
-    logger.info(f"Set log directory to {output_dir}")
-
-    model_name = cfg.model_name
-    # use train config
-    with open(join(cfg.experiment_dir, ".hydra/config.yaml")) as file:
-        config = DictConfig(yaml.safe_load(file))
-        model_path = join(cfg.experiment_dir, "model", model_name)
-    logger.info(f"Loaded config from {cfg.experiment_dir}/.hydra/config.yaml")
 
     # Get env, wrappers and policy
     env = make_vec_env(
