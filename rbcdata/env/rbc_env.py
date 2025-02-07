@@ -374,15 +374,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if len(peaks_candidates) <= 1:
             distance = 0  # only one peak, no distance, it's the optimal situation.
             peaks = peaks_candidates
-        elif len(peaks_candidates) == 2:
-            # peaks = peaks_candidates[
-            #     np.argsort(uy[peaks_candidates])[-2:]
-            # ]  # this returns two largest peaks in vertical velocity
-            peaks = peaks_candidates
-            dist1 = np.abs(domain_x[peaks[1]] - domain_x[peaks[0]])
-            dist2 = 2 * np.pi - dist1  # complement distance
-            distance = min(dist1, dist2)
-        elif len(peaks_candidates) > 2:
+        elif len(peaks_candidates) >= 2:
             peaks = peaks_candidates
             # Compute distance between all combinations of peaks
             # TODO implement the maximum of the pairs here, which is probably better.
@@ -394,7 +386,15 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                     dist1 = np.abs(domain_x[peaks[j]] - domain_x[peaks[i]])
                     dist2 = 2 * np.pi - dist1
                     distances[k] = min(dist1, dist2)
-                    k += 1
+                    # Check if there is no negative velocity between the cells, because if there is, we consider them to be the same cell. 
+                    if dist1 < dist2:
+                        if np.all(uy[peaks[i] : peaks[j]] > 0):
+                            distances[k] = 0
+                            k += 1
+                    else:
+                        if np.all(uy[peaks[j]:] > 0) and np.all(uy[:peaks[i]] > 0):
+                            distances[k] = 0
+                            k += 1
             # NOTE for mean distance, use the line below
             # distance = np.sum(distances) / nr_pairs
             # NOTE for maximum distance, use the line below
