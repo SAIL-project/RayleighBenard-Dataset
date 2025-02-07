@@ -41,10 +41,11 @@ def main(cfg: DictConfig) -> None:
     logger = configure(join(output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {output_dir}")
 
+    model_name = cfg.model_name
     # use train config
     with open(join(cfg.experiment_dir, ".hydra/config.yaml")) as file:
         config = DictConfig(yaml.safe_load(file))
-        model_path = join(cfg.experiment_dir, "model/best_model")
+        model_path = join(cfg.experiment_dir, "model", model_name)
     logger.info(f"Loaded config from {cfg.experiment_dir}/.hydra/config.yaml")
 
     # Get env, wrappers and policy
