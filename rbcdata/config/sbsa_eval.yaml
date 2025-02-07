@@ -8,7 +8,8 @@ defaults:
 task: sbsa_eval
 tags:
   - eval
-experiment_dir: logs/experiments/ra100000
+experiment_dir: logs/sbsa/02-04-13-12-52
+model_name: "best_model"
 nr_episodes: 20
 render_mode: "rgb_array" # "human" or "rgb_array"
 fps: 4
