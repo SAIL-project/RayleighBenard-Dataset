@@ -3,7 +3,7 @@
 defaults:
   - hydra: default
   - env@train_env: default
-  - env@test_env: default
+  - env@val_env: default
   - _self_ # This will override the defaults if there are any conflicts
   - experiment: null
 
@@ -15,30 +15,28 @@ ra: 10_000
 dt: 0.025
 action_duration: 1.5
 reward_shaping: 0.15 # how much reward shaping, i.e. taking into account distance between cells, to apply (0 = no shaping, 1 = full shaping)
-nr_neurons: 512
+nr_neurons: 64
 
 train_env:
   ra: ${ra}
   dt: ${dt}
-  episode_length: 100
-  # checkpoint: data/checkpoints/ra${ra}/train/baseline42.chk.h5
+  episode_length: 300
   checkpoint: data/checkpoints/ra${ra}/train/
   action_duration: ${action_duration}
   reward_shaping: ${reward_shaping}
 
-test_env:
+val_env:
   ra: ${ra}
   dt: ${dt}
   episode_length: 300
-  # checkpoint: data/checkpoints/ra${ra}/train/baseline42.chk.h5
-  checkpoint: data/checkpoints/ra${ra}/test/
+  checkpoint: data/checkpoints/ra${ra}/validation/
   action_duration: ${action_duration}
-  reward_shaping: ${reward_shaping}
+  reward_shaping: 0
 
 # Stable baselines 3 parameters overrides
 sb3:
   nr_processes: 20
-  nr_eval_processes: 10
+  nr_eval_processes: 5
   #eval_episodes: 5 # just on rollout per worker, collecting nr_processes rollouts per evaluation
   train_steps: 400_000
   eval_every: 10 # eval_every * nr_processes total episodes completed before evaluation. So PPO has then already been updated for eval_every / episodes_update times (has seen so many datasets)

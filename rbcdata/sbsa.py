@@ -6,7 +6,7 @@ import hydra
 import torch
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig, open_dict
+from omegaconf import DictConfig, OmegaConf, open_dict
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
@@ -30,6 +30,7 @@ def main(cfg: DictConfig) -> None:
             raise FileExistsError(f"Logging directory {cfg.output_dir} already exists")
 
     # wandb
+    OmegaConf.resolve(cfg)
     run = wandb.init(
         project="sb3-single-agent",
         config=dict(cfg),
@@ -62,9 +63,9 @@ def main(cfg: DictConfig) -> None:
             for i in range(1, cfg.sb3.nr_processes + 1)
         ]
     )
-    test_env = SubprocVecEnv(
+    val_env = SubprocVecEnv(
         [
-            lambda i=i: create_env(cfg.test_env, f"test_{i}")
+            lambda i=i: create_env(cfg.val_env, f"val_{i}")
             for i in range(1, cfg.sb3.nr_eval_processes + 1)
         ]
     )
@@ -114,7 +115,7 @@ def main(cfg: DictConfig) -> None:
 
     # evaluation callback
     eval_cb = EvalCallback(
-        test_env,
+        val_env,
         best_model_save_path=dir_model,
         log_path=dir_log,
         eval_freq=cfg.sb3.eval_every * steps_per_iteration,
@@ -136,7 +137,7 @@ def main(cfg: DictConfig) -> None:
     model.learn(total_timesteps=cfg.sb3.train_steps, progress_bar=True, callback=callbacks)
 
     train_env.close()
-    test_env.close()
+    val_env.close()
     run.finish()
 
 

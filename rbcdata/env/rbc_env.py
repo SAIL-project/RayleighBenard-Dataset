@@ -324,16 +324,22 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
     def __get_reward(self) -> float:
         obs = self.__get_obs()
+
+        # compute nusselt number
         neg_nusselt_nr = float(-self.simulation.compute_nusselt(obs))
         nusselt_normalized = (
             neg_nusselt_nr + self.__reward_scale()
         ) / self.__reward_scale()  # scale to [0, 1]
         reward = nusselt_normalized
+
+        # compute cell distance
+        cell_distance = self.compute_distance_cells()
+        self.__last_cell_distance = cell_distance
+
+        # reward shaping
         if self.reward_shaping:
             # NOTE: works for our specific horizontal domain, needs
             # simple modification to generalize
-            cell_distance = self.compute_distance_cells()
-            self.__last_cell_distance = cell_distance
             # scale to [0, 1], 0 is close, 1 is far (maximum distance is pi)
             cell_distance_normalized = (-cell_distance + np.pi) / np.pi
             reward = (

@@ -3,9 +3,9 @@
 #SBATCH --job-name=sbsa
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:0
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=23
 #SBATCH --mem=64G
-#SBATCH --time=2-00:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --output=/homes/tmarkmann/RayleighBenard-Dataset/slurmout/%x_%j.out
 #SBATCH --error=/homes/tmarkmann/RayleighBenard-Dataset/slurmout/%x_%j.err
 #SBATCH --mail-type=FAIL
@@ -15,10 +15,11 @@ conda activate rbcdata
 cd ~/RayleighBenard-Dataset
 
 # run with config
-srun python rbcdata/sbsa.py experiment=thorben tags="['train_neurons']"
+srun python rbcdata/sbsa.py experiment=thorben tags="['trainv2']" ra=10000,1000000
+#srun python rbcdata/sbsa.py experiment=thorben tags="['trainv2']" ra=100000,5000000
 
 # eval
-srun python rbcdata/sbsa_eval.py
+#srun python rbcdata/sbsa_eval.py
 
 # run ppo with sweep params for different RA
 #srun python rbcdata/sbsa.py -m tags="['train','ep_len_50']" notes="train on different ra for eval later" dt=0.05 ra=5000,10000
