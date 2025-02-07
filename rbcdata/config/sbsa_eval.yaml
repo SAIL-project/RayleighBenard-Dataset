@@ -5,8 +5,10 @@ defaults:
   - _self_ # This will override the defaults if there are any conflicts
 
 task: sbsa_eval
-ra: 10_000
-experiment_dir: logs/sbsa/01-28-10-16-30
-nr_episodes: 2
+tags:
+  - eval
+ra: 100_000
+experiment_dir: logs/experiments/ra100000
+nr_episodes: 20
 render_mode: "rgb_array" # "human" or "rgb_array"
 fps: 4

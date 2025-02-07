@@ -17,6 +17,9 @@ cd ~/RayleighBenard-Dataset
 # run with config
 srun python rbcdata/sbsa.py experiment=thorben tags="['train_neurons']"
 
+# eval
+srun python rbcdata/sbsa_eval.py
+
 # run ppo with sweep params for different RA
 #srun python rbcdata/sbsa.py -m tags="['train','ep_len_50']" notes="train on different ra for eval later" dt=0.05 ra=5000,10000
 #srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=50000,500000,5000000

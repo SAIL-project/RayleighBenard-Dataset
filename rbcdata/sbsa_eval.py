@@ -30,9 +30,9 @@ def main(cfg: DictConfig) -> None:
         config=dict(cfg),
         sync_tensorboard=True,
         dir=output_dir,
-        tags=["eval"],
+        tags=cfg.tags,
     )
-    
+
     # If we are running from slurm, append the job id to the wandb run name
     if "SLURM_JOB_ID" in os.environ:
         run.name += f"-{os.environ['SLURM_JOB_ID']}"
@@ -41,11 +41,15 @@ def main(cfg: DictConfig) -> None:
     logger = configure(join(output_dir, "log"), ["stdout", "log", "json", "tensorboard"])
     logger.info(f"Set log directory to {output_dir}")
 
-    # TODO: new config for evaluation. rn: use train config
+    # use train config
     with open(join(cfg.experiment_dir, ".hydra/config.yaml")) as file:
         config = DictConfig(yaml.safe_load(file))
         model_path = join(cfg.experiment_dir, "model/best_model")
     logger.info(f"Loaded config from {cfg.experiment_dir}/.hydra/config.yaml")
+
+    # overwrite Ra for env
+    env = config.test_env
+    env.ra = cfg.ra
 
     # Get env, wrappers and policy
     env = make_vec_env(
