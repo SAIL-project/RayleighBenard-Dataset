@@ -12,6 +12,7 @@ tags:
 
 # experiment configuration
 experiment_dir: logs/experiments/test
+model_name: "best_model"
 ra: 100_000
 
 # fixed parameters
