@@ -69,6 +69,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         else:
             logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
         self.logger = logging.getLogger(__name__)
+
         self.env_id = env_id
 
         if debug_cell_dist:
@@ -134,6 +135,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             "fraction_length_smoothing", self.FRACTION_LENGTH_SMOOTHING
         )
         self.solver_steps = int(self.action_duration / self.dt)
+
+        self.logger.info(f"Using Rayleigh number Ra={self.ra}")
 
         # Env configuration
         self.steps = int(self.episode_length / self.dt)

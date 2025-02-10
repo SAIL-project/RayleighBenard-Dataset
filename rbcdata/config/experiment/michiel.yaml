@@ -3,11 +3,11 @@
 
 tags: null
 seed: null
-ra: 10_000
+ra: 5_000_000 
 dt: 0.025
 
 action_duration: 1.5
-reward_shaping: 0.15
+reward_shaping: 0.5
 nr_neurons: 64
 
 train_env:
