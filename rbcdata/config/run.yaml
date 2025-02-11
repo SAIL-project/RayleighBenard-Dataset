@@ -10,10 +10,10 @@ interval: 1
 render_mode: human # null, "human" or "rgb_array"
 
 env:
-  ra: 5_000_000
-  checkpoint: "data/checkpoints/ra${env.ra}/train"
-  episode_length: 120
-  action_duration: 1
+  ra: 10_000
+  checkpoint: "data/checkpoints/ra${env.ra}/test"
+  episode_length: 300
+  action_duration: 1.5
   dt: 0.025
 
 hydra:

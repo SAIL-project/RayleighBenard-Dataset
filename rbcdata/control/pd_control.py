@@ -31,12 +31,11 @@ class PDController(Controller):
         self.nr_segements = nr_segments
 
         self._last_error = None
-        self.logger.warning("PD controller works on the state and not on the observation")
 
     def __call__(self, env, obs, info) -> float:
         if super().__call__(env, obs, info):
             # Get input and error term
-            error = self.optimal_conductive_state(env.get_state())
+            error = self.optimal_conductive_state(obs)
             error = segmentize(error, env.action_segments)
 
             # Compute change in error

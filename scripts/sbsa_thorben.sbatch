@@ -31,3 +31,6 @@ srun python rbcdata/sbsa.py experiment=thorben tags="['trainv2']" ra=10000,10000
 
 # evaluate on different RA using checkpoints
 #srun python rbcdata/sbsa_eval.py -m ra=5000,10000,50000,100000,500000,1000000,5000000
+
+# pd and baseline
+#srun python rbcdata/run_pd.py -m baseline=false env.ra=10000,100000,1000000,5000000

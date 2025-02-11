@@ -11,7 +11,7 @@ hydra:
   sweeper:
     params:
       seed: range(42, 79, 1)
-      env.ra: choice(5_000, 50_000, 500_000, 5_000_000)
+      env.ra: choice(10_000, 100_000, 1_000_000, 5_000_000)
 
 render_mode: null
 env:

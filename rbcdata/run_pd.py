@@ -1,10 +1,6 @@
 import hydra
-import rootutils
-from omegaconf import DictConfig
-
 import wandb
-
-rootutils.setup_root(__file__, indicator="pyproject.toml", pythonpath=True)
+from omegaconf import DictConfig
 
 from rbcdata.callbacks.callbacks import SaveNusseltNumberCallback, TqdmCallback
 from rbcdata.control.pd_control import PDController
