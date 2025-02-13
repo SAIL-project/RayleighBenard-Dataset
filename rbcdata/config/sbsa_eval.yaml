@@ -11,10 +11,9 @@ tags:
   - eval
 
 # experiment configuration
-experiment_dir: logs/sbsa/02-05-12-03-16
-# experiment_dir: logs/sbsa/02-05-12-03-46
-model_name: "best_model"
 ra: 10_000
+experiment_dir: logs/models/ppo_sbsa/ra${ra}
+model_name: "best_model"
 
 # fixed parameters
 nr_episodes: 20

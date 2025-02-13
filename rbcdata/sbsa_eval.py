@@ -148,6 +148,10 @@ def main(cfg: DictConfig) -> None:
     wandb.log({"mean_nusselt": cell_dist_mean})
     wandb.run.summary["mean_cell_dist"] = cell_dist_mean
 
+    #close 
+    env.close()
+    run.finish()
+
 
 def plot_actions(actions, out_dir, episode_idx, fps=2):
     # Plot nusselt number
