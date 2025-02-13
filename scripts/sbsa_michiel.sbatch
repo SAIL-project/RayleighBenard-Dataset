@@ -14,6 +14,5 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate rbcdata
 cd ~/Projects/RayleighBenard-Dataset
 
-srun python rbcdata/sbsa.py experiment=michiel
-# srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=100000,1000000
-# srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=500000,5000000
+srun python rbcdata/sbsa.py -m tags="['train']" experiment=michiel ra=$1 reward_shaping=$2
+#srun python rbcdata/sbsa.py -m tags="['train']" notes="train on different ra for eval later" ra=50000,500000,5000000
