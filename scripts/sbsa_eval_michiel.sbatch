@@ -14,4 +14,4 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate rbcdata
 cd ~/Projects/RayleighBenard-Dataset
 
-srun python rbcdata/sbsa_eval.py
+srun python rbcdata/sbsa_eval.py experiment_dir=$1 ra=$2
