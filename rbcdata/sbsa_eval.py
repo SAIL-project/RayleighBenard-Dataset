@@ -132,7 +132,6 @@ def main(cfg: DictConfig) -> None:
     )
     wandb.log({"nusselt_table": Table(dataframe=df)})
     wandb.log({"mean_nusselt": nusselt_mean})
-    wandb.run.summary["mean_nusselt"] = nusselt_mean
 
     # log overall mean cell_dists
     cell_dist_mean = np.mean(cell_dists)
@@ -146,7 +145,6 @@ def main(cfg: DictConfig) -> None:
     )
     wandb.log({"cell_dist_table": Table(dataframe=df)})
     wandb.log({"mean_cell_dist": cell_dist_mean})
-    wandb.run.summary["mean_cell_dist"] = cell_dist_mean
 
 
 def plot_actions(actions, out_dir, episode_idx, fps=2):
