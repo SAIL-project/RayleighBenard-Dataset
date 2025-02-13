@@ -145,7 +145,7 @@ def main(cfg: DictConfig) -> None:
         }
     )
     wandb.log({"cell_dist_table": Table(dataframe=df)})
-    wandb.log({"mean_nusselt": cell_dist_mean})
+    wandb.log({"mean_cell_dist": cell_dist_mean})
     wandb.run.summary["mean_cell_dist"] = cell_dist_mean
 
     #close 
