@@ -5,6 +5,7 @@ import hydra
 import matplotlib.animation as animation
 import numpy as np
 import pandas as pd
+import wandb
 import yaml
 from gymnasium.wrappers import FlattenObservation, FrameStackObservation
 from hydra.core.hydra_config import HydraConfig
@@ -14,10 +15,9 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.vec_env import DummyVecEnv
-
-import wandb
-from rbcdata.env.rbc_env import RayleighBenardEnv
 from wandb import Table, Video
+
+from rbcdata.env.rbc_env import RayleighBenardEnv
 
 
 @hydra.main(version_base=None, config_path="config", config_name="sbsa_eval")
@@ -145,7 +145,7 @@ def main(cfg: DictConfig) -> None:
         }
     )
     wandb.log({"cell_dist_table": Table(dataframe=df)})
-    wandb.log({"mean_nusselt": cell_dist_mean})
+    wandb.log({"mean_cell_dist": cell_dist_mean})
     wandb.run.summary["mean_cell_dist"] = cell_dist_mean
 
 
