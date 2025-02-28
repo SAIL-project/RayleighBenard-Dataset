@@ -58,7 +58,7 @@ def main(cfg: DictConfig) -> None:
     env = make_vec_env(
         lambda: FrameStackObservation(
             FlattenObservation(
-                RayleighBenardEnv(cfg.env, render_mode=cfg.render_mode),
+                RayleighBenardEnv(cfg.env, render_mode=cfg.render_mode, debug_cell_dist=cfg.debug_cell_dist),
             ),
             stack_size=config.sb3.frame_stack,
         ),

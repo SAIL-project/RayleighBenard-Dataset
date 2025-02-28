@@ -14,6 +14,7 @@ tags:
 ra: 10_000
 experiment_dir: logs/models/ppo_sbsa/ra${ra}
 model_name: "best_model"
+debug_cell_dist: False
 
 # fixed parameters
 nr_episodes: 20

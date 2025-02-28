@@ -17,6 +17,8 @@ from rbcdata.env.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.utils import colormap
 
+import matplotlib.pyplot as plt
+
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
 
@@ -372,24 +374,24 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Find the locations of the cells
         # peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
         # alternative approach: go over the signal and look for sign changes.
-        peaks = []
-        for j in range(self.simulation.N[1] - 1):
-            # Strategy: at all points where the y-velocity goes from positive to negative, we should go back in the domain to find the highest point of the cell. This is the cell location.
-            if uy[j] > 0 and uy[j + 1] < 0:
-                # go back and find the index of the maximum 
-                k = j
-                cur_max = -1000
-                cur_max_idx = -1
-                while uy[k] > 0:
-                    if uy[j] > cur_max:
-                        cur_max = uy[j]
-                        cur_max_idx = j
-                    if k == 0:
-                        k = self.simulation.N[1]
-                    k -= 1
-                peaks.append(cur_max_idx)
+        #peaks = []
+        #for j in range(self.simulation.N[1] - 1):
+        #    # Strategy: at all points where the y-velocity goes from positive to negative, we should go back in the domain to find the highest point of the cell. This is the cell location.
+        #    if uy[j] > 0 and uy[j + 1] < 0:
+        #        # go back and find the index of the maximum 
+        #        k = j
+        #        cur_max = -1000
+        #        cur_max_idx = -1
+        #        while uy[k] > 0:
+        #            if uy[j] > cur_max:
+        #                cur_max = uy[j]
+        #                cur_max_idx = j
+        #            if k == 0:
+        #                k = self.simulation.N[1]
+        #            k -= 1
+        #        peaks.append(cur_max_idx)
 
-        # peaks, _ = find_peaks(uy, height=0.001)
+        peaks, _ = find_peaks(uy, height=0.001)
         # pick out the two largest peaks
         # in addition: one can add a check of finding peaks in the y-velocity field, the cell locations are always at the maxima of the y-velocity
         # for example, only consider peaks where the y-velocity is positive
@@ -412,11 +414,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                     if dist1 < dist2:
                         if np.all(uy[peaks[i] : peaks[j]] > 0):
                             distances[k] = 0
-                            k += 1
                     else:
                         if np.all(uy[peaks[j]:] > 0) and np.all(uy[:peaks[i]] > 0):
                             distances[k] = 0
-                            k += 1
+                    k += 1
             # NOTE for mean distance, use the line below
             # distance = np.sum(distances) / nr_pairs
             # NOTE for maximum distance, use the line below
@@ -425,7 +426,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.debug_cell_dist:
             self.line_cells.set_data(domain_x[peaks], uy[peaks])
 
-        # print(f"Distance between cells: {distance}")
+        print(f"Distance between cells: {distance}. Number of peaks: {len(peaks)}, distances: {distances}, max distance: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:
