@@ -355,32 +355,51 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             raise ValueError("Reward is NaN")
         return reward
 
-    def compute_distance_cells(self) -> float:
+    def compute_distance_cells(self, use_avg=False) -> float:
         """
         Computes the distance between the Bénard cells of the state, given the mid-line temperature
         NOTE: works for our specific horizontal domain, needs simple modification to generalize
+        use_avg is a boolean that determines whether the column average of the y-velocity field is used as a signal to find the cells
         """
         state = self.get_state()
         distance = 0
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         ux = state[RBCField.UX][int(self.size_state[0] / 2) - 1]
-        uy = state[RBCField.UY][int(self.size_state[0] / 2) - 1]
+        if use_avg:
+            uy = state[RBCField.UY].mean(axis=0)
+        else:
+            uy = state[RBCField.UY][int(self.size_state[0] / 2) - 1]
         # Find the locations of the cells
         # peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
-        peaks_candidates, _ = find_peaks(uy, height=0.001)
+        # alternative approach: go over the signal and look for sign changes.
+        peaks = []
+        for j in range(self.simulation.N[1] - 1):
+            # Strategy: at all points where the y-velocity goes from positive to negative, we should go back in the domain to find the highest point of the cell. This is the cell location.
+            if uy[j] > 0 and uy[j + 1] < 0:
+                # go back and find the index of the maximum 
+                k = j
+                cur_max = -1000
+                cur_max_idx = -1
+                while uy[k] > 0:
+                    if uy[j] > cur_max:
+                        cur_max = uy[j]
+                        cur_max_idx = j
+                    if k == 0:
+                        k = self.simulation.N[1]
+                    k -= 1
+                peaks.append(cur_max_idx)
+
+        # peaks, _ = find_peaks(uy, height=0.001)
         # pick out the two largest peaks
         # in addition: one can add a check of finding peaks in the y-velocity field, the cell locations are always at the maxima of the y-velocity
         # for example, only consider peaks where the y-velocity is positive
         # peaks_candidates = peaks_candidates[uy[peaks_candidates] > 0]
 
         domain_x = np.linspace(0, 2 * np.pi, self.size_state[1], endpoint=False)  # periodic domain
-        if len(peaks_candidates) <= 1:
+        if len(peaks) <= 1:
             distance = 0  # only one peak, no distance, it's the optimal situation.
-            peaks = peaks_candidates
-        elif len(peaks_candidates) >= 2:
-            peaks = peaks_candidates
+        elif len(peaks) >= 2:
             # Compute distance between all combinations of peaks
-            # TODO implement the maximum of the pairs here, which is probably better.
             nr_pairs = int(len(peaks) * (len(peaks) - 1) / 2)
             distances = np.zeros(nr_pairs)
             k = 0
@@ -416,7 +435,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
             "state": self.get_state(),
             "nusselt_obs": self.simulation.compute_nusselt(self.__get_obs()),
             "nusselt": self.simulation.compute_nusselt(self.get_state()),
-            "cell_dist": self.__last_cell_distance,
+            "cell_dist": self.compute_distance_cells(),
         }
 
     def render(self):
