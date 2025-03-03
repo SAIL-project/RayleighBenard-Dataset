@@ -7,7 +7,7 @@ defaults:
 task: pdcontrol
 seed: null
 interval: 1
-render_mode: null
+render_mode: rgb_array
 
 hydra:
   job:
@@ -15,12 +15,12 @@ hydra:
 
 # params
 baseline: True
-nr_episodes: 20
+nr_episodes: 1
 
 env:
   ra: 10_000
-  checkpoint: data/checkpoints/ra${env.ra}/test
-  episode_length: 300
+  checkpoint: null  #data/checkpoints/ra${env.ra}/test
+  episode_length: 700
   action_duration: 1.5
   dt: 0.025
 

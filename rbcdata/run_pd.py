@@ -3,6 +3,7 @@ import wandb
 from omegaconf import DictConfig
 
 from rbcdata.callbacks.callbacks import SaveNusseltNumberCallback, TqdmCallback
+from rbcdata.callbacks.callbacks_wandb import LogNusseltNumberCallback
 from rbcdata.control.pd_control import PDController
 from rbcdata.env.rbc_env import RayleighBenardEnv
 from rbcdata.utils.integrate import integrate
@@ -31,8 +32,8 @@ def main(cfg: DictConfig) -> None:
     callbacks = [
         TqdmCallback(total=env.episode_length, interval=cfg.interval),
         SaveNusseltNumberCallback(log_wandb=True),
-        # LogVisualizationCallback(action_limit=cfg.env.action_limit, interval=cfg.interval),
-        # LogNusseltNumberCallback(interval=cfg.interval),
+        # LogVisualizationCallback(action_limit=cfg.env.action_limit),
+        LogNusseltNumberCallback(interval=cfg.interval, nr_episodes=cfg.nr_episodes),
         # LogActionCallback(interval=cfg.interval),
     ]
 
