@@ -28,3 +28,7 @@ def integrate(
         # Callbacks
         for callback in callbacks:
             callback(env, obs, reward, info, episode_idx=episode_idx)
+
+    # close environment and callbacks
+    for callback in callbacks:
+        callback.reset()

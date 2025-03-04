@@ -5,6 +5,7 @@ from os.path import exists, isdir, isfile, join
 from typing import Any, Dict, Optional, Tuple, TypeAlias
 
 import gymnasium as gym
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import sympy
@@ -16,8 +17,6 @@ from rbcdata.env.sim.rayleighbenard2d import RayleighBenard
 from rbcdata.env.sim.tfunc import Tfunc
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.utils import colormap
-
-import matplotlib.pyplot as plt
 
 RBCAction: TypeAlias = npt.NDArray[np.float32]
 RBCObservation: TypeAlias = npt.NDArray[np.float32]
@@ -365,6 +364,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         """
         state = self.get_state()
         distance = 0
+        distances = []
         T_mid_line = state[RBCField.T][int(self.size_state[0] / 2) - 1]
         ux = state[RBCField.UX][int(self.size_state[0] / 2) - 1]
         if use_avg:
@@ -374,11 +374,11 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         # Find the locations of the cells
         # peaks_candidates, _ = find_peaks(T_mid_line, height=1.5)
         # alternative approach: go over the signal and look for sign changes.
-        #peaks = []
-        #for j in range(self.simulation.N[1] - 1):
+        # peaks = []
+        # for j in range(self.simulation.N[1] - 1):
         #    # Strategy: at all points where the y-velocity goes from positive to negative, we should go back in the domain to find the highest point of the cell. This is the cell location.
         #    if uy[j] > 0 and uy[j + 1] < 0:
-        #        # go back and find the index of the maximum 
+        #        # go back and find the index of the maximum
         #        k = j
         #        cur_max = -1000
         #        cur_max_idx = -1
@@ -410,12 +410,12 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
                     dist1 = np.abs(domain_x[peaks[j]] - domain_x[peaks[i]])
                     dist2 = 2 * np.pi - dist1
                     distances[k] = min(dist1, dist2)
-                    # Check if there is no negative velocity between the cells, because if there is, we consider them to be the same cell. 
+                    # Check if there is no negative velocity between the cells, because if there is, we consider them to be the same cell.
                     if dist1 < dist2:
                         if np.all(uy[peaks[i] : peaks[j]] > 0):
                             distances[k] = 0
                     else:
-                        if np.all(uy[peaks[j]:] > 0) and np.all(uy[:peaks[i]] > 0):
+                        if np.all(uy[peaks[j] :] > 0) and np.all(uy[: peaks[i]] > 0):
                             distances[k] = 0
                     k += 1
             # NOTE for mean distance, use the line below
@@ -426,7 +426,7 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         if self.debug_cell_dist:
             self.line_cells.set_data(domain_x[peaks], uy[peaks])
 
-        print(f"Distance between cells: {distance}. Number of peaks: {len(peaks)}, distances: {distances}, max distance: {distance}")
+        # print(f"Distance between cells: {distance}. Number of peaks: {len(peaks)}, distances: {distances}, max distance: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:

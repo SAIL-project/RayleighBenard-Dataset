@@ -56,15 +56,19 @@ class LogVisualizationCallback(CallbackBase):
     def __call__(self, env, obs, reward, info, episode_idx=0):
         if super().__call__(env, obs, reward, info):
             self.screens.append(env.render().transpose(2, 0, 1))
+            self.ep_idx = episode_idx
 
-    def close(self):
-        wandb.log(
-            {
-                "run/visualization": wandb.Video(
-                    np.asarray(self.screens), fps=self.fps, format="mp4"
-                )
-            }
-        )
+    def reset(self):
+        if self.ep_idx is not None:
+            wandb.log(
+                {
+                    f"ep{self.ep_idx}/visualization": wandb.Video(
+                        np.asarray(self.screens), fps=self.fps, format="mp4"
+                    )
+                }
+            )
+        self.screens = []
+        self.actions = []
 
 
 class LogActionCallback(CallbackBase):

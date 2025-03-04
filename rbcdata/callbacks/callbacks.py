@@ -5,17 +5,17 @@ import h5py
 import hydra
 import numpy as np
 import pandas as pd
+import wandb
 import yaml
 from matplotlib import pyplot as plt
 from omegaconf import DictConfig
 from tqdm import tqdm
+from wandb import Table
 
-import wandb
 from rbcdata.env.rbc_env import RayleighBenardEnv
 from rbcdata.utils.rbc_field import RBCField
 from rbcdata.vis.rbc_action_visualizer import RBCActionVisualizer
 from rbcdata.vis.rbc_field_visualizer import RBCFieldVisualizer
-from wandb import Table
 
 
 class CallbackBase:
@@ -24,6 +24,9 @@ class CallbackBase:
 
     def __call__(self, env, obs, reward, info, render=None, episode_idx=0) -> bool:
         return info["step"] % self.interval == 0
+
+    def reset(self):
+        pass
 
     def close(self):
         pass

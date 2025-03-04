@@ -14,15 +14,15 @@ hydra:
     chdir: true
 
 # params
-baseline: True
+baseline: False
 nr_episodes: 1
 
 env:
   ra: 10_000
-  checkpoint: null  #data/checkpoints/ra${env.ra}/test
-  episode_length: 700
+  checkpoint: data/checkpoints/ra${env.ra}/test/baseline74.chk.h5
+  episode_length: 300
   action_duration: 1.5
-  dt: 0.025
+  dt: 0.05
 
 controller:
   kp: 970
