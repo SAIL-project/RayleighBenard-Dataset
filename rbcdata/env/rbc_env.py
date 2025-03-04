@@ -425,8 +425,10 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
 
         if self.debug_cell_dist:
             self.line_cells.set_data(domain_x[peaks], uy[peaks])
+            print(
+                f"Distance between cells: {distance}. Number of peaks: {len(peaks)}, max distance: {distance}"
+            )
 
-        # print(f"Distance between cells: {distance}. Number of peaks: {len(peaks)}, distances: {distances}, max distance: {distance}")
         return distance
 
     def __get_info(self) -> dict[str, Any]:
