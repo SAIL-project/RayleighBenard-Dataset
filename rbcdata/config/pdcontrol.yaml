@@ -22,7 +22,7 @@ env:
   checkpoint: data/checkpoints/ra${env.ra}/test/baseline74.chk.h5
   episode_length: 300
   action_duration: 1.5
-  dt: 0.05
+  dt: 0.025
 
 controller:
   kp: 970

@@ -1,12 +1,16 @@
 import logging
+import os
 import pathlib
 import tempfile
 from typing import Optional
 
 import numpy as np
+import seaborn as sns
+import sympy as sp
 import wandb
 from matplotlib import animation
 from matplotlib import pyplot as plt
+from PIL import Image
 
 from rbcdata.callbacks.callbacks import CallbackBase
 
@@ -43,84 +47,119 @@ class LogNusseltNumberCallback(CallbackBase):
 class LogVisualizationCallback(CallbackBase):
     def __init__(
         self,
-        action_limit: float,
         fps: int = 4,
         interval: Optional[int] = 1,
+        save_video: bool = True,
+        save_images: bool = False,
     ):
         super().__init__(interval=interval)
-        self.action_limit = action_limit
         self.fps = fps
         self.screens = []
-        self.actions = []
+        self.save_video = save_video
+        self.save_images = save_images
 
     def __call__(self, env, obs, reward, info, episode_idx=0):
         if super().__call__(env, obs, reward, info):
-            self.screens.append(env.render().transpose(2, 0, 1))
+            screen = env.render()
+            self.screens.append(screen.transpose(2, 0, 1))
             self.ep_idx = episode_idx
 
+            if self.save_images:
+                im = wandb.Image(screen, caption="state")
+                os.makedirs("states/", exist_ok=True)
+                Image.fromarray(screen).save(f"states/state_{info['t']}.png")
+                wandb.log(
+                    {
+                        f"ep{episode_idx}/state": im,
+                    }
+                )
+
     def reset(self):
-        if self.ep_idx is not None:
+        if self.save_video:
             wandb.log(
                 {
-                    f"ep{self.ep_idx}/visualization": wandb.Video(
+                    f"ep{self.ep_idx}/state_video": wandb.Video(
                         np.asarray(self.screens), fps=self.fps, format="mp4"
                     )
                 }
             )
         self.screens = []
-        self.actions = []
 
 
 class LogActionCallback(CallbackBase):
     def __init__(
         self,
         interval: Optional[int] = 1,
+        save_video: bool = True,
+        save_images: bool = False,
     ):
         super().__init__(interval=interval)
-        wandb.define_metric("sim_time")
-        wandb.define_metric("run/action", step_metric="sim_time")
-
-        # plot
         self.actions = []
+        self.save_video = save_video
+        self.save_images = save_images
 
         # suppress matplotlib logging
         logger = logging.getLogger("matplotlib.animation")
         logger.setLevel(logging.ERROR)
 
-    def __call__(self, env, obs, reward, info):
+    def __call__(self, env, obs, reward, info, episode_idx=0):
         if super().__call__(env, obs, reward, info):
-            action = env.last_action
-            self.actions.append(action)
-            # plot action
-            fig, ax = plt.subplots(figsize=(9, 6))
-            ax.set_xlabel("segements")
-            ax.set_ylabel("amplitude")
-            ax.set_ylim(-1.1, 1.1)
-            ax.tick_params(axis="y")
-            ax.grid()
-            # save container for video
-            ax.plot(range(len(action)), action, color="blue")
-            im = wandb.Image(fig, caption="action")
-            plt.close(fig)
-            # log to wandb
-            wandb.log(
-                {
-                    "sim_time": info["t"],
-                    "run/action": im,
-                }
-            )
+            # get and save action
+            self.ep_idx = episode_idx
+            action = env.action_effective
 
-    def close(self):
+            # plot setup
+            fig = plt.figure(figsize=(5, 3))
+            sns.set_theme()
+
+            plt.xlabel("Spatial x")
+            plt.xlim(0, 2 * np.pi)
+            plt.xticks(ticks=[0, np.pi, 2 * np.pi], labels=["0", r"$\pi$", r"$2\pi$"])
+
+            plt.ylabel(r"Control Input $\hat{T}$")
+            plt.ylim(-1, 1)
+            plt.yticks(ticks=[-0.75, 0, 0.75], labels=["-C", "0", "C"])
+
+            # plot and save to wandb
+            y = sp.Symbol("y")
+            action_lambda = sp.lambdify(y, action, "numpy")
+            x_vals = np.linspace(0, 2 * sp.pi, 400)
+            y_vals = action_lambda(x_vals) - 2
+
+            # Plot the action and log to wandb
+            if self.save_images:
+                plt.plot(x_vals, y_vals, label="Action", color="b")
+                im = wandb.Image(fig, caption="action")
+                plt.tight_layout()
+                os.makedirs("actions/", exist_ok=True)
+                plt.savefig(f"actions/action_{info['t']}.svg", format="svg")
+                plt.close(fig)
+                wandb.log(
+                    {
+                        f"ep{episode_idx}/action": im,
+                    }
+                )
+
+            # save values for video
+            self.actions.append({"y": y_vals, "x": x_vals})
+
+    def reset(self):
         # plot actions
-        fig, ax = plt.subplots(figsize=(9, 6))
-        ax.set_xlabel("segements")
-        ax.set_ylabel("amplitude")
-        ax.set_ylim(-1.1, 1.1)
-        ax.tick_params(axis="y")
-        ax.grid()
+        fig, ax = plt.subplots(figsize=(5, 3))
+        sns.set_theme()
+
+        ax.set_xlabel("Spatial x")
+        ax.set_xlim(0, 2 * np.pi)
+        ax.set_xticks(ticks=[0, np.pi, 2 * np.pi], labels=["0", r"$\pi$", r"$2\pi$"])
+
+        ax.set_ylabel(r"Control Input $\hat{T}$")
+        ax.set_ylim(-1, 1)
+        ax.set_yticks(ticks=[-0.75, 0, 0.75], labels=["-C", "0", "C"])
+        fig.tight_layout()
+
         artists = []
         for action in self.actions:
-            artists.append(ax.plot(range(len(action)), action, color="blue"))
+            artists.append(ax.plot(action["x"], action["y"], label="Action", color="b"))
         ani = animation.ArtistAnimation(fig=fig, artists=artists)
         writer = animation.FFMpegWriter(fps=2)
         path = pathlib.Path(f"{tempfile.gettempdir()}/rbcdata").resolve()
@@ -129,5 +168,6 @@ class LogActionCallback(CallbackBase):
         ani.save(path, writer=writer)
 
         # wandb
-        vid = wandb.Video(path, caption="actions")
-        wandb.log({"run/video_actions": vid})
+        if self.save_video:
+            vid = wandb.Video(path, caption="actions")
+            wandb.log({f"ep{self.ep_idx}/action_video": vid})

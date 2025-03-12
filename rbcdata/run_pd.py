@@ -4,6 +4,7 @@ from omegaconf import DictConfig
 
 from rbcdata.callbacks.callbacks import TqdmCallback
 from rbcdata.callbacks.callbacks_wandb import (
+    LogActionCallback,
     LogNusseltNumberCallback,
     LogVisualizationCallback,
 )
@@ -34,10 +35,9 @@ def main(cfg: DictConfig) -> None:
     # Callbacks
     callbacks = [
         TqdmCallback(total=env.episode_length, interval=cfg.interval),
-        # SaveNusseltNumberCallback(log_wandb=True),
-        LogVisualizationCallback(action_limit=cfg.env.action_limit),
         LogNusseltNumberCallback(interval=cfg.interval, nr_episodes=cfg.nr_episodes),
-        # LogActionCallback(interval=cfg.interval),
+        LogVisualizationCallback(save_images=True),
+        LogActionCallback(interval=cfg.interval, save_images=True),
     ]
 
     # Controller
