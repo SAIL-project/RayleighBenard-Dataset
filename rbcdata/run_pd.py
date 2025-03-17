@@ -37,7 +37,7 @@ def main(cfg: DictConfig) -> None:
         TqdmCallback(total=env.episode_length, interval=cfg.interval),
         LogNusseltNumberCallback(interval=cfg.interval, nr_episodes=cfg.nr_episodes),
         LogVisualizationCallback(save_images=True),
-        LogActionCallback(interval=cfg.interval, save_images=True),
+        # LogActionCallback(interval=cfg.interval, save_images=True),
     ]
 
     # Controller

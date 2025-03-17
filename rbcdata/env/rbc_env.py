@@ -324,7 +324,8 @@ class RayleighBenardEnv(gym.Env[RBCAction, RBCObservation]):
         elif self.ra == 5_000_000:
             return 20.0
         else:
-            raise ValueError(f"Reward scaling not implemented for Ra={self.ra}")
+            self.logger.warning(f"Reward scaling not implemented for Ra={self.ra}")
+            return 1
 
     def __get_reward(self) -> float:
         obs = self.__get_obs()
